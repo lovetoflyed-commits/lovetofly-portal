@@ -3,51 +3,28 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext'; // Import AuthContext
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login, error } = useAuth(); // Use AuthContext
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
 
-    try {
-      // Envia 'password' (texto puro) para a API.
-      // A API vai comparar isso com o 'password_hash' no banco Neon.
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+    const success = await login(email, password);
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Erro ao fazer login');
-      }
-
-      // --- CORREÇÃO CRÍTICA PARA O LOGIN FUNCIONAR ---
-      // Salva o usuário no navegador para que o Header reconheça o login
-      localStorage.setItem('user', JSON.stringify(data.user));
-
-      // Dispara eventos para atualizar a tela imediatamente
-      window.dispatchEvent(new Event('storage'));
-      window.dispatchEvent(new Event('user-login'));
-
-      // Redireciona para a página principal
-      router.push('/');
-      router.refresh();
-
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+    if (success) {
+      // Login successful, context handles redirect
+    } else {
+      // Error is handled by context
     }
+
+    setLoading(false);
   };
 
   return (

@@ -1,51 +1,82 @@
 import { NextResponse } from 'next/server';
-import pool from '../config/db';
-import bcrypt from 'bcrypt';
+import pool from '../config/db'; // Certifique-se de que este caminho está correto
+import bcrypt from 'bcrypt'; // Ou 'bcryptjs', certifique-se de usar o mesmo em todo lugar
 import jwt from 'jsonwebtoken';
 
 // Função para registrar um novo usuário
 export const registerUser = async (req: Request) => {
   try {
-    const { name, email, password, anac_code, phone_number } = await req.json();
+    // Desestrutura todos os campos do corpo da requisição, conforme o formulário
+    const {
+      firstName,
+      lastName,
+      birthDate,
+      cpf,
+      email,
+      password,
+      mobilePhone,
+      addressStreet,
+      addressNumber,
+      addressComplement,
+      addressNeighborhood,
+      addressCity,
+      addressState,
+      addressZip,
+      addressCountry,
+      aviationRole,
+      aviationRoleOther,
+      socialMedia,
+      newsletter,
+      terms,
+    } = await req.json();
 
-    // Validação básica
-    if (!name || !email || !password || !anac_code) {
+    // Validação básica para campos obrigatórios
+    if (!firstName || !lastName || !email || !password || !cpf || !birthDate || !mobilePhone || !addressStreet || !addressNumber || !addressNeighborhood || !addressCity || !addressState || !addressZip || !addressCountry || !aviationRole || !terms) {
       return NextResponse.json(
         { message: 'Por favor, preencha todos os campos obrigatórios.' },
         { status: 400 }
       );
     }
 
-    // Verifica se o usuário já existe (Email ou CANAC)
+    // Verifica se o email ou CPF já estão em uso (conforme as chaves UNIQUE do seu DB)
     const userCheck = await pool.query(
-      'SELECT * FROM users WHERE email = $1 OR anac_code = $2',
-      [email, anac_code]
+      'SELECT * FROM users WHERE email = $1 OR cpf = $2',
+      [email, cpf]
     );
 
     if (userCheck.rows.length > 0) {
-      const existingUser = userCheck.rows[0];
-      if (existingUser.email === email) {
+      if (userCheck.rows[0].email === email) {
         return NextResponse.json({ message: 'Email já está em uso.' }, { status: 409 });
       }
-      if (existingUser.anac_code === anac_code) {
-        return NextResponse.json({ message: 'CANAC já cadastrado.' }, { status: 409 });
+      if (userCheck.rows[0].cpf === cpf) {
+        return NextResponse.json({ message: 'CPF já está em uso.' }, { status: 409 });
       }
     }
 
-    // Criptografa a senha
+    // Criptografa a senha para 'password_hash'
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const passwordHash = await bcrypt.hash(password, salt); // Usando passwordHash
 
-    // Insere no banco de dados
+    // Insere no banco de dados com os nomes de colunas EXATOS do seu esquema
     const newUser = await pool.query(
-      `INSERT INTO users (name, email, password, anac_code, phone_number) 
-       VALUES ($1, $2, $3, $4, $5) 
-       RETURNING id, name, email, anac_code`,
-      [name, email, hashedPassword, anac_code, phone_number]
+      `INSERT INTO users (
+        first_name, last_name, birth_date, cpf, email, password_hash, mobile_phone,
+        address_street, address_number, address_complement, address_neighborhood,
+        address_city, address_state, address_zip, address_country,
+        aviation_role, aviation_role_other, social_media, newsletter_opt_in, terms_agreed
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
+      ) RETURNING id, first_name, email`,
+      [
+        firstName, lastName, birthDate, cpf, email, passwordHash, mobilePhone,
+        addressStreet, addressNumber, addressComplement, addressNeighborhood,
+        addressCity, addressState, addressZip, addressCountry,
+        aviationRole, aviationRoleOther, socialMedia, newsletter, terms
+      ]
     );
 
     return NextResponse.json(
-      { message: 'Usuário registrado com sucesso!', user: newUser.rows[0] },
+      { message: 'Cadastro realizado com sucesso!', user: newUser.rows[0] },
       { status: 201 }
     );
 
@@ -61,12 +92,12 @@ export const registerUser = async (req: Request) => {
 // Função para login (Autenticação)
 export const loginUser = async (req: Request) => {
   try {
-    const { identifier, password } = await req.json(); // identifier pode ser Email ou CANAC
+    const { email, password } = await req.json(); // Use email directly
 
-    // Busca usuário pelo Email ou CANAC
+    // Busca usuário apenas pelo Email
     const result = await pool.query(
-      'SELECT * FROM users WHERE email = $1 OR anac_code = $1',
-      [identifier]
+      'SELECT * FROM users WHERE email = $1',
+      [email]
     );
 
     if (result.rows.length === 0) {
@@ -75,8 +106,8 @@ export const loginUser = async (req: Request) => {
 
     const user = result.rows[0];
 
-    // Verifica a senha
-    const isMatch = await bcrypt.compare(password, user.password);
+    // Verifica a senha usando 'password_hash'
+    const isMatch = await bcrypt.compare(password, user.password_hash); // Usando user.password_hash
 
     if (!isMatch) {
       return NextResponse.json({ message: 'Credenciais inválidas.' }, { status: 401 });
@@ -84,21 +115,20 @@ export const loginUser = async (req: Request) => {
 
     // Gera o Token JWT
     const token = jwt.sign(
-      { id: user.id, email: user.email, anac_code: user.anac_code },
+      { id: user.id, email: user.email, firstName: user.first_name }, // Incluindo first_name no token
       process.env.JWT_SECRET as string,
-      { expiresIn: '1d' } // Token expira em 1 dia
+      { expiresIn: '1d' }
     );
 
     // Retorna o token e dados do usuário
     return NextResponse.json(
-      { 
+      {
         message: 'Login realizado com sucesso!',
         token,
         user: {
           id: user.id,
-          name: user.name,
-          email: user.email,
-          anac_code: user.anac_code
+          firstName: user.first_name, // Retornando first_name
+          email: user.email
         }
       },
       { status: 200 }

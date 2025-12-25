@@ -1,13 +1,10 @@
 import type { NextConfig } from "next";
 
-// Mudamos de ': NextConfig' para ': any' para forçar o aceite
-const nextConfig: any = {
+const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+  // Removemos a parte do eslint que estava dando erro na versão nova
 };
 
 export default nextConfig;

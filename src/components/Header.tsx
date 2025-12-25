@@ -4,25 +4,15 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext'; // Import AuthContext
 
 export default function Header() {
   const router = useRouter();
-  const [user, setUser] = useState<{ name: string } | null>(null);
-
-  useEffect(() => {
-    // Verifica se há usuário logado ao carregar
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-  }, []);
+  const { user, logout } = useAuth(); // Use AuthContext
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
+    logout(); // Use AuthContext logout
     router.push('/'); // Redireciona para a Home após sair
-    window.location.reload(); // Recarrega para atualizar estados
   };
 
   return (
@@ -59,7 +49,7 @@ export default function Header() {
           <div className="flex items-center gap-4">
             {/* Nome do Usuário */}
             <div className="text-right">
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Piloto</p>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Olá,</p>
               <p className="text-sm font-bold text-blue-900 leading-none">
                 {user.name.split(' ')[0]}
               </p>

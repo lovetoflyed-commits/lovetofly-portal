@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import pool from '@/lib/db'; // Certifique-se que este caminho do pool está correto no seu projeto
+import pool from '@/config/db'; // Importando do arquivo de configuração correto
 import bcrypt from 'bcryptjs';
 
 export async function POST(request: Request) {

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import pool from '@/lib/db';
+import pool from '@/config/db';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 

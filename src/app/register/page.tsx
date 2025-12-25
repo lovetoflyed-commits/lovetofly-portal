@@ -31,9 +31,7 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
 
   const [formData, setFormData] = useState({
-    firstName: '', lastName: '', birthDate: '', cpf: '', email: '', 
-    password: '', confirmPassword: '',
-    mobilePhone: '',
+    firstName: '', lastName: '', birthDate: '', cpf: '', email: '', password: '', mobilePhone: '',
     addressStreet: '', addressNumber: '', addressComplement: '', addressNeighborhood: '', addressCity: '', addressState: '', addressZip: '', addressCountry: 'Brasil',
     aviationRole: '', aviationRoleOther: '', socialMedia: '', newsletter: false, terms: false
   });
@@ -53,40 +51,10 @@ export default function RegisterPage() {
     }
   };
 
-  // --- NOVA FUNÇÃO: Busca endereço ao sair do campo CEP ---
-  const handleCepBlur = async () => {
-    const cep = formData.addressZip.replace(/\D/g, '');
-    if (cep.length === 8) {
-      try {
-        const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-        const data = await res.json();
-        if (!data.erro) {
-          setFormData((prev) => ({
-            ...prev,
-            addressStreet: data.logradouro,
-            addressNeighborhood: data.bairro,
-            addressCity: data.localidade,
-            addressState: data.uf,
-          }));
-        }
-      } catch (err) {
-        console.error("Erro ao buscar CEP", err);
-      }
-    }
-  };
-
   const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault(); // Impede a página de recarregar
     console.log('1. Botão clicado. Iniciando validação...');
     setError('');
-
-    // Validação Senhas Iguais
-    if (formData.password !== formData.confirmPassword) {
-      console.log('ERRO: Senhas não conferem');
-      setError('As senhas não coincidem. Por favor, verifique.');
-      window.scrollTo(0, 0);
-      return;
-    }
 
     // Validação CPF
     if (!isValidCPF(formData.cpf)) {
@@ -108,15 +76,12 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // Removemos o confirmPassword antes de enviar para a API
-      const { confirmPassword, ...dataToSend } = formData;
-
-      console.log('3. Enviando fetch para /api/register com dados:', dataToSend);
+      console.log('3. Enviando fetch para /api/register com dados:', formData);
 
       const response = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dataToSend),
+        body: JSON.stringify(formData),
       });
 
       console.log('4. Resposta recebida. Status:', response.status);
@@ -180,17 +145,10 @@ export default function RegisterPage() {
                 <label className="block text-xs font-bold text-slate-700 mb-1">Celular *</label>
                 <input name="mobilePhone" type="tel" required maxLength={15} value={formData.mobilePhone} onChange={handleChange} placeholder="(00) 00000-0000" className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
-
-              {/* SENHA E CONFIRMAÇÃO */}
-              <div>
+              <div className="md:col-span-2">
                 <label className="block text-xs font-bold text-slate-700 mb-1">Senha de Acesso *</label>
-                <input name="password" type="password" required value={formData.password} onChange={handleChange} className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" placeholder="••••••" />
+                <input name="password" type="password" required value={formData.password} onChange={handleChange} className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Confirmar Senha *</label>
-                <input name="confirmPassword" type="password" required value={formData.confirmPassword} onChange={handleChange} className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" placeholder="••••••" />
-              </div>
-
             </div>
           </div>
 
@@ -200,8 +158,7 @@ export default function RegisterPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-1">
                 <label className="block text-xs font-bold text-slate-700 mb-1">CEP *</label>
-                {/* ADICIONEI O onBlur={handleCepBlur} AQUI PARA BUSCAR O ENDEREÇO */}
-                <input name="addressZip" type="text" required maxLength={9} value={formData.addressZip} onChange={handleChange} onBlur={handleCepBlur} placeholder="00000-000" className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" />
+                <input name="addressZip" type="text" required maxLength={9} value={formData.addressZip} onChange={handleChange} placeholder="00000-000" className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
               <div className="md:col-span-2">
                 <label className="block text-xs font-bold text-slate-700 mb-1">Endereço (Rua/Av) *</label>

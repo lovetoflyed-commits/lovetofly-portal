@@ -26,9 +26,8 @@ export async function GET(req: Request) {
     const query = `
       SELECT 
         id, 
-        name, 
+        first_name as name, 
         email, 
-        anac_code, 
         phone_number, 
         address, 
         current_license, 

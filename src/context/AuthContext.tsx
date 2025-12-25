@@ -8,7 +8,6 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  anac_code?: string;
   role?: string;
   // Campos adicionais do perfil
   phone_number?: string;
@@ -25,7 +24,7 @@ export interface User {
 interface AuthContextData {
   user: User | null;
   loading: boolean;
-  login: (identifier: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   error: string | null;
   updateUser: (data: Partial<User>) => void; // Adicionei uma função auxiliar útil
@@ -41,8 +40,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     async function loadStorageData() {
-      const storedUser = localStorage.getItem('@LoveToFly:user');
-      const storedToken = localStorage.getItem('@LoveToFly:token');
+      const storedUser = sessionStorage.getItem('@LoveToFly:user');
+      const storedToken = sessionStorage.getItem('@LoveToFly:token');
 
       if (storedUser && storedToken) {
         setUser(JSON.parse(storedUser));
@@ -53,13 +52,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loadStorageData();
   }, []);
 
-  async function login(identifier: string, password: string) {
+  async function login(email: string, password: string) {
     setError(null);
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier, password }),
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
@@ -68,8 +67,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error(data.message || 'Erro ao fazer login');
       }
 
-      localStorage.setItem('@LoveToFly:user', JSON.stringify(data.user));
-      localStorage.setItem('@LoveToFly:token', data.token);
+      sessionStorage.setItem('@LoveToFly:user', JSON.stringify(data.user));
+      sessionStorage.setItem('@LoveToFly:token', data.token);
 
       setUser(data.user);
       router.push('/');
@@ -81,8 +80,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   function logout() {
-    localStorage.removeItem('@LoveToFly:user');
-    localStorage.removeItem('@LoveToFly:token');
+    sessionStorage.removeItem('@LoveToFly:user');
+    sessionStorage.removeItem('@LoveToFly:token');
     setUser(null);
     router.push('/login');
   }
@@ -92,7 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (user) {
       const updatedUser = { ...user, ...data };
       setUser(updatedUser);
-      localStorage.setItem('@LoveToFly:user', JSON.stringify(updatedUser));
+      sessionStorage.setItem('@LoveToFly:user', JSON.stringify(updatedUser));
     }
   }
 
