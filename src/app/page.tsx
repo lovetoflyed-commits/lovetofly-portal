@@ -467,7 +467,7 @@ export default function Home() {
   }
 
   return (
-    <div className="h-screen bg-slate-100 flex flex-col overflow-hidden font-sans">
+    <div className="h-screen bg-slate-100 flex flex-col font-sans">
 
       {/* CABEÇALHO */}
       <header className="bg-blue-900 text-white shadow-md shrink-0 z-50 relative h-24">
@@ -487,36 +487,63 @@ export default function Home() {
       </header>
 
       {/* DASHBOARD */}
-      <main className="flex-1 p-4 max-w-[1920px] mx-auto w-full h-full overflow-hidden">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 h-full">
+      <main className="flex-1 p-4 max-w-[1920px] mx-auto w-full overflow-y-auto">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
 
-          {/* COLUNA 1: FERRAMENTAS */}
-          <div className="md:col-span-3 flex flex-col gap-4 h-full">
-            <div className="h-1/5"><UTCClock /></div>
-            <div className="h-1/5"><AirportStatusWidget /></div>
-            <div className="h-1/5"><WeatherWidget /></div>
-            <div className="h-1/5"><WorldClocks /></div>
-            <div className="h-1/5 bg-white p-4 rounded-xl shadow border border-slate-200 flex flex-col">
-              <h3 className="text-blue-900 font-bold text-xs mb-3 text-center">LINKS RÁPIDOS</h3>
-              <div className="grid grid-cols-1 gap-2 flex-1 overflow-y-auto">
-                <a href="https://aisweb.decea.mil.br/" target="_blank" className="flex items-center justify-center bg-slate-50 hover:bg-blue-50 text-blue-800 rounded border border-slate-200 text-[10px] font-bold transition-all">AISWEB</a>
-                <a href="https://www.redemet.aer.mil.br/" target="_blank" className="flex items-center justify-center bg-slate-50 hover:bg-blue-50 text-blue-800 rounded border border-slate-200 text-[10px] font-bold transition-all">REDEMET</a>
-                <a href="https://www.flightradar24.com/" target="_blank" className="flex items-center justify-center bg-slate-50 hover:bg-blue-50 text-blue-800 rounded border border-slate-200 text-[10px] font-bold transition-all">FLIGHTRADAR</a>
-                <a href="https://www.windy.com/" target="_blank" className="flex items-center justify-center bg-slate-50 hover:bg-blue-50 text-blue-800 rounded border border-slate-200 text-[10px] font-bold transition-all">WINDY</a>
+          {/* COLUNA 1: FERRAMENTAS & TOOLS */}
+          <div className="md:col-span-3 flex flex-col gap-4">
+            <div className="h-28"><UTCClock /></div>
+            <div className="h-28"><AirportStatusWidget /></div>
+            <div className="h-28"><WeatherWidget /></div>
+            <div className="h-28"><WorldClocks /></div>
+            <div className="flex-1 bg-white p-4 rounded-xl shadow border border-slate-200 flex flex-col min-h-32">
+              <h3 className="text-blue-900 font-bold text-xs mb-2 text-center">🌐 LINKS RÁPIDOS</h3>
+              <div className="grid grid-cols-1 gap-2 flex-1">
+                <a href="https://aisweb.decea.mil.br/" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center bg-slate-50 hover:bg-blue-50 text-blue-800 rounded border border-slate-200 text-[10px] font-bold transition-all py-2">AISWEB</a>
+                <a href="https://www.redemet.aer.mil.br/" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center bg-slate-50 hover:bg-blue-50 text-blue-800 rounded border border-slate-200 text-[10px] font-bold transition-all py-2">REDEMET</a>
+                <a href="https://www.flightradar24.com/" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center bg-slate-50 hover:bg-blue-50 text-blue-800 rounded border border-slate-200 text-[10px] font-bold transition-all py-2">FLIGHTRADAR</a>
+                <a href="https://www.windy.com/" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center bg-slate-50 hover:bg-blue-50 text-blue-800 rounded border border-slate-200 text-[10px] font-bold transition-all py-2">WINDY</a>
               </div>
             </div>
           </div>
 
           {/* COLUNA 2: CONTEÚDO CENTRAL */}
-          <div className="md:col-span-6 flex flex-col gap-4 h-full">
-            <div className="h-3/5">
+          <div className="md:col-span-6 flex flex-col gap-4">
+            {/* NEWS FEED - REDUCED HEIGHT */}
+            <div className="h-40">
               <AviationNewsWidget />
             </div>
-            <div className="h-1/5">
+            
+            {/* E6B FLIGHT COMPUTER - AUTH CONDITIONAL */}
+            <div className="h-40 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-lg border-2 border-blue-400 flex flex-col items-center justify-center p-6 text-center relative overflow-hidden hover:shadow-xl transition-shadow">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-blue-200 opacity-20 rounded-full -mr-12 -mt-12"></div>
+              <div className="relative z-10">
+                <h3 className="text-blue-900 font-bold text-lg mb-2">🧮 E6B Flight Computer</h3>
+                <p className="text-sm text-blue-800 mb-3">Calculadora profissional de navegação aérea</p>
+                {user ? (
+                  <Link href="/tools/e6b">
+                    <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors shadow-md">
+                      Abrir E6B Computer
+                    </button>
+                  </Link>
+                ) : (
+                  <button 
+                    onClick={() => { setShowLoginModal(true); }}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors shadow-md"
+                  >
+                    Faça Login para Usar
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* QUICK ACCESS */}
+            <div className="h-24">
               <QuickAccess />
             </div>
-            {/* ESPAÇO GOOGLE ADS COM SCRIPT INSERIDO */}
-            <div className="h-1/5 bg-white rounded-xl border border-slate-200 flex items-center justify-center relative overflow-hidden">
+            
+            {/* GOOGLE ADS SPACE */}
+            <div className="h-24 bg-white rounded-xl border border-slate-200 flex items-center justify-center relative overflow-hidden">
               <Script
                 async
                 src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3204295995338267"
@@ -526,22 +553,27 @@ export default function Home() {
             </div>
           </div>
 
-          {/* COLUNA 3: PUBLICIDADE EMPRESAS */}
-          <div className="md:col-span-3 flex flex-col gap-4 h-full">
-            <div className="h-1/3">
+          {/* COLUNA 3: PUBLICIDADE & PARTNERSHIPS */}
+          <div className="md:col-span-3 flex flex-col gap-4">
+            {/* NEWS FEED SIDEBAR - REDUCED */}
+            <div className="h-40">
               <NewsFeed />
             </div>
-            <div className="h-1/3 bg-gradient-to-br from-slate-100 to-white rounded-xl shadow border border-slate-200 flex flex-col items-center justify-center p-4 text-center relative overflow-hidden">
-              <span className="absolute top-2 right-2 text-[8px] text-slate-300 border border-slate-200 px-1 rounded">PUBLICIDADE</span>
-              <h4 className="text-blue-900 font-bold text-sm mb-2">Sua Empresa Aqui</h4>
-              <p className="text-xs text-slate-500">Anuncie para milhares de pilotos.</p>
-              <button className="mt-3 text-[10px] bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">Saiba mais</button>
+            
+            {/* AVIATION COMPANY PARTNERSHIP #1 */}
+            <div className="h-40 bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl shadow-lg border-2 border-amber-400 flex flex-col items-center justify-center p-4 text-center relative overflow-hidden hover:shadow-xl transition-shadow group">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-amber-200 opacity-20 rounded-full -mr-10 -mt-10 group-hover:scale-110 transition-transform"></div>
+              <h4 className="text-amber-900 font-bold text-base mb-2 relative z-10">✈️ Parceiros Oficiais</h4>
+              <p className="text-xs text-amber-800 mb-3 relative z-10">Empresas líderes em aviação</p>
+              <button className="bg-amber-600 hover:bg-amber-700 text-white text-xs px-4 py-1 rounded font-bold transition-colors relative z-10">Saiba Mais</button>
             </div>
-            <div className="h-1/3 bg-gradient-to-br from-slate-100 to-white rounded-xl shadow border border-slate-200 flex flex-col items-center justify-center p-4 text-center relative overflow-hidden">
-              <span className="absolute top-2 right-2 text-[8px] text-slate-300 border border-slate-200 px-1 rounded">PUBLICIDADE</span>
-              <h4 className="text-blue-900 font-bold text-sm mb-2">Parceiro Oficial</h4>
-              <p className="text-xs text-slate-500">Espaço reservado para patrocinadores.</p>
-              <button className="mt-3 text-[10px] bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">Contato</button>
+            
+            {/* AVIATION COMPANY PARTNERSHIP #2 */}
+            <div className="h-40 bg-gradient-to-br from-sky-50 to-sky-100 rounded-xl shadow-lg border-2 border-sky-400 flex flex-col items-center justify-center p-4 text-center relative overflow-hidden hover:shadow-xl transition-shadow group">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-sky-200 opacity-20 rounded-full -mr-10 -mt-10 group-hover:scale-110 transition-transform"></div>
+              <h4 className="text-sky-900 font-bold text-base mb-2 relative z-10">🎓 Certificações</h4>
+              <p className="text-xs text-sky-800 mb-3 relative z-10">Prepare-se para suas provas</p>
+              <button className="bg-sky-600 hover:bg-sky-700 text-white text-xs px-4 py-1 rounded font-bold transition-colors relative z-10">Explorar</button>
             </div>
           </div>
 

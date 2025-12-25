@@ -6,6 +6,8 @@
   NODE_VERSION = "20"
   DATABASE_URL = "postgresql://neondb_owner:npg_2yGJ1IjpWEDF@ep-billowing-hat-accmfenf-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
   JWT_SECRET = "esosduaasmcnopeodascopnmauss!@#$%^&*()"
+  NETLIFY_USE_BLOBS = "false"
+  NETLIFY_NEXT_PLUGIN_SKIP_CACHE = "true"
 
 [[redirects]]
   from = "/api/*"

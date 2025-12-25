@@ -1,0 +1,6 @@
+CONNECTION_STRING=postgresql://neondb_owner:npg_2yGJ1IjpWEDF@ep-billowing-hat-accmfenf-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+HOST=ep-billowing-hat-accmfenf-pooler.sa-east-1.aws.neon.tech
+PORT=5432
+DATABASE=neondb
+USER=neondb_owner
+PASSWORD=npg_2yGJ1IjpWEDF
