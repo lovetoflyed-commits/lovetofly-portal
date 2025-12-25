@@ -3,6 +3,10 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Script from 'next/script'; // Importação necessária para o AdSense
+import WeatherWidget from '@/components/WeatherWidget';
+import WorldClocks from '@/components/WorldClocks';
+import NewsFeed from '@/components/NewsFeed';
+import QuickAccess from '@/components/QuickAccess';
 
 // --- COMPONENTE: RELÓGIO UTC ---
 function UTCClock() {
@@ -157,9 +161,11 @@ export default function Home() {
 
           {/* COLUNA 1: FERRAMENTAS */}
           <div className="md:col-span-3 flex flex-col gap-4 h-full">
-            <div className="h-1/4"><UTCClock /></div>
-            <div className="h-1/4"><AirportStatusWidget /></div>
-            <div className="h-2/4 bg-white p-4 rounded-xl shadow border border-slate-200 flex flex-col">
+            <div className="h-1/5"><UTCClock /></div>
+            <div className="h-1/5"><AirportStatusWidget /></div>
+            <div className="h-1/5"><WeatherWidget /></div>
+            <div className="h-1/5"><WorldClocks /></div>
+            <div className="h-1/5 bg-white p-4 rounded-xl shadow border border-slate-200 flex flex-col">
               <h3 className="text-blue-900 font-bold text-xs mb-3 text-center">LINKS RÁPIDOS</h3>
               <div className="grid grid-cols-1 gap-2 flex-1 overflow-y-auto">
                 <a href="https://aisweb.decea.mil.br/" target="_blank" className="flex items-center justify-center bg-slate-50 hover:bg-blue-50 text-blue-800 rounded border border-slate-200 text-[10px] font-bold transition-all">AISWEB</a>
@@ -172,10 +178,12 @@ export default function Home() {
 
           {/* COLUNA 2: CONTEÚDO CENTRAL */}
           <div className="md:col-span-6 flex flex-col gap-4 h-full">
-            <div className="h-4/5">
+            <div className="h-3/5">
               <AviationNewsWidget />
             </div>
-
+            <div className="h-1/5">
+              <QuickAccess />
+            </div>
             {/* ESPAÇO GOOGLE ADS COM SCRIPT INSERIDO */}
             <div className="h-1/5 bg-white rounded-xl border border-slate-200 flex items-center justify-center relative overflow-hidden">
               {/* Script do AdSense carregado aqui */}
@@ -192,13 +200,16 @@ export default function Home() {
 
           {/* COLUNA 3: PUBLICIDADE EMPRESAS */}
           <div className="md:col-span-3 flex flex-col gap-4 h-full">
-            <div className="h-1/2 bg-gradient-to-br from-slate-100 to-white rounded-xl shadow border border-slate-200 flex flex-col items-center justify-center p-4 text-center relative overflow-hidden">
+            <div className="h-1/3">
+              <NewsFeed />
+            </div>
+            <div className="h-1/3 bg-gradient-to-br from-slate-100 to-white rounded-xl shadow border border-slate-200 flex flex-col items-center justify-center p-4 text-center relative overflow-hidden">
               <span className="absolute top-2 right-2 text-[8px] text-slate-300 border border-slate-200 px-1 rounded">PUBLICIDADE</span>
               <h4 className="text-blue-900 font-bold text-sm mb-2">Sua Empresa Aqui</h4>
               <p className="text-xs text-slate-500">Anuncie para milhares de pilotos.</p>
               <button className="mt-3 text-[10px] bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">Saiba mais</button>
             </div>
-            <div className="h-1/2 bg-gradient-to-br from-slate-100 to-white rounded-xl shadow border border-slate-200 flex flex-col items-center justify-center p-4 text-center relative overflow-hidden">
+            <div className="h-1/3 bg-gradient-to-br from-slate-100 to-white rounded-xl shadow border border-slate-200 flex flex-col items-center justify-center p-4 text-center relative overflow-hidden">
               <span className="absolute top-2 right-2 text-[8px] text-slate-300 border border-slate-200 px-1 rounded">PUBLICIDADE</span>
               <h4 className="text-blue-900 font-bold text-sm mb-2">Parceiro Oficial</h4>
               <p className="text-xs text-slate-500">Espaço reservado para patrocinadores.</p>
