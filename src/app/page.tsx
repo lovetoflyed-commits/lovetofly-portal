@@ -163,6 +163,7 @@ const maskPhone = (value: string) => {
 export default function Home() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const { user } = useAuth();
 
   // --- COMPONENTE: FORMULÁRIO DE LOGIN ---
   function LoginForm({ onSuccess }: { onSuccess: () => void }) {
