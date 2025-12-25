@@ -7,6 +7,7 @@ import WorldClocks from '@/components/WorldClocks';
 import NewsFeed from '@/components/NewsFeed';
 import QuickAccess from '@/components/QuickAccess';
 import { useAuth } from '@/context/AuthContext';
+import Script from 'next/script';
 
 // --- COMPONENTE: RELÓGIO UTC ---
 function UTCClock() {
@@ -511,6 +512,11 @@ export default function Home() {
             </div>
             {/* ESPAÇO GOOGLE ADS COM SCRIPT INSERIDO */}
             <div className="h-1/5 bg-white rounded-xl border border-slate-200 flex items-center justify-center relative overflow-hidden">
+              <Script
+                async
+                src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3204295995338267"
+                crossorigin="anonymous"
+              />
               <span className="text-[10px] text-slate-400 uppercase tracking-widest">Publicidade Google</span>
             </div>
           </div>
