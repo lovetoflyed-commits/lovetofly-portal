@@ -270,7 +270,14 @@ export default function Home() {
       setError('');
 
       // Validações básicas
-      if (!isValidCPF(formData.cpf)) {
+      if (!formData.cpf || formData.cpf.trim() === '') {
+        setError('CPF é obrigatório.');
+        setLoading(false);
+        return;
+      }
+
+      const cpfDigitsOnly = formData.cpf.replace(/\D/g, '');
+      if (!isValidCPF(cpfDigitsOnly)) {
         setError('CPF inválido.');
         setLoading(false);
         return;
@@ -289,10 +296,18 @@ export default function Home() {
       }
 
       try {
+        // Clean up masked fields before sending
+        const cleanedFormData = {
+          ...formData,
+          cpf: formData.cpf.replace(/\D/g, ''),
+          mobilePhone: formData.mobilePhone.replace(/\D/g, ''),
+          addressZip: formData.addressZip.replace(/\D/g, ''),
+        };
+
         const response = await fetch('/api/auth/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(cleanedFormData),
         });
 
         const data = await response.json();
