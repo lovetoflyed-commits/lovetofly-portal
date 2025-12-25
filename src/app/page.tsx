@@ -6,6 +6,7 @@ import WeatherWidget from '@/components/WeatherWidget';
 import WorldClocks from '@/components/WorldClocks';
 import NewsFeed from '@/components/NewsFeed';
 import QuickAccess from '@/components/QuickAccess';
+import { useAuth } from '@/context/AuthContext';
 
 // --- COMPONENTE: RELÓGIO UTC ---
 function UTCClock() {
@@ -132,8 +133,315 @@ function AviationNewsWidget() {
   );
 }
 
+// --- COMPONENTE: FORMULÁRIO DE LOGIN ---
+function LoginForm({ onSuccess }: { onSuccess: () => void }) {
+  const { login, error } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    const success = await login(email, password);
+
+    if (success) {
+      onSuccess();
+    }
+
+    setLoading(false);
+  };
+
+  return (
+    <>
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6 text-sm text-center font-bold">
+          {error}
+        </div>
+      )}
+
+      <form onSubmit={handleLogin} className="space-y-6">
+        <div>
+          <label className="block text-xs font-bold text-slate-700 mb-1">Email</label>
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full p-3 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+            placeholder="seu@email.com"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-slate-700 mb-1">Senha</label>
+          <input
+            type="password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full p-3 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+            placeholder="••••••"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full py-3 bg-blue-900 text-white font-bold rounded-lg hover:bg-blue-800 transition-colors shadow-lg shadow-blue-900/20 disabled:opacity-50"
+        >
+          {loading ? 'ENTRANDO...' : 'ENTRAR'}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setShowLoginModal(false)}
+          className="w-full py-2 mt-4 bg-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-300 transition-colors"
+        >
+          VOLTAR
+        </button>
+      </form>
+    </>
+  );
+}
+
+// --- COMPONENTE: FORMULÁRIO DE REGISTRO ---
+function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const [formData, setFormData] = useState({
+    firstName: '', lastName: '', birthDate: '', cpf: '', email: '', password: '', mobilePhone: '',
+    addressStreet: '', addressNumber: '', addressComplement: '', addressNeighborhood: '', addressCity: '', addressState: '', addressZip: '', addressCountry: 'Brasil',
+    aviationRole: '', aviationRoleOther: '', socialMedia: '', newsletter: false, terms: false
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    let finalValue = value;
+
+    if (name === 'cpf') finalValue = maskCPF(value);
+    if (name === 'addressZip') finalValue = maskCEP(value);
+    if (name === 'mobilePhone') finalValue = maskPhone(value);
+
+    if (type === 'checkbox') {
+      setFormData(prev => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: finalValue }));
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    // Validações básicas
+    if (!isValidCPF(formData.cpf)) {
+      setError('CPF inválido.');
+      setLoading(false);
+      return;
+    }
+
+    if (!formData.terms) {
+      setError('Você deve aceitar os termos de uso.');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('Cadastro realizado com sucesso! Faça login.');
+        onSuccess();
+      } else {
+        setError(data.error || 'Erro no cadastro.');
+      }
+    } catch (err) {
+      setError('Erro de conexão.');
+    }
+
+    setLoading(false);
+  };
+
+  return (
+    <>
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6 text-sm text-center font-bold">
+          {error}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">Nome</label>
+            <input
+              type="text"
+              name="firstName"
+              required
+              value={formData.firstName}
+              onChange={handleChange}
+              className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">Sobrenome</label>
+            <input
+              type="text"
+              name="lastName"
+              required
+              value={formData.lastName}
+              onChange={handleChange}
+              className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-slate-700 mb-1">Data de Nascimento</label>
+          <input
+            type="date"
+            name="birthDate"
+            required
+            value={formData.birthDate}
+            onChange={handleChange}
+            className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-slate-700 mb-1">CPF</label>
+          <input
+            type="text"
+            name="cpf"
+            required
+            value={formData.cpf}
+            onChange={handleChange}
+            className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+            placeholder="000.000.000-00"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-slate-700 mb-1">Email</label>
+          <input
+            type="email"
+            name="email"
+            required
+            value={formData.email}
+            onChange={handleChange}
+            className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-slate-700 mb-1">Senha</label>
+          <input
+            type="password"
+            name="password"
+            required
+            value={formData.password}
+            onChange={handleChange}
+            className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-slate-700 mb-1">Telefone</label>
+          <input
+            type="text"
+            name="mobilePhone"
+            required
+            value={formData.mobilePhone}
+            onChange={handleChange}
+            className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+            placeholder="(00) 00000-0000"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-slate-700 mb-1">Função na Aviação</label>
+          <select
+            name="aviationRole"
+            required
+            value={formData.aviationRole}
+            onChange={handleChange}
+            className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+          >
+            <option value="">Selecione</option>
+            <option value="student">Estudante</option>
+            <option value="pilot">Piloto</option>
+            <option value="instructor">Instrutor</option>
+            <option value="mechanic">Mecânico</option>
+            <option value="other">Outro</option>
+          </select>
+        </div>
+
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            name="terms"
+            checked={formData.terms}
+            onChange={handleChange}
+            className="mr-2"
+          />
+          <label className="text-xs text-slate-700">Aceito os termos de uso</label>
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full py-3 bg-blue-900 text-white font-bold rounded-lg hover:bg-blue-800 transition-colors shadow-lg shadow-blue-900/20 disabled:opacity-50"
+        >
+          {loading ? 'CADASTRANDO...' : 'CADASTRAR'}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setShowRegisterModal(false)}
+          className="w-full py-2 mt-4 bg-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-300 transition-colors"
+        >
+          VOLTAR
+        </button>
+      </form>
+    </>
+  );
+}
+
+// --- FUNÇÕES AUXILIARES PARA REGISTRO ---
+const isValidCPF = (cpf: string) => {
+  cpf = cpf.replace(/[^\d]+/g, '');
+  if (cpf.length !== 11 || !!cpf.match(/(\d)\1{10}/)) return false;
+  const cpfDigits = cpf.split('').map(el => +el);
+  const rest = (count: number) => (cpfDigits.slice(0, count-12).reduce((soma, el, index) => (soma + el * (count-index)), 0) * 10) % 11 % 10;
+  return rest(10) === cpfDigits[9] && rest(11) === cpfDigits[10];
+};
+
+const maskCPF = (value: string) => {
+  return value.replace(/\D/g, '').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})/, '$1-$2').replace(/(-\d{2})\d+?$/, '$1');
+};
+
+const maskCEP = (value: string) => {
+  return value.replace(/\D/g, '').replace(/(\d{5})(\d)/, '$1-$2').replace(/(-\d{3})\d+?$/, '$1');
+};
+
+const maskPhone = (value: string) => {
+  return value.replace(/\D/g, '').replace(/(\d{2})(\d)/, '($1) $2').replace(/(\d{5})(\d)/, '$1-$2').replace(/(-\d{4})\d+?$/, '$1');
+};
+
 // --- PÁGINA PRINCIPAL ---
 export default function Home() {
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
   return (
     <div className="h-screen bg-slate-100 flex flex-col overflow-hidden font-sans">
 
@@ -148,8 +456,8 @@ export default function Home() {
             <p className="text-[10px] md:text-xs font-light tracking-[0.3em] text-blue-200 mt-0.5 text-center">O SEU PORTAL DA AVIAÇÃO CIVIL</p>
           </div>
           <div className="flex gap-3 text-xs font-bold items-center z-20">
-            <Link href="/login" className="hover:text-blue-200 px-3 py-2">ENTRAR</Link>
-            <Link href="/register" className="bg-yellow-400 text-blue-900 px-5 py-2 rounded hover:bg-yellow-300 shadow-lg transition-transform hover:scale-105">CADASTRAR</Link>
+            <button onClick={() => setShowLoginModal(true)} className="hover:text-blue-200 px-3 py-2">ENTRAR</button>
+            <button onClick={() => setShowRegisterModal(true)} className="bg-yellow-400 text-blue-900 px-5 py-2 rounded hover:bg-yellow-300 shadow-lg transition-transform hover:scale-105">CADASTRAR</button>
           </div>
         </div>
       </header>
@@ -210,6 +518,63 @@ export default function Home() {
 
         </div>
       </main>
+
+      {/* MODAL LOGIN */}
+      {showLoginModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl p-8 border border-slate-200 w-full max-w-md relative">
+            <button
+              onClick={() => setShowLoginModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-xl"
+            >
+              ×
+            </button>
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-blue-900">Bem-vindo de volta!</h2>
+              <p className="text-slate-500 mt-2">Acesse sua conta para continuar.</p>
+            </div>
+            <LoginForm onSuccess={() => setShowLoginModal(false)} />
+            <div className="mt-6 text-center text-sm text-slate-600">
+              Não tem uma conta?{' '}
+              <button
+                onClick={() => { setShowLoginModal(false); setShowRegisterModal(true); }}
+                className="text-blue-600 font-bold hover:underline"
+              >
+                Cadastre-se
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL REGISTER */}
+      {showRegisterModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl p-8 border border-slate-200 w-full max-w-md relative max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setShowRegisterModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-xl z-10"
+            >
+              ×
+            </button>
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-blue-900">Criar Conta</h2>
+              <p className="text-slate-500 mt-2">Junte-se à comunidade de aviação.</p>
+            </div>
+            <RegisterForm onSuccess={() => setShowRegisterModal(false)} />
+            <div className="mt-6 text-center text-sm text-slate-600">
+              Já tem uma conta?{' '}
+              <button
+                onClick={() => { setShowRegisterModal(false); setShowLoginModal(true); }}
+                className="text-blue-600 font-bold hover:underline"
+              >
+                Faça login
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
