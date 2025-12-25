@@ -134,307 +134,9 @@ function AviationNewsWidget() {
   );
 }
 
-// --- COMPONENTE: FORMULÁRIO DE LOGIN ---
-function LoginForm({ onSuccess }: { onSuccess: () => void }) {
-  const { login, error } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
 
-    const success = await login(email, password);
 
-    if (success) {
-      onSuccess();
-    }
-
-    setLoading(false);
-  };
-
-  return (
-    <>
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6 text-sm text-center font-bold">
-          {error}
-        </div>
-      )}
-
-      <form onSubmit={handleLogin} className="space-y-6">
-        <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">Email</label>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full p-3 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-            placeholder="seu@email.com"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">Senha</label>
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full p-3 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-            placeholder="••••••"
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full py-3 bg-blue-900 text-white font-bold rounded-lg hover:bg-blue-800 transition-colors shadow-lg shadow-blue-900/20 disabled:opacity-50"
-        >
-          {loading ? 'ENTRANDO...' : 'ENTRAR'}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setShowLoginModal(false)}
-          className="w-full py-2 mt-4 bg-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-300 transition-colors"
-        >
-          VOLTAR
-        </button>
-      </form>
-    </>
-  );
-}
-
-// --- COMPONENTE: FORMULÁRIO DE REGISTRO ---
-function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const [formData, setFormData] = useState({
-    firstName: '', lastName: '', birthDate: '', cpf: '', email: '', password: '', confirmPassword: '', mobilePhone: '',
-    addressStreet: '', addressNumber: '', addressComplement: '', addressNeighborhood: '', addressCity: '', addressState: '', addressZip: '', addressCountry: 'Brasil',
-    aviationRole: '', aviationRoleOther: '', socialMedia: '', newsletter: false, terms: false
-  });
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    let finalValue = value;
-
-    if (name === 'cpf') finalValue = maskCPF(value);
-    if (name === 'addressZip') finalValue = maskCEP(value);
-    if (name === 'mobilePhone') finalValue = maskPhone(value);
-
-    if (type === 'checkbox') {
-      setFormData(prev => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: finalValue }));
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    // Validações básicas
-    if (!isValidCPF(formData.cpf)) {
-      setError('CPF inválido.');
-      setLoading(false);
-      return;
-    }
-
-    if (!formData.terms) {
-      setError('Você deve aceitar os termos de uso.');
-      setLoading(false);
-      return;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      setError('As senhas não coincidem.');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        alert('Cadastro realizado com sucesso! Faça login.');
-        onSuccess();
-      } else {
-        setError(data.error || 'Erro no cadastro.');
-      }
-    } catch (err) {
-      setError('Erro de conexão.');
-    }
-
-    setLoading(false);
-  };
-
-  return (
-    <>
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6 text-sm text-center font-bold">
-          {error}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Nome</label>
-            <input
-              type="text"
-              name="firstName"
-              required
-              value={formData.firstName}
-              onChange={handleChange}
-              className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Sobrenome</label>
-            <input
-              type="text"
-              name="lastName"
-              required
-              value={formData.lastName}
-              onChange={handleChange}
-              className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">Data de Nascimento</label>
-          <input
-            type="date"
-            name="birthDate"
-            required
-            value={formData.birthDate}
-            onChange={handleChange}
-            className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">CPF</label>
-          <input
-            type="text"
-            name="cpf"
-            required
-            value={formData.cpf}
-            onChange={handleChange}
-            className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-            placeholder="000.000.000-00"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">Email</label>
-          <input
-            type="email"
-            name="email"
-            required
-            value={formData.email}
-            onChange={handleChange}
-            className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">Senha</label>
-          <input
-            type="password"
-            name="password"
-            required
-            value={formData.password}
-            onChange={handleChange}
-            className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">Confirmar Senha</label>
-          <input
-            type="password"
-            name="confirmPassword"
-            required
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">Telefone</label>
-          <input
-            type="text"
-            name="mobilePhone"
-            required
-            value={formData.mobilePhone}
-            onChange={handleChange}
-            className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-            placeholder="(00) 00000-0000"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">Função na Aviação</label>
-          <select
-            name="aviationRole"
-            required
-            value={formData.aviationRole}
-            onChange={handleChange}
-            className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-          >
-            <option value="">Selecione</option>
-            <option value="student">Estudante</option>
-            <option value="pilot">Piloto</option>
-            <option value="instructor">Instrutor</option>
-            <option value="mechanic">Mecânico</option>
-            <option value="other">Outro</option>
-          </select>
-        </div>
-
-        <div className="flex items-center">
-          <input
-            type="checkbox"
-            name="terms"
-            checked={formData.terms}
-            onChange={handleChange}
-            className="mr-2"
-          />
-          <label className="text-xs text-slate-700">Aceito os termos de uso</label>
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full py-3 bg-blue-900 text-white font-bold rounded-lg hover:bg-blue-800 transition-colors shadow-lg shadow-blue-900/20 disabled:opacity-50"
-        >
-          {loading ? 'CADASTRANDO...' : 'CADASTRAR'}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setShowRegisterModal(false)}
-          className="w-full py-2 mt-4 bg-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-300 transition-colors"
-        >
-          VOLTAR
-        </button>
-      </form>
-    </>
-  );
-}
 
 // --- FUNÇÕES AUXILIARES PARA REGISTRO ---
 const isValidCPF = (cpf: string) => {
@@ -461,6 +163,309 @@ const maskPhone = (value: string) => {
 export default function Home() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
+
+  // --- COMPONENTE: FORMULÁRIO DE LOGIN ---
+  function LoginForm({ onSuccess }: { onSuccess: () => void }) {
+    const { login, error } = useAuth();
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const handleLogin = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setLoading(true);
+
+      const success = await login(email, password);
+
+      if (success) {
+        onSuccess();
+      }
+
+      setLoading(false);
+    };
+
+    return (
+      <>
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6 text-sm text-center font-bold">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleLogin} className="space-y-6">
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">Email</label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full p-3 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+              placeholder="seu@email.com"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">Senha</label>
+            <input
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full p-3 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+              placeholder="••••••"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 bg-blue-900 text-white font-bold rounded-lg hover:bg-blue-800 transition-colors shadow-lg shadow-blue-900/20 disabled:opacity-50"
+          >
+            {loading ? 'ENTRANDO...' : 'ENTRAR'}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowLoginModal(false)}
+            className="w-full py-2 mt-4 bg-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-300 transition-colors"
+          >
+            VOLTAR
+          </button>
+        </form>
+      </>
+    );
+  }
+
+  // --- COMPONENTE: FORMULÁRIO DE REGISTRO ---
+  function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+
+    const [formData, setFormData] = useState({
+      firstName: '', lastName: '', birthDate: '', cpf: '', email: '', password: '', confirmPassword: '', mobilePhone: '',
+      addressStreet: '', addressNumber: '', addressComplement: '', addressNeighborhood: '', addressCity: '', addressState: '', addressZip: '', addressCountry: 'Brasil',
+      aviationRole: '', aviationRoleOther: '', socialMedia: '', newsletter: false, terms: false
+    });
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      const { name, value, type } = e.target;
+      let finalValue = value;
+
+      if (name === 'cpf') finalValue = maskCPF(value);
+      if (name === 'addressZip') finalValue = maskCEP(value);
+      if (name === 'mobilePhone') finalValue = maskPhone(value);
+
+      if (type === 'checkbox') {
+        setFormData(prev => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
+      } else {
+        setFormData(prev => ({ ...prev, [name]: finalValue }));
+      }
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setLoading(true);
+      setError('');
+
+      // Validações básicas
+      if (!isValidCPF(formData.cpf)) {
+        setError('CPF inválido.');
+        setLoading(false);
+        return;
+      }
+
+      if (!formData.terms) {
+        setError('Você deve aceitar os termos de uso.');
+        setLoading(false);
+        return;
+      }
+
+      if (formData.password !== formData.confirmPassword) {
+        setError('As senhas não coincidem.');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          alert('Cadastro realizado com sucesso! Faça login.');
+          onSuccess();
+        } else {
+          setError(data.error || 'Erro no cadastro.');
+        }
+      } catch (err) {
+        setError('Erro de conexão.');
+      }
+
+      setLoading(false);
+    };
+
+    return (
+      <>
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6 text-sm text-center font-bold">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Nome</label>
+              <input
+                type="text"
+                name="firstName"
+                required
+                value={formData.firstName}
+                onChange={handleChange}
+                className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Sobrenome</label>
+              <input
+                type="text"
+                name="lastName"
+                required
+                value={formData.lastName}
+                onChange={handleChange}
+                className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">Data de Nascimento</label>
+            <input
+              type="date"
+              name="birthDate"
+              required
+              value={formData.birthDate}
+              onChange={handleChange}
+              className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">CPF</label>
+            <input
+              type="text"
+              name="cpf"
+              required
+              value={formData.cpf}
+              onChange={handleChange}
+              className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+              placeholder="000.000.000-00"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">Email</label>
+            <input
+              type="email"
+              name="email"
+              required
+              value={formData.email}
+              onChange={handleChange}
+              className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">Senha</label>
+            <input
+              type="password"
+              name="password"
+              required
+              value={formData.password}
+              onChange={handleChange}
+              className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">Confirmar Senha</label>
+            <input
+              type="password"
+              name="confirmPassword"
+              required
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">Telefone</label>
+            <input
+              type="text"
+              name="mobilePhone"
+              required
+              value={formData.mobilePhone}
+              onChange={handleChange}
+              className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+              placeholder="(00) 00000-0000"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">Função na Aviação</label>
+            <select
+              name="aviationRole"
+              required
+              value={formData.aviationRole}
+              onChange={handleChange}
+              className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+            >
+              <option value="">Selecione</option>
+              <option value="student">Estudante</option>
+              <option value="pilot">Piloto</option>
+              <option value="instructor">Instrutor</option>
+              <option value="mechanic">Mecânico</option>
+              <option value="other">Outro</option>
+            </select>
+          </div>
+
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              name="terms"
+              checked={formData.terms}
+              onChange={handleChange}
+              className="mr-2"
+            />
+            <label className="text-xs text-slate-700">Aceito os termos de uso</label>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 bg-blue-900 text-white font-bold rounded-lg hover:bg-blue-800 transition-colors shadow-lg shadow-blue-900/20 disabled:opacity-50"
+          >
+            {loading ? 'CADASTRANDO...' : 'CADASTRAR'}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowRegisterModal(false)}
+            className="w-full py-2 mt-4 bg-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-300 transition-colors"
+          >
+            VOLTAR
+          </button>
+        </form>
+      </>
+    );
+  }
+
   return (
     <div className="h-screen bg-slate-100 flex flex-col overflow-hidden font-sans">
 
@@ -515,7 +520,7 @@ export default function Home() {
               <Script
                 async
                 src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3204295995338267"
-                crossorigin="anonymous"
+                crossOrigin="anonymous"
               />
               <span className="text-[10px] text-slate-400 uppercase tracking-widest">Publicidade Google</span>
             </div>
