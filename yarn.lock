@@ -579,7 +579,7 @@
 
 "@types/bcryptjs@^3.0.0":
   version "3.0.0"
-  resolved "https://registry.npmjs.org/@types/bcryptjs/-/bcryptjs-3.0.0.tgz"
+  resolved "https://registry.yarnpkg.com/@types/bcryptjs/-/bcryptjs-3.0.0.tgz#d7be11653aa82cf17ffee4f3925f1f80cfc1add2"
   integrity sha512-WRZOuCuaz8UcZZE4R5HXTco2goQSI2XxjGY3hbM/xDvwmqFWd4ivooImsMx65OKM6CtNKbnZ5YL+YwAwK7c1dg==
   dependencies:
     bcryptjs "*"
@@ -621,7 +621,7 @@
 
 "@types/pg@^8.16.0":
   version "8.16.0"
-  resolved "https://registry.npmjs.org/@types/pg/-/pg-8.16.0.tgz"
+  resolved "https://registry.yarnpkg.com/@types/pg/-/pg-8.16.0.tgz#b7af0d642752340b7c9de1c33afd9bc5c5f0ebeb"
   integrity sha512-RmhMd/wD+CF8Dfo+cVIy3RR5cl8CyfXQ0tGgW6XBL8L4LM/UTEbNXYRbLwU6w+CgrKBNbrQWt4FUtTfaU5jSYQ==
   dependencies:
     "@types/node" "*"
@@ -1053,7 +1053,7 @@ bcrypt@^6.0.0:
 
 bcryptjs@*, bcryptjs@^3.0.3:
   version "3.0.3"
-  resolved "https://registry.npmjs.org/bcryptjs/-/bcryptjs-3.0.3.tgz"
+  resolved "https://registry.yarnpkg.com/bcryptjs/-/bcryptjs-3.0.3.tgz#4b93d6a398c48bfc9f32ee65d301174a8a8ea56f"
   integrity sha512-GlF5wPWnSa/X5LKM1o0wz0suXIINz1iHRLvTS+sLyi7XPbe5ycmYI3DlZqVGZZtDgl4DmasFg7gOB3JYbphV5g==
 
 binary-extensions@^2.0.0:
@@ -2786,7 +2786,7 @@ pg-types@2.2.0, pg-types@^2.2.0:
 
 pg@^8.16.3:
   version "8.16.3"
-  resolved "https://registry.npmjs.org/pg/-/pg-8.16.3.tgz"
+  resolved "https://registry.yarnpkg.com/pg/-/pg-8.16.3.tgz#160741d0b44fdf64680e45374b06d632e86c99fd"
   integrity sha512-enxc1h0jA/aq5oSDMvqyW3q89ra6XIIDZgCX9vkMrnz5DFTw/Ny3Li2lFQ+pt3L6MCgm/5o2o8HW9hiJji+xvw==
   dependencies:
     pg-connection-string "^2.9.1"

@@ -31,9 +31,7 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
 
   const [formData, setFormData] = useState({
-    firstName: '', lastName: '', birthDate: '', cpf: '', email: '', 
-    password: '', confirmPassword: '', // NOVO CAMPO
-    mobilePhone: '',
+    firstName: '', lastName: '', birthDate: '', cpf: '', email: '', password: '', mobilePhone: '',
     addressStreet: '', addressNumber: '', addressComplement: '', addressNeighborhood: '', addressCity: '', addressState: '', addressZip: '', addressCountry: 'Brasil',
     aviationRole: '', aviationRoleOther: '', socialMedia: '', newsletter: false, terms: false
   });
@@ -54,17 +52,9 @@ export default function RegisterPage() {
   };
 
   const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault(); // Impede a página de recarregar
     console.log('1. Botão clicado. Iniciando validação...');
     setError('');
-
-    // Validação Senhas Iguais (NOVA)
-    if (formData.password !== formData.confirmPassword) {
-      console.log('ERRO: Senhas não conferem');
-      setError('As senhas não coincidem. Por favor, verifique.');
-      window.scrollTo(0, 0);
-      return;
-    }
 
     // Validação CPF
     if (!isValidCPF(formData.cpf)) {
@@ -86,15 +76,12 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // Removemos o confirmPassword antes de enviar para a API, pois o banco não precisa dele
-      const { confirmPassword, ...dataToSend } = formData;
-
-      console.log('3. Enviando fetch para /api/register com dados:', dataToSend);
+      console.log('3. Enviando fetch para /api/register com dados:', formData);
 
       const response = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dataToSend),
+        body: JSON.stringify(formData),
       });
 
       console.log('4. Resposta recebida. Status:', response.status);
@@ -158,17 +145,10 @@ export default function RegisterPage() {
                 <label className="block text-xs font-bold text-slate-700 mb-1">Celular *</label>
                 <input name="mobilePhone" type="tel" required maxLength={15} value={formData.mobilePhone} onChange={handleChange} placeholder="(00) 00000-0000" className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
-
-              {/* SENHA E CONFIRMAÇÃO */}
-              <div>
+              <div className="md:col-span-2">
                 <label className="block text-xs font-bold text-slate-700 mb-1">Senha de Acesso *</label>
-                <input name="password" type="password" required value={formData.password} onChange={handleChange} className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" placeholder="••••••" />
+                <input name="password" type="password" required value={formData.password} onChange={handleChange} className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Confirmar Senha *</label>
-                <input name="confirmPassword" type="password" required value={formData.confirmPassword} onChange={handleChange} className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" placeholder="••••••" />
-              </div>
-
             </div>
           </div>
 

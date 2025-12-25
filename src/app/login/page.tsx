@@ -3,35 +3,41 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import Header from '@/components/Header'; // 1. Importando o Header
+import Image from 'next/image';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [identifier, setIdentifier] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
+    setError('');
 
     try {
-      const res = await fetch('/api/auth/login', {
+      // --- CONEXÃO COM A API REAL ---
+      const response = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier, password }),
+        body: JSON.stringify({ email, password }),
       });
 
-      const data = await res.json();
+      const data = await response.json();
 
-      if (!res.ok) {
-        throw new Error(data.message || 'Erro ao entrar');
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao fazer login.');
       }
 
-      // Login bem-sucedido
-      router.push('/'); 
+      // Sucesso: Salva o token e os dados do usuário
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+
+      // Redireciona para a Página Principal
+      router.push('/');
+
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -40,68 +46,56 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans">
-      {/* 2. ADICIONADO: O Header no topo da página para teste */}
-      <Header />
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-200">
+        <div className="flex justify-center mb-6">
+          <Image src="/logo-pac.png" alt="Logo Love to Fly" width={250} height={250} className="object-contain" priority />
+        </div>
 
-      <div className="flex items-center justify-center p-4 mt-10">
-        <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-100">
+        <h2 className="text-2xl font-bold text-center text-blue-900 mb-2">Bem-vindo de volta</h2>
+        <p className="text-center text-slate-500 mb-8">Acesse sua conta para continuar</p>
 
-          {/* 3. REMOVIDO: O bloco da imagem grande centralizada foi retirado daqui */}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6 text-center text-sm font-bold">
+            {error}
+          </div>
+        )}
 
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-extrabold text-slate-900">Bem-vindo de volta</h1>
-            <p className="text-slate-500 text-sm mt-1">Acesse sua conta para continuar</p>
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div>
+            <label className="block text-sm font-bold text-slate-700 mb-1">Email</label>
+            <input 
+              type="email" 
+              required 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)} 
+              className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" 
+              placeholder="seu@email.com" 
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-slate-700 mb-1">Senha</label>
+            <input 
+              type="password" 
+              required 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" 
+              placeholder="••••••••" 
+            />
           </div>
 
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm text-center font-medium">
-              {error}
-            </div>
-          )}
+          <button 
+            type="submit" 
+            disabled={loading} 
+            className="w-full py-3 bg-blue-900 text-white font-bold rounded-lg hover:bg-blue-800 transition-all flex justify-center items-center shadow-lg shadow-blue-900/20"
+          >
+            {loading ? 'ENTRANDO...' : 'ENTRAR'}
+          </button>
+        </form>
 
-          <form onSubmit={handleLogin} className="space-y-5">
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">CANAC ou Email</label>
-              <input
-                type="text"
-                required
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium text-slate-700"
-                placeholder="Digite seu acesso"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Senha</label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium text-slate-700"
-                placeholder="••••••••"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg hover:shadow-blue-500/30 flex justify-center items-center"
-            >
-              {loading ? 'Carregando...' : 'ENTRAR'}
-            </button>
-          </form>
-
-          <div className="mt-6 text-center pt-6 border-t border-slate-100">
-            <p className="text-sm text-slate-600">
-              Não tem uma conta?{' '}
-              <Link href="/register" className="text-blue-600 font-bold hover:underline">
-                Criar conta
-              </Link>
-            </p>
-          </div>
+        <div className="mt-6 text-center text-sm text-slate-600">
+          Não tem uma conta? <Link href="/register" className="text-blue-600 font-bold hover:underline">Cadastre-se grátis</Link>
         </div>
       </div>
     </div>
