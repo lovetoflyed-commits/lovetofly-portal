@@ -15,7 +15,7 @@
    - Connect your GitHub account and select the `lovetofly-portal` repository
 
 2. **Configure Build Settings**
-   - Build command: `npm run build`
+   - Build command: `yarn build`
    - Publish directory: `.next` (will be set automatically)
    - Node version: 18
 

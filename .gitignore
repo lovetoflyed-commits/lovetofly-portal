@@ -33,6 +33,9 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# lock files (use yarn)
+package-lock.json
+
 # vercel
 .vercel
 
