@@ -4,6 +4,8 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  DATABASE_URL = "postgresql://neondb_owner:npg_2yGJ1IjpWEDF@ep-billowing-hat-accmfenf-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+  JWT_SECRET = "esosduaasmcnopeodascopnmauss!@#$%^&*()"
 
 [[redirects]]
   from = "/api/*"
