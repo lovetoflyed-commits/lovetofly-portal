@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import pool from '@/lib/db';
+import pool from '@/lib/db'; // Certifique-se que este caminho do pool está correto no seu projeto
 import bcrypt from 'bcryptjs';
 
 export async function POST(request: Request) {
@@ -65,7 +65,6 @@ export async function POST(request: Request) {
     );
 
   } catch (error: any) {
-    // AQUI ESTÁ O SEGREDO: Vamos ver qual é o erro exato do banco
     console.error('--- ERRO FATAL NO CADASTRO ---');
     console.error(error); 
 

@@ -32,7 +32,7 @@ export default function RegisterPage() {
 
   const [formData, setFormData] = useState({
     firstName: '', lastName: '', birthDate: '', cpf: '', email: '', 
-    password: '', confirmPassword: '', // NOVO CAMPO
+    password: '', confirmPassword: '',
     mobilePhone: '',
     addressStreet: '', addressNumber: '', addressComplement: '', addressNeighborhood: '', addressCity: '', addressState: '', addressZip: '', addressCountry: 'Brasil',
     aviationRole: '', aviationRoleOther: '', socialMedia: '', newsletter: false, terms: false
@@ -53,12 +53,34 @@ export default function RegisterPage() {
     }
   };
 
+  // --- NOVA FUNÇÃO: Busca endereço ao sair do campo CEP ---
+  const handleCepBlur = async () => {
+    const cep = formData.addressZip.replace(/\D/g, '');
+    if (cep.length === 8) {
+      try {
+        const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const data = await res.json();
+        if (!data.erro) {
+          setFormData((prev) => ({
+            ...prev,
+            addressStreet: data.logradouro,
+            addressNeighborhood: data.bairro,
+            addressCity: data.localidade,
+            addressState: data.uf,
+          }));
+        }
+      } catch (err) {
+        console.error("Erro ao buscar CEP", err);
+      }
+    }
+  };
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log('1. Botão clicado. Iniciando validação...');
     setError('');
 
-    // Validação Senhas Iguais (NOVA)
+    // Validação Senhas Iguais
     if (formData.password !== formData.confirmPassword) {
       console.log('ERRO: Senhas não conferem');
       setError('As senhas não coincidem. Por favor, verifique.');
@@ -86,7 +108,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // Removemos o confirmPassword antes de enviar para a API, pois o banco não precisa dele
+      // Removemos o confirmPassword antes de enviar para a API
       const { confirmPassword, ...dataToSend } = formData;
 
       console.log('3. Enviando fetch para /api/register com dados:', dataToSend);
@@ -178,7 +200,8 @@ export default function RegisterPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-1">
                 <label className="block text-xs font-bold text-slate-700 mb-1">CEP *</label>
-                <input name="addressZip" type="text" required maxLength={9} value={formData.addressZip} onChange={handleChange} placeholder="00000-000" className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" />
+                {/* ADICIONEI O onBlur={handleCepBlur} AQUI PARA BUSCAR O ENDEREÇO */}
+                <input name="addressZip" type="text" required maxLength={9} value={formData.addressZip} onChange={handleChange} onBlur={handleCepBlur} placeholder="00000-000" className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
               <div className="md:col-span-2">
                 <label className="block text-xs font-bold text-slate-700 mb-1">Endereço (Rua/Av) *</label>

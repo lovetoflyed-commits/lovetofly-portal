@@ -1,13 +1,21 @@
 import { Pool } from 'pg';
 
-// Cria a conexão usando as variáveis definidas no arquivo .env
+// Força o uso da variável DATABASE_URL que configuramos no Netlify
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+  throw new Error('ERRO CRÍTICO: DATABASE_URL não encontrada. Configure no painel do Netlify.');
+}
+
 const pool = new Pool({
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  host: process.env.DB_HOST,
-  port: parseInt(process.env.DB_PORT || '5432'),
-  database: process.env.DB_NAME || 'lovetofly_portal',
+  connectionString: connectionString,
+  ssl: {
+    rejectUnauthorized: false // Obrigatório para o Neon
+  },
+  // Removemos qualquer referência a DB_HOST ou localhost aqui
+  max: 10,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
 });
 
 export default pool;
-
