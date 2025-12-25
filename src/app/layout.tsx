@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   title: 'Portal Love to Fly',
   description: 'O Seu Portal da Aviação Civil',
   icons: {
-    icon: '/favicon.ico',
+    icon: '/favicon.svg',
   },
 };
 
@@ -25,7 +25,6 @@ export default function RootLayout({
         <Script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3204295995338267"
-          crossOrigin="anonymous"
           strategy="beforeInteractive"
         />
       </head>

@@ -26,6 +26,7 @@
    JWT_SECRET=your-super-secret-jwt-key
    NODE_ENV=production
    ```
+   **⚠️ IMPORTANT:** Without `DATABASE_URL`, the login/register APIs will return 500 errors!
 
 4. **Database Setup**
    - Create a PostgreSQL database on a service like Supabase or Railway
