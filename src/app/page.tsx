@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Script from 'next/script'; // Importação necessária para o AdSense
 import WeatherWidget from '@/components/WeatherWidget';
 import WorldClocks from '@/components/WorldClocks';
 import NewsFeed from '@/components/NewsFeed';
@@ -186,14 +185,6 @@ export default function Home() {
             </div>
             {/* ESPAÇO GOOGLE ADS COM SCRIPT INSERIDO */}
             <div className="h-1/5 bg-white rounded-xl border border-slate-200 flex items-center justify-center relative overflow-hidden">
-              {/* Script do AdSense carregado aqui */}
-              <Script
-                id="adsense-init"
-                async
-                src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3204295995338267"
-                crossOrigin="anonymous"
-                strategy="afterInteractive"
-              />
               <span className="text-[10px] text-slate-400 uppercase tracking-widest">Publicidade Google</span>
             </div>
           </div>
