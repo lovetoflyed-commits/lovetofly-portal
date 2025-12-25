@@ -212,7 +212,7 @@ function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
   const [error, setError] = useState('');
 
   const [formData, setFormData] = useState({
-    firstName: '', lastName: '', birthDate: '', cpf: '', email: '', password: '', mobilePhone: '',
+    firstName: '', lastName: '', birthDate: '', cpf: '', email: '', password: '', confirmPassword: '', mobilePhone: '',
     addressStreet: '', addressNumber: '', addressComplement: '', addressNeighborhood: '', addressCity: '', addressState: '', addressZip: '', addressCountry: 'Brasil',
     aviationRole: '', aviationRoleOther: '', socialMedia: '', newsletter: false, terms: false
   });
@@ -246,6 +246,12 @@ function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
 
     if (!formData.terms) {
       setError('Você deve aceitar os termos de uso.');
+      setLoading(false);
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('As senhas não coincidem.');
       setLoading(false);
       return;
     }
@@ -350,6 +356,18 @@ function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
             name="password"
             required
             value={formData.password}
+            onChange={handleChange}
+            className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-slate-700 mb-1">Confirmar Senha</label>
+          <input
+            type="password"
+            name="confirmPassword"
+            required
+            value={formData.confirmPassword}
             onChange={handleChange}
             className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
           />
