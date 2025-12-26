@@ -61,10 +61,10 @@ export async function POST(request: Request) {
         first_name, last_name, email, password_hash, cpf, birth_date, mobile_phone,
         address_street, address_number, address_complement, address_neighborhood,
         address_city, address_state, address_zip, address_country,
-        aviation_role, aviation_role_other, newsletter_opt_in, terms_agreed
+        aviation_role, aviation_role_other, newsletter_opt_in, terms_agreed, plan
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
-      ) RETURNING id, first_name, last_name, email`,
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
+      ) RETURNING id, first_name, last_name, email, plan`,
       [
         firstName,
         lastName,
@@ -85,6 +85,7 @@ export async function POST(request: Request) {
         aviationRoleOther || null,
         newsletter || false,
         terms || false,
+        'free'
       ]
     );
 
@@ -95,6 +96,7 @@ export async function POST(request: Request) {
         firstName: newUser.rows[0].first_name,
         lastName: newUser.rows[0].last_name,
         email: newUser.rows[0].email,
+        plan: newUser.rows[0].plan,
       },
     }, { status: 201 });
 
