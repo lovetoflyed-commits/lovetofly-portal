@@ -452,7 +452,10 @@ export default function Home() {
       <div className="min-h-screen bg-slate-50 text-slate-900">
         <header className="bg-blue-900 text-white shadow-md">
           <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-2 font-black tracking-wide text-lg">PORTAL LOVE TO FLY</div>
+            <div className="flex items-center gap-3">
+              <img src="/logo-pac.png" alt="Love to Fly" className="h-10 w-auto" />
+              <span className="font-black tracking-wide text-lg">PORTAL LOVE TO FLY</span>
+            </div>
             <div className="flex items-center gap-4">
               <span className="text-xs bg-yellow-400 text-blue-900 px-3 py-1 rounded-full font-bold uppercase">{userPlan}</span>
               <span className="text-sm">Olá, {user.name}</span>
@@ -461,12 +464,70 @@ export default function Home() {
           </div>
         </header>
 
-        <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+        <main className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+          {/* Welcome Section */}
           <section className="bg-white rounded-2xl shadow p-6 border border-slate-100">
             <h1 className="text-3xl md:text-4xl font-black text-blue-900 mb-2">Bem vindo ao seu cockpit</h1>
-            <p className="text-sm text-slate-600">Acesse suas ferramentas organizadas por módulos abaixo.</p>
+            <p className="text-sm text-slate-600">Acesse suas ferramentas e acompanhe informações em tempo real.</p>
           </section>
 
+          {/* Widgets Row */}
+          <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Widget 1: UTC Clock */}
+            <div className="bg-white rounded-xl shadow border border-slate-200 p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-2xl">🕐</span>
+                <h3 className="text-lg font-bold text-blue-900">Relógio UTC</h3>
+              </div>
+              <div className="text-center">
+                <div className="text-4xl font-black text-blue-900 mb-1">
+                  {new Date().toUTCString().split(' ')[4]}
+                </div>
+                <div className="text-sm text-slate-500">
+                  {new Date().toUTCString().split(',')[0]}
+                </div>
+              </div>
+            </div>
+
+            {/* Widget 2: Airport Weather */}
+            <div className="bg-white rounded-xl shadow border border-slate-200 p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-2xl">☁️</span>
+                <h3 className="text-lg font-bold text-blue-900">Clima Aeroporto</h3>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-600">SBGR</span>
+                  <span className="font-bold text-green-600">VFR</span>
+                </div>
+                <div className="text-xs text-slate-500">
+                  Temperatura: 28°C<br/>
+                  Vento: 090/12kt<br/>
+                  Visibilidade: 10km
+                </div>
+              </div>
+            </div>
+
+            {/* Widget 3: Latest News */}
+            <div className="bg-white rounded-xl shadow border border-slate-200 p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-2xl">📰</span>
+                <h3 className="text-lg font-bold text-blue-900">Últimas Notícias</h3>
+              </div>
+              <div className="space-y-2">
+                <div className="text-xs text-slate-600 border-b border-slate-100 pb-2">
+                  <p className="font-semibold">Nova rota SBSP-SBBR</p>
+                  <p className="text-slate-400">Há 2 horas</p>
+                </div>
+                <div className="text-xs text-slate-600">
+                  <p className="font-semibold">Atualização NOTAM</p>
+                  <p className="text-slate-400">Há 5 horas</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Tools/Modules Section */}
           {Object.entries(modules).map(([key, module]) => {
             const moduleHasAccess = hasAccess(module.minPlan);
             const accessibleFeatures = module.features.filter(f => hasAccess(f.minPlan));
