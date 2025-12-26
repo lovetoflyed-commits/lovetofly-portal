@@ -23,6 +23,8 @@
     "cookie": "^1.1.1",
     "framer-motion": "^12.23.26",
     "jsonwebtoken": "^9.0.3",
+    "jspdf": "^3.0.4",
+    "jspdf-autotable": "^5.0.2",
     "lucide-react": "^0.562.0",
     "next": "16.1.1",
     "node-pg-migrate": "^8.0.4",

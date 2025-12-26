@@ -56,11 +56,12 @@ export default function HangarOwnerRegisterPage() {
       // TODO: Implement file upload and API call
       const formDataToSend = new FormData();
       Object.keys(formData).forEach(key => {
-        formDataToSend.append(key, formData[key]);
+        formDataToSend.append(key, String(formData[key as keyof typeof formData]));
       });
       Object.keys(files).forEach(key => {
-        if (files[key]) {
-          formDataToSend.append(key, files[key]);
+        const file = files[key as keyof typeof files];
+        if (file !== null) {
+          formDataToSend.append(key, file);
         }
       });
 
