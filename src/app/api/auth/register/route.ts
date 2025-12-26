@@ -27,90 +27,79 @@ export async function POST(request: Request) {
       terms,
     } = body;
 
-    // 1. Validação Básica
-    if (!firstName || !lastName || !email || !password || !cpf || !birthDate) {
-      return NextResponse.json(
-        { error: 'Preencha todos os campos obrigatórios.' },
-        { status: 400 }
-      );
+    const cleanedCPF = (cpf || '').replace(/\D/g, '');
+    const cleanedPhone = (mobilePhone || '').replace(/\D/g, '');
+    const cleanedZip = (addressZip || '').replace(/\D/g, '');
+
+    if (!firstName || !lastName || !email || !password || !cleanedCPF || !birthDate) {
+      return NextResponse.json({ error: 'Please fill required fields' }, { status: 400 });
     }
 
     if (!terms) {
-      return NextResponse.json(
-        { error: 'Você deve aceitar os termos de uso.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'You must accept terms' }, { status: 400 });
     }
 
-    // 2. Verifica se usuário já existe (Email e CPF)
     const existingUser = await pool.query(
       'SELECT * FROM users WHERE email = $1 OR cpf = $2',
-      [email, cpf]
+      [email, cleanedCPF]
     );
 
     if (existingUser.rows.length > 0) {
       const existing = existingUser.rows[0];
       if (existing.email === email) {
-        return NextResponse.json({ error: 'Este email já está cadastrado.' }, { status: 409 });
+        return NextResponse.json({ error: 'Email already registered' }, { status: 409 });
       } else {
-        return NextResponse.json({ error: 'Este CPF já está cadastrado.' }, { status: 409 });
+        return NextResponse.json({ error: 'CPF already registered' }, { status: 409 });
       }
     }
 
-    // 3. Criptografa a senha
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // 4. Insere no Banco de Dados
     const newUser = await pool.query(
       `INSERT INTO users (
-        first_name, last_name, email, password, cpf, birth_date, mobile_phone,
+        first_name, last_name, email, password_hash, cpf, birth_date, mobile_phone,
         address_street, address_number, address_complement, address_neighborhood,
         address_city, address_state, address_zip, address_country,
-        aviation_role, aviation_role_other, newsletter, created_at, updated_at
+        aviation_role, aviation_role_other, newsletter_opt_in, terms_agreed
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, NOW(), NOW()
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
       ) RETURNING id, first_name, last_name, email`,
       [
         firstName,
         lastName,
         email,
         hashedPassword,
-        cpf,
+        cleanedCPF,
         birthDate,
-        mobilePhone,
+        cleanedPhone,
         addressStreet,
         addressNumber,
         addressComplement,
         addressNeighborhood,
         addressCity,
         addressState,
-        addressZip,
+        cleanedZip,
         addressCountry,
         aviationRole,
         aviationRoleOther || null,
         newsletter || false,
+        terms || false,
       ]
     );
 
-    return NextResponse.json(
-      {
-        message: 'Usuário criado com sucesso!',
-        user: {
-          id: newUser.rows[0].id,
-          firstName: newUser.rows[0].first_name,
-          lastName: newUser.rows[0].last_name,
-          email: newUser.rows[0].email,
-        },
+    return NextResponse.json({
+      message: 'User created successfully!',
+      user: {
+        id: newUser.rows[0].id,
+        firstName: newUser.rows[0].first_name,
+        lastName: newUser.rows[0].last_name,
+        email: newUser.rows[0].email,
       },
-      { status: 201 }
-    );
+    }, { status: 201 });
 
   } catch (error: any) {
-    console.error('Erro no registro:', error);
-    return NextResponse.json(
-      { error: 'Erro ao processar o registro. Por favor, tente novamente.' },
-      { status: 500 }
-    );
+    console.error('Register error:', error);
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

@@ -9,7 +9,7 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState({ loading: false, error: '', success: false });
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus({ loading: true, error: '', success: false });
 

@@ -1,0 +1,23 @@
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  first_name VARCHAR(255) NOT NULL,
+  last_name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  cpf VARCHAR(14) UNIQUE NOT NULL,
+  birth_date DATE NOT NULL,
+  mobile_phone VARCHAR(20) NOT NULL,
+  address_street VARCHAR(255) NOT NULL,
+  address_number VARCHAR(50) NOT NULL,
+  address_complement VARCHAR(255),
+  address_neighborhood VARCHAR(255) NOT NULL,
+  address_city VARCHAR(255) NOT NULL,
+  address_state VARCHAR(50) NOT NULL,
+  address_zip VARCHAR(20) NOT NULL,
+  address_country VARCHAR(100) NOT NULL,
+  aviation_role VARCHAR(50) NOT NULL,
+  aviation_role_other VARCHAR(100),
+  newsletter_opt_in BOOLEAN DEFAULT FALSE,
+  terms_agreed BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);

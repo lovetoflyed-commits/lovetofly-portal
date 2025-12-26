@@ -1,106 +1,77 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-// ATUALIZADO: Adicionamos os campos do perfil aqui para o TypeScript parar de reclamar
-export interface User {
-  id: string;
+interface User {
+  id: number;
   name: string;
   email: string;
+  plan?: string;
   role?: string;
-  // Campos adicionais do perfil
-  phone_number?: string;
-  address?: string;
-  current_license?: string;
-  current_ratings?: string;
-  total_flight_hours?: string | number;
-  course_type?: string;
-  transferred_from_ciac?: boolean;
-  previous_ciac_name?: string;
-  observations?: string;
 }
 
-interface AuthContextData {
+interface AuthContextType {
   user: User | null;
-  loading: boolean;
+  token: string | null;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   error: string | null;
-  updateUser: (data: Partial<User>) => void; // Adicionei uma função auxiliar útil
 }
 
-const AuthContext = createContext<AuthContextData>({} as AuthContextData);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
 
   useEffect(() => {
-    async function loadStorageData() {
-      const storedUser = sessionStorage.getItem('@LoveToFly:user');
-      const storedToken = sessionStorage.getItem('@LoveToFly:token');
-
-      if (storedUser && storedToken) {
-        setUser(JSON.parse(storedUser));
-      }
-      setLoading(false);
+    const storedToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const storedUser = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+    if (storedToken && storedUser) {
+      setToken(storedToken);
+      setUser(JSON.parse(storedUser));
     }
-
-    loadStorageData();
   }, []);
 
-  async function login(email: string, password: string) {
+  const login = async (email: string, password: string): Promise<boolean> => {
     setError(null);
     try {
-      const response = await fetch('/api/auth/login', {
+      const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
+      const data = await res.json();
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Erro ao fazer login');
+      if (res.ok) {
+        setToken(data.token);
+        setUser(data.user);
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        return true;
+      } else {
+        setError(data.message || 'Login failed');
+        return false;
       }
-
-      sessionStorage.setItem('@LoveToFly:user', JSON.stringify(data.user));
-      sessionStorage.setItem('@LoveToFly:token', data.token);
-
-      setUser(data.user);
-      router.push('/');
-      return true;
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError('Connection error');
       return false;
     }
-  }
+  };
 
-  function logout() {
-    sessionStorage.removeItem('@LoveToFly:user');
-    sessionStorage.removeItem('@LoveToFly:token');
+  const logout = () => {
     setUser(null);
-    router.push('/login');
-  }
-
-  // Função para atualizar o usuário localmente sem precisar relogar
-  function updateUser(data: Partial<User>) {
-    if (user) {
-      const updatedUser = { ...user, ...data };
-      setUser(updatedUser);
-      sessionStorage.setItem('@LoveToFly:user', JSON.stringify(updatedUser));
+    setToken(null);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
     }
-  }
-
-  if (loading) {
-    return null; 
-  }
+  };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, error, updateUser }}>
+    <AuthContext.Provider value={{ user, token, login, logout, error }}>
       {children}
     </AuthContext.Provider>
   );
@@ -108,5 +79,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
 }

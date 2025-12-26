@@ -1,657 +1,539 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import WeatherWidget from '@/components/WeatherWidget';
-import WorldClocks from '@/components/WorldClocks';
-import NewsFeed from '@/components/NewsFeed';
-import QuickAccess from '@/components/QuickAccess';
+import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import Script from 'next/script';
 
-// --- COMPONENTE: RELÓGIO UTC ---
-function UTCClock() {
-  const [time, setTime] = useState('');
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const now = new Date();
-      const timeString = now.toISOString().split('T')[1].split('.')[0];
-      setTime(timeString);
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-  return (
-    <div className="bg-slate-900 text-white p-6 rounded-xl shadow-lg border border-slate-700 flex flex-col items-center justify-center h-full">
-      <h3 className="text-slate-400 text-xs font-bold tracking-widest mb-1">HORÁRIO ZULU (UTC)</h3>
-      <div className="text-4xl font-mono font-bold text-yellow-400">
-        {time || '--:--:--'} <span className="text-lg text-slate-500">Z</span>
-      </div>
-    </div>
-  );
-}
+// Helpers for masked fields
+const isValidCPF = (cpf: string) => {
+  const cleaned = cpf.replace(/[^\d]+/g, '');
+  if (cleaned.length !== 11 || /^(\d)\1{10}$/.test(cleaned)) return false;
+  const digits = cleaned.split('').map(Number);
+  const rest = (count: number) => (
+    (digits.slice(0, count - 12).reduce((sum, el, idx) => sum + el * (count - idx), 0) * 10) % 11
+  ) % 10;
+  return rest(10) === digits[9] && rest(11) === digits[10];
+};
 
-// --- COMPONENTE: STATUS DO AERÓDROMO (VERSÃO RESTAURADA) ---
-function AirportStatusWidget() {
-  const [icao, setIcao] = useState('SBGR');
-  const [data, setData] = useState<any>(null);
+const maskCPF = (value: string) => value
+  .replace(/\D/g, '')
+  .replace(/(\d{3})(\d)/, '$1.$2')
+  .replace(/(\d{3})(\d)/, '$1.$2')
+  .replace(/(\d{3})(\d{1,2})/, '$1-$2')
+  .replace(/(-\d{2})\d+?$/, '$1');
+
+const maskCEP = (value: string) => value
+  .replace(/\D/g, '')
+  .replace(/(\d{5})(\d)/, '$1-$2')
+  .replace(/(-\d{3})\d+?$/, '$1');
+
+const maskPhone = (value: string) => value
+  .replace(/\D/g, '')
+  .replace(/(\d{2})(\d)/, '($1) $2')
+  .replace(/(\d{5})(\d)/, '$1-$2')
+  .replace(/(-\d{4})\d+?$/, '$1');
+
+// Login form
+function LoginForm({ onSuccess }: { onSuccess: () => void }) {
+  const { login, error } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const fetchMetar = async () => {
-    if (icao.length !== 4) return;
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
-    try {
-      // Busca via Proxy para evitar erro de CORS (Versão NOAA)
-      const response = await fetch(`https://corsproxy.io/?https://aviationweather.gov/api/data/metar?ids=${icao}&format=json`);
-      const json = await response.json();
-
-      if (json && json.length > 0) {
-        const metar = json[0];
-        // Lógica simples para determinar status visualmente
-        let status = 'VFR';
-        let color = 'text-green-500';
-
-        // Se visibilidade < 5000m ou Teto < 1500ft (simplificado)
-        const isCavok = metar.rawOb.includes('CAVOK');
-        const lowVis = metar.visib && parseFloat(metar.visib) < 5; // < 5 milhas
-
-        if (!isCavok && lowVis) {
-          status = 'IFR';
-          color = 'text-red-500';
-        }
-
-        setData({ ...metar, status, color });
-      } else {
-        setData(null);
-      }
-    } catch (error) {
-      console.error("Erro ao buscar METAR:", error);
-      setData(null);
-    } finally {
-      setLoading(false);
-    }
+    const ok = await login(email, password);
+    setLoading(false);
+    if (ok) onSuccess();
   };
 
   return (
-    <div className="bg-white p-4 rounded-xl shadow border border-slate-200 flex flex-col h-full relative">
-      <div className="flex justify-between items-center mb-2">
-        <h3 className="text-blue-900 font-bold text-xs">STATUS DO AERÓDROMO</h3>
-        <div className="flex gap-1">
-          <input 
-            value={icao} 
-            onChange={(e) => setIcao(e.target.value.toUpperCase())}
-            maxLength={4}
-            className="w-12 text-xs border border-slate-300 rounded px-1 text-center font-mono uppercase"
-          />
-          <button onClick={fetchMetar} className="bg-blue-600 text-white text-[10px] px-2 rounded hover:bg-blue-700">OK</button>
+    <form onSubmit={handleLogin} className="space-y-4">
+      {error && (
+        <div className="bg-red-100 border border-red-300 text-red-700 text-sm px-3 py-2 rounded">
+          {error}
+        </div>
+      )}
+      <div>
+        <label className="block text-xs font-semibold text-slate-700 mb-1">Email</label>
+        <input
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+          placeholder="seu@email.com"
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-slate-700 mb-1">Senha</label>
+        <input
+          type="password"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+          placeholder="••••••"
+        />
+      </div>
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full py-3 rounded-lg bg-blue-900 text-white font-bold shadow-md hover:bg-blue-800 disabled:opacity-60"
+      >
+        {loading ? 'Entrando...' : 'Entrar'}
+      </button>
+    </form>
+  );
+}
+
+// Register form (keeps required backend fields but simplified layout)
+function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [formData, setFormData] = useState({
+    firstName: '', lastName: '', birthDate: '', cpf: '', email: '', password: '', confirmPassword: '',
+    mobilePhone: '', addressStreet: '', addressNumber: '', addressComplement: '', addressNeighborhood: '',
+    addressCity: '', addressState: '', addressZip: '', addressCountry: 'Brasil', aviationRole: '',
+    aviationRoleOther: '', socialMedia: '', newsletter: false, terms: false,
+  });
+  const [zipStatus, setZipStatus] = useState('');
+  const [zipLoading, setZipLoading] = useState(false);
+
+  const fetchAddressByCEP = async (cep: string) => {
+    const cleaned = cep.replace(/\D/g, '');
+    if (cleaned.length !== 8) return;
+
+    setZipLoading(true);
+    setZipStatus('Buscando CEP...');
+
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cleaned}/json/`);
+      if (!response.ok) throw new Error('CEP lookup failed');
+
+      const data = await response.json();
+      if (data.erro) {
+        setZipStatus('CEP não encontrado.');
+        return;
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        addressZip: maskCEP(cleaned),
+        addressStreet: data.logradouro || prev.addressStreet,
+        addressNeighborhood: data.bairro || prev.addressNeighborhood,
+        addressCity: data.localidade || prev.addressCity,
+        addressState: data.uf || prev.addressState,
+      }));
+
+      setZipStatus('Endereço preenchido automaticamente.');
+    } catch (err) {
+      setZipStatus('Não foi possível buscar o CEP.');
+    } finally {
+      setZipLoading(false);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    let finalValue = value;
+    if (name === 'cpf') finalValue = maskCPF(value);
+    if (name === 'addressZip') finalValue = maskCEP(value);
+    if (name === 'mobilePhone') finalValue = maskPhone(value);
+
+    if (type === 'checkbox') {
+      setFormData((prev) => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
+      return;
+    }
+
+    setFormData((prev) => ({ ...prev, [name]: finalValue }));
+
+    if (name === 'addressZip') {
+      const cleanedZip = finalValue.replace(/\D/g, '');
+      if (cleanedZip.length === 8) {
+        fetchAddressByCEP(cleanedZip);
+      } else {
+        setZipStatus('');
+      }
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    if (!formData.terms) {
+      setError('Você deve aceitar os termos de uso.');
+      setLoading(false);
+      return;
+    }
+
+    const cleanedCPF = formData.cpf.replace(/\D/g, '');
+    if (!isValidCPF(cleanedCPF)) {
+      setError('CPF inválido.');
+      setLoading(false);
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('As senhas não coincidem.');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const cleanedFormData = {
+        ...formData,
+        cpf: cleanedCPF,
+        mobilePhone: formData.mobilePhone.replace(/\D/g, ''),
+        addressZip: formData.addressZip.replace(/\D/g, ''),
+      };
+
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cleanedFormData),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        alert('Cadastro realizado com sucesso! Faça login.');
+        onSuccess();
+      } else {
+        setError(data.error || 'Erro no cadastro.');
+      }
+    } catch (err) {
+      setError('Erro de conexão.');
+    }
+
+    setLoading(false);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {error && (
+        <div className="bg-red-100 border border-red-300 text-red-700 text-sm px-3 py-2 rounded">
+          {error}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">Nome</label>
+          <input name="firstName" required value={formData.firstName} onChange={handleChange} className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">Sobrenome</label>
+          <input name="lastName" required value={formData.lastName} onChange={handleChange} className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center text-center">
-        {loading ? (
-          <span className="text-xs text-slate-400 animate-pulse">Buscando...</span>
-        ) : data ? (
-          <>
-            <div className={`text-3xl font-black ${data.color} mb-1`}>{data.status}</div>
-            <div className="text-[9px] text-slate-500 font-mono leading-tight overflow-hidden h-10 w-full text-left bg-slate-50 p-1 rounded border border-slate-100">
-              {data.rawOb}
-            </div>
-          </>
-        ) : (
-          <span className="text-xs text-slate-400">Digite o ICAO (ex: SBGR)</span>
-        )}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">Data de Nascimento</label>
+          <input type="date" name="birthDate" required value={formData.birthDate} onChange={handleChange} className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">CPF</label>
+          <input name="cpf" required value={formData.cpf} onChange={handleChange} placeholder="000.000.000-00" className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+        </div>
       </div>
-    </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">Email</label>
+          <input type="email" name="email" required value={formData.email} onChange={handleChange} className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">Telefone</label>
+          <input name="mobilePhone" required value={formData.mobilePhone} onChange={handleChange} placeholder="(00) 00000-0000" className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">Senha</label>
+          <input type="password" name="password" required value={formData.password} onChange={handleChange} className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">Confirmar Senha</label>
+          <input type="password" name="confirmPassword" required value={formData.confirmPassword} onChange={handleChange} className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">Função na Aviação</label>
+          <select name="aviationRole" required value={formData.aviationRole} onChange={handleChange} className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+            <option value="">Selecione</option>
+            <option value="student">Estudante</option>
+            <option value="pilot">Piloto</option>
+            <option value="instructor">Instrutor</option>
+            <option value="mechanic">Mecânico</option>
+            <option value="other">Outro</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">CEP</label>
+          <input name="addressZip" required value={formData.addressZip} onChange={handleChange} placeholder="00000-000" className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+          {zipStatus && (
+            <p className="text-xs text-slate-500 mt-1">{zipLoading ? 'Buscando CEP...' : zipStatus}</p>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">Endereço</label>
+          <input name="addressStreet" required value={formData.addressStreet} onChange={handleChange} className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">Número</label>
+          <input name="addressNumber" required value={formData.addressNumber} onChange={handleChange} className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">Bairro</label>
+          <input name="addressNeighborhood" required value={formData.addressNeighborhood} onChange={handleChange} className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">Cidade</label>
+          <input name="addressCity" required value={formData.addressCity} onChange={handleChange} className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">Estado</label>
+          <input name="addressState" required value={formData.addressState} onChange={handleChange} className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">País</label>
+          <input name="addressCountry" required value={formData.addressCountry} onChange={handleChange} className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <input type="checkbox" name="terms" checked={formData.terms} onChange={handleChange} className="w-4 h-4" />
+        <span className="text-xs text-slate-700">Aceito os termos de uso</span>
+      </div>
+
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full py-3 rounded-lg bg-blue-900 text-white font-bold shadow-md hover:bg-blue-800 disabled:opacity-60"
+      >
+        {loading ? 'Cadastrando...' : 'Cadastrar'}
+      </button>
+    </form>
   );
 }
 
-// --- COMPONENTE: NOTÍCIAS (MOCK) ---
-function AviationNewsWidget() {
-  const news = [
-    { id: 1, category: 'REGULAÇÃO', date: 'Hoje, 10:00', title: 'ANAC publica nova emenda sobre RBAC 61 para pilotos privados.' },
-    { id: 2, category: 'INDÚSTRIA', date: 'Ontem, 18:30', title: 'Embraer anuncia venda de 20 aeronaves E2 para companhia asiática.' },
-    { id: 3, category: 'SEGURANÇA', date: '24 Dez, 14:00', title: 'Relatório preliminar sobre incidente em Congonhas é divulgado.' },
-    { id: 4, category: 'TECNOLOGIA', date: '23 Dez, 09:15', title: 'Novo sistema de navegação por satélite promete maior precisão em aproximações.' },
-  ];
-
+// Modal shell
+function Modal({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: React.ReactNode }) {
+  if (!open) return null;
   return (
-    <div className="bg-white p-6 rounded-xl shadow-lg border border-slate-200 h-full flex flex-col">
-      <div className="flex justify-between items-center mb-4 border-b pb-2">
-        <h3 className="text-blue-900 font-bold text-sm">ÚLTIMAS NOTÍCIAS</h3>
-        <button className="text-blue-500 text-xs hover:underline">Atualizar</button>
-      </div>
-      <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-        {news.map((item) => (
-          <div key={item.id} className="group cursor-pointer">
-            <div className="flex justify-between mb-1">
-              <span className="text-[9px] font-bold text-blue-600 uppercase">{item.category}</span>
-              <span className="text-[9px] text-slate-400">{item.date}</span>
-            </div>
-            <h4 className="text-xs font-semibold text-slate-800 leading-tight group-hover:text-blue-700 transition-colors">{item.title}</h4>
-          </div>
-        ))}
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl relative p-6 border border-slate-200">
+        <button onClick={onClose} className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 text-xl">×</button>
+        <h2 className="text-2xl font-bold text-blue-900 mb-4">{title}</h2>
+        {children}
       </div>
     </div>
   );
 }
 
-
-
-
-
-// --- FUNÇÕES AUXILIARES PARA REGISTRO ---
-const isValidCPF = (cpf: string) => {
-  cpf = cpf.replace(/[^\d]+/g, '');
-  if (cpf.length !== 11 || !!cpf.match(/(\d)\1{10}/)) return false;
-  const cpfDigits = cpf.split('').map(el => +el);
-  const rest = (count: number) => (cpfDigits.slice(0, count-12).reduce((soma, el, index) => (soma + el * (count-index)), 0) * 10) % 11 % 10;
-  return rest(10) === cpfDigits[9] && rest(11) === cpfDigits[10];
-};
-
-const maskCPF = (value: string) => {
-  return value.replace(/\D/g, '').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})/, '$1-$2').replace(/(-\d{2})\d+?$/, '$1');
-};
-
-const maskCEP = (value: string) => {
-  return value.replace(/\D/g, '').replace(/(\d{5})(\d)/, '$1-$2').replace(/(-\d{3})\d+?$/, '$1');
-};
-
-const maskPhone = (value: string) => {
-  return value.replace(/\D/g, '').replace(/(\d{2})(\d)/, '($1) $2').replace(/(\d{5})(\d)/, '$1-$2').replace(/(-\d{4})\d+?$/, '$1');
-};
-
-// --- PÁGINA PRINCIPAL ---
 export default function Home() {
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const [showRegisterModal, setShowRegisterModal] = useState(false);
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [registerOpen, setRegisterOpen] = useState(false);
 
-  // --- COMPONENTE: FORMULÁRIO DE LOGIN ---
-  function LoginForm({ onSuccess }: { onSuccess: () => void }) {
-    const { login, error } = useAuth();
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [loading, setLoading] = useState(false);
+  // Define feature modules with access requirements
+  const modules = {
+    navigation: {
+      name: 'Navegação',
+      icon: '🧭',
+      minPlan: 'free',
+      features: [
+        { name: 'E6B Flight Computer', desc: 'Calculadora de navegação aérea', href: '/tools/e6b', minPlan: 'free' },
+        { name: 'Glass Cockpit Simulator', desc: 'Simulador de cabine com aviônicos moderno', href: '/tools/glass-cockpit', minPlan: 'pro' },
+        { name: 'Planejamento de Voo', desc: 'Planejar rotas e calcular combustível', href: '/flight-plan', minPlan: 'premium' },
+      ]
+    },
+    weather: {
+      name: 'Meteorologia',
+      icon: '☁️',
+      minPlan: 'free',
+      features: [
+        { name: 'METAR/TAF', desc: 'Consulta de condições meteorológicas', href: '/weather', minPlan: 'free' },
+        { name: 'Radar', desc: 'Radar meteorológico em tempo real', href: '/weather/radar', minPlan: 'premium' },
+      ]
+    },
+    training: {
+      name: 'Treinamento',
+      icon: '🎓',
+      minPlan: 'free',
+      features: [
+        { name: 'Logbook', desc: 'Registro de horas de voo', href: '/logbook', minPlan: 'free' },
+        { name: 'Cursos', desc: 'Treinamento e certificação online', href: '/courses', minPlan: 'free' },
+        { name: 'Simulador', desc: 'Treinamento em simulador', href: '/simulator', minPlan: 'pro' },
+      ]
+    },
+    community: {
+      name: 'Comunidade',
+      icon: '💬',
+      minPlan: 'free',
+      features: [
+        { name: 'Fórum', desc: 'Discussões com pilotos e instrutores', href: '/forum', minPlan: 'free' },
+        { name: 'Marketplace', desc: 'Compra e venda de equipamentos', href: '/marketplace', minPlan: 'free' },
+      ]
+    },
+    career: {
+      name: 'Carreira',
+      icon: '✈️',
+      minPlan: 'premium',
+      features: [
+        { name: 'Vagas', desc: 'Oportunidades de emprego na aviação', href: '/career', minPlan: 'premium' },
+        { name: 'Mentoria', desc: 'Conecte-se com mentores', href: '/mentorship', minPlan: 'pro' },
+      ]
+    },
+  };
 
-    const handleLogin = async (e: React.FormEvent) => {
-      e.preventDefault();
-      setLoading(true);
+  const userPlan = user?.plan || 'free';
+  const planPriority: Record<string, number> = { free: 0, premium: 1, pro: 2 };
 
-      const success = await login(email, password);
+  const hasAccess = (minPlan: string) => planPriority[userPlan] >= planPriority[minPlan];
 
-      if (success) {
-        onSuccess();
-      }
-
-      setLoading(false);
-    };
-
+  // If user is logged in, show modular dashboard
+  if (user) {
     return (
-      <>
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6 text-sm text-center font-bold">
-            {error}
+      <div className="min-h-screen bg-slate-50 text-slate-900">
+        <header className="bg-blue-900 text-white shadow-md">
+          <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-2 font-black tracking-wide text-lg">PORTAL LOVE TO FLY</div>
+            <div className="flex items-center gap-4">
+              <span className="text-xs bg-yellow-400 text-blue-900 px-3 py-1 rounded-full font-bold uppercase">{userPlan}</span>
+              <span className="text-sm">Olá, {user.name}</span>
+              <button onClick={logout} className="px-4 py-2 rounded-lg bg-white text-blue-900 font-bold shadow-sm hover:bg-blue-50">Sair</button>
+            </div>
           </div>
-        )}
+        </header>
 
-        <form onSubmit={handleLogin} className="space-y-6">
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Email</label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-3 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-              placeholder="seu@email.com"
-            />
-          </div>
+        <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+          <section className="bg-white rounded-2xl shadow p-6 border border-slate-100">
+            <h1 className="text-3xl md:text-4xl font-black text-blue-900 mb-2">Bem vindo ao seu cockpit</h1>
+            <p className="text-sm text-slate-600">Acesse suas ferramentas organizadas por módulos abaixo.</p>
+          </section>
 
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Senha</label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-3 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-              placeholder="••••••"
-            />
-          </div>
+          {Object.entries(modules).map(([key, module]) => {
+            const moduleHasAccess = hasAccess(module.minPlan);
+            const accessibleFeatures = module.features.filter(f => hasAccess(f.minPlan));
+            const lockedFeatures = module.features.filter(f => !hasAccess(f.minPlan));
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 bg-blue-900 text-white font-bold rounded-lg hover:bg-blue-800 transition-colors shadow-lg shadow-blue-900/20 disabled:opacity-50"
-          >
-            {loading ? 'ENTRANDO...' : 'ENTRAR'}
-          </button>
+            if (!moduleHasAccess && accessibleFeatures.length === 0) return null;
 
-          <button
-            type="button"
-            onClick={() => setShowLoginModal(false)}
-            className="w-full py-2 mt-4 bg-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-300 transition-colors"
-          >
-            VOLTAR
-          </button>
-        </form>
-      </>
+            return (
+              <section key={key} className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">{module.icon}</span>
+                  <h2 className="text-2xl font-bold text-blue-900">{module.name}</h2>
+                  {!moduleHasAccess && <span className="text-xs bg-slate-200 text-slate-600 px-2 py-1 rounded">Requer {module.minPlan}</span>}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {accessibleFeatures.map((feature, idx) => (
+                    <a
+                      key={idx}
+                      href={feature.href}
+                      className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition"
+                    >
+                      <h3 className="text-blue-900 font-bold mb-2">{feature.name}</h3>
+                      <p className="text-sm text-slate-600">{feature.desc}</p>
+                    </a>
+                  ))}
+
+                  {lockedFeatures.map((feature, idx) => (
+                    <div
+                      key={idx}
+                      className="bg-slate-100 rounded-xl border border-slate-300 p-6 shadow-sm opacity-60 cursor-not-allowed relative"
+                    >
+                      <div className="absolute top-3 right-3 text-xs bg-slate-700 text-white px-2 py-1 rounded">
+                        {feature.minPlan}
+                      </div>
+                      <h3 className="text-slate-700 font-bold mb-2">{feature.name}</h3>
+                      <p className="text-sm text-slate-500">{feature.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            );
+          })}
+
+          {userPlan === 'free' && (
+            <section className="bg-gradient-to-r from-blue-900 to-blue-700 text-white rounded-2xl shadow-lg p-8">
+              <h2 className="text-2xl font-bold mb-2">Desbloqueie todos os recursos</h2>
+              <p className="mb-4 text-blue-100">Assine Premium ou Pro para acessar funcionalidades avançadas.</p>
+              <button className="px-6 py-3 bg-yellow-400 text-blue-900 font-bold rounded-lg shadow hover:bg-yellow-300">
+                Ver Planos
+              </button>
+            </section>
+          )}
+        </main>
+      </div>
     );
   }
 
-  // --- COMPONENTE: FORMULÁRIO DE REGISTRO ---
-  function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-
-    const [formData, setFormData] = useState({
-      firstName: '', lastName: '', birthDate: '', cpf: '', email: '', password: '', confirmPassword: '', mobilePhone: '',
-      addressStreet: '', addressNumber: '', addressComplement: '', addressNeighborhood: '', addressCity: '', addressState: '', addressZip: '', addressCountry: 'Brasil',
-      aviationRole: '', aviationRoleOther: '', socialMedia: '', newsletter: false, terms: false
-    });
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-      const { name, value, type } = e.target;
-      let finalValue = value;
-
-      if (name === 'cpf') finalValue = maskCPF(value);
-      if (name === 'addressZip') finalValue = maskCEP(value);
-      if (name === 'mobilePhone') finalValue = maskPhone(value);
-
-      if (type === 'checkbox') {
-        setFormData(prev => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
-      } else {
-        setFormData(prev => ({ ...prev, [name]: finalValue }));
-      }
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-      e.preventDefault();
-      setLoading(true);
-      setError('');
-
-      // Validações básicas
-      if (!formData.cpf || formData.cpf.trim() === '') {
-        setError('CPF é obrigatório.');
-        setLoading(false);
-        return;
-      }
-
-      const cpfDigitsOnly = formData.cpf.replace(/\D/g, '');
-      if (!isValidCPF(cpfDigitsOnly)) {
-        setError('CPF inválido.');
-        setLoading(false);
-        return;
-      }
-
-      if (!formData.terms) {
-        setError('Você deve aceitar os termos de uso.');
-        setLoading(false);
-        return;
-      }
-
-      if (formData.password !== formData.confirmPassword) {
-        setError('As senhas não coincidem.');
-        setLoading(false);
-        return;
-      }
-
-      try {
-        // Clean up masked fields before sending
-        const cleanedFormData = {
-          ...formData,
-          cpf: formData.cpf.replace(/\D/g, ''),
-          mobilePhone: formData.mobilePhone.replace(/\D/g, ''),
-          addressZip: formData.addressZip.replace(/\D/g, ''),
-        };
-
-        const response = await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(cleanedFormData),
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          alert('Cadastro realizado com sucesso! Faça login.');
-          onSuccess();
-        } else {
-          setError(data.error || 'Erro no cadastro.');
-        }
-      } catch (err) {
-        setError('Erro de conexão.');
-      }
-
-      setLoading(false);
-    };
-
-    return (
-      <>
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6 text-sm text-center font-bold">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Nome</label>
-              <input
-                type="text"
-                name="firstName"
-                required
-                value={formData.firstName}
-                onChange={handleChange}
-                className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Sobrenome</label>
-              <input
-                type="text"
-                name="lastName"
-                required
-                value={formData.lastName}
-                onChange={handleChange}
-                className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Data de Nascimento</label>
-            <input
-              type="date"
-              name="birthDate"
-              required
-              value={formData.birthDate}
-              onChange={handleChange}
-              className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">CPF</label>
-            <input
-              type="text"
-              name="cpf"
-              required
-              value={formData.cpf}
-              onChange={handleChange}
-              className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-              placeholder="000.000.000-00"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Email</label>
-            <input
-              type="email"
-              name="email"
-              required
-              value={formData.email}
-              onChange={handleChange}
-              className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Senha</label>
-            <input
-              type="password"
-              name="password"
-              required
-              value={formData.password}
-              onChange={handleChange}
-              className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Confirmar Senha</label>
-            <input
-              type="password"
-              name="confirmPassword"
-              required
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Telefone</label>
-            <input
-              type="text"
-              name="mobilePhone"
-              required
-              value={formData.mobilePhone}
-              onChange={handleChange}
-              className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-              placeholder="(00) 00000-0000"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Função na Aviação</label>
-            <select
-              name="aviationRole"
-              required
-              value={formData.aviationRole}
-              onChange={handleChange}
-              className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-            >
-              <option value="">Selecione</option>
-              <option value="student">Estudante</option>
-              <option value="pilot">Piloto</option>
-              <option value="instructor">Instrutor</option>
-              <option value="mechanic">Mecânico</option>
-              <option value="other">Outro</option>
-            </select>
-          </div>
-
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              name="terms"
-              checked={formData.terms}
-              onChange={handleChange}
-              className="mr-2"
-            />
-            <label className="text-xs text-slate-700">Aceito os termos de uso</label>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 bg-blue-900 text-white font-bold rounded-lg hover:bg-blue-800 transition-colors shadow-lg shadow-blue-900/20 disabled:opacity-50"
-          >
-            {loading ? 'CADASTRANDO...' : 'CADASTRAR'}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setShowRegisterModal(false)}
-            className="w-full py-2 mt-4 bg-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-300 transition-colors"
-          >
-            VOLTAR
-          </button>
-        </form>
-      </>
-    );
-  }
-
+  // Landing page for non-logged users
   return (
-    <div className="h-screen bg-slate-100 flex flex-col font-sans">
-
-      {/* CABEÇALHO */}
-      <header className="bg-blue-900 text-white shadow-md shrink-0 z-50 relative h-24">
-        <div className="max-w-[1920px] mx-auto px-6 h-full flex justify-between items-center relative">
-          <div className="flex-shrink-0 z-20">
-            <img src="/logo-pac.png" alt="Logo" className="h-[3.5cm] w-auto object-contain drop-shadow-lg" />
-          </div>
-          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
-            <h1 className="text-2xl md:text-3xl font-extrabold tracking-wider drop-shadow-md text-center">PORTAL LOVE TO FLY</h1>
-            <p className="text-[10px] md:text-xs font-light tracking-[0.3em] text-blue-200 mt-0.5 text-center">O SEU PORTAL DA AVIAÇÃO CIVIL</p>
-          </div>
-          <div className="flex gap-3 text-xs font-bold items-center z-20">
-            <button onClick={() => setShowLoginModal(true)} className="hover:text-blue-200 px-3 py-2">ENTRAR</button>
-            <button onClick={() => setShowRegisterModal(true)} className="bg-yellow-400 text-blue-900 px-5 py-2 rounded hover:bg-yellow-300 shadow-lg transition-transform hover:scale-105">CADASTRAR</button>
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      <header className="bg-blue-900 text-white shadow-md">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 font-black tracking-wide text-lg">PORTAL LOVE TO FLY</div>
+          <div className="flex items-center gap-3">
+            <button onClick={() => setLoginOpen(true)} className="px-4 py-2 rounded-lg bg-white text-blue-900 font-bold shadow-sm hover:bg-blue-50">Entrar</button>
+            <button onClick={() => setRegisterOpen(true)} className="px-4 py-2 rounded-lg bg-yellow-400 text-blue-900 font-bold shadow-sm hover:bg-yellow-300">Cadastrar</button>
           </div>
         </div>
       </header>
 
-      {/* DASHBOARD */}
-      <main className="flex-1 p-4 max-w-[1920px] mx-auto w-full overflow-y-auto">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-
-          {/* COLUNA 1: FERRAMENTAS & TOOLS */}
-          <div className="md:col-span-3 flex flex-col gap-4">
-            <div className="h-28"><UTCClock /></div>
-            <div className="h-28"><AirportStatusWidget /></div>
-            <div className="h-28"><WeatherWidget /></div>
-            <div className="h-28"><WorldClocks /></div>
-            <div className="flex-1 bg-white p-4 rounded-xl shadow border border-slate-200 flex flex-col min-h-32">
-              <h3 className="text-blue-900 font-bold text-xs mb-2 text-center">🌐 LINKS RÁPIDOS</h3>
-              <div className="grid grid-cols-1 gap-2 flex-1">
-                <a href="https://aisweb.decea.mil.br/" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center bg-slate-50 hover:bg-blue-50 text-blue-800 rounded border border-slate-200 text-[10px] font-bold transition-all py-2">AISWEB</a>
-                <a href="https://www.redemet.aer.mil.br/" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center bg-slate-50 hover:bg-blue-50 text-blue-800 rounded border border-slate-200 text-[10px] font-bold transition-all py-2">REDEMET</a>
-                <a href="https://www.flightradar24.com/" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center bg-slate-50 hover:bg-blue-50 text-blue-800 rounded border border-slate-200 text-[10px] font-bold transition-all py-2">FLIGHTRADAR</a>
-                <a href="https://www.windy.com/" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center bg-slate-50 hover:bg-blue-50 text-blue-800 rounded border border-slate-200 text-[10px] font-bold transition-all py-2">WINDY</a>
-              </div>
+      <main className="max-w-6xl mx-auto px-4 py-8 space-y-6">
+        <section className="bg-white rounded-2xl shadow p-6 border border-slate-100">
+          <div className="flex flex-col gap-2">
+            <p className="text-sm uppercase tracking-[0.2em] text-blue-700 font-semibold">O SEU PORTAL DA AVIAÇÃO CIVIL</p>
+            <h1 className="text-3xl md:text-4xl font-black text-blue-900">Tudo em um só lugar</h1>
+            <p className="text-sm text-slate-600 max-w-2xl">Acompanhe tempo, navegação, notícias e ferramentas essenciais. Entre ou cadastre-se para usar a E6B e recursos avançados.</p>
+            <div className="flex flex-wrap gap-3 mt-3">
+              <button onClick={() => setLoginOpen(true)} className="px-5 py-2 rounded-lg bg-blue-900 text-white font-bold shadow hover:bg-blue-800">Fazer login</button>
+              <button onClick={() => setRegisterOpen(true)} className="px-5 py-2 rounded-lg bg-white text-blue-900 font-bold border border-blue-200 hover:bg-blue-50">Criar conta</button>
             </div>
           </div>
+        </section>
 
-          {/* COLUNA 2: CONTEÚDO CENTRAL */}
-          <div className="md:col-span-6 flex flex-col gap-4">
-            {/* NEWS FEED - REDUCED HEIGHT */}
-            <div className="h-40">
-              <AviationNewsWidget />
-            </div>
-            
-            {/* E6B FLIGHT COMPUTER - AUTH CONDITIONAL */}
-            <div className="h-40 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-lg border-2 border-blue-400 flex flex-col items-center justify-center p-6 text-center relative overflow-hidden hover:shadow-xl transition-shadow">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-blue-200 opacity-20 rounded-full -mr-12 -mt-12"></div>
-              <div className="relative z-10">
-                <h3 className="text-blue-900 font-bold text-lg mb-2">🧮 E6B Flight Computer</h3>
-                <p className="text-sm text-blue-800 mb-3">Calculadora profissional de navegação aérea</p>
-                {user ? (
-                  <Link href="/tools/e6b">
-                    <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors shadow-md">
-                      Abrir E6B Computer
-                    </button>
-                  </Link>
-                ) : (
-                  <button 
-                    onClick={() => { setShowLoginModal(true); }}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors shadow-md"
-                  >
-                    Faça Login para Usar
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* QUICK ACCESS */}
-            <div className="h-24">
-              <QuickAccess />
-            </div>
-            
-            {/* GOOGLE ADS SPACE */}
-            <div className="h-24 bg-white rounded-xl border border-slate-200 flex items-center justify-center relative overflow-hidden">
-              <Script
-                async
-                src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3204295995338267"
-                crossOrigin="anonymous"
-              />
-              <span className="text-[10px] text-slate-400 uppercase tracking-widest">Publicidade Google</span>
-            </div>
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+            <h3 className="text-blue-900 font-bold mb-2">E6B Flight Computer</h3>
+            <p className="text-sm text-slate-600 mb-3">Calculadora de navegação aérea profissional.</p>
+            <button onClick={() => setLoginOpen(true)} className="px-4 py-2 rounded-lg bg-blue-900 text-white font-bold shadow hover:bg-blue-800">Faça login para usar</button>
           </div>
 
-          {/* COLUNA 3: PUBLICIDADE & PARTNERSHIPS */}
-          <div className="md:col-span-3 flex flex-col gap-4">
-            {/* NEWS FEED SIDEBAR - REDUCED */}
-            <div className="h-40">
-              <NewsFeed />
-            </div>
-            
-            {/* AVIATION COMPANY PARTNERSHIP #1 */}
-            <div className="h-40 bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl shadow-lg border-2 border-amber-400 flex flex-col items-center justify-center p-4 text-center relative overflow-hidden hover:shadow-xl transition-shadow group">
-              <div className="absolute top-0 right-0 w-20 h-20 bg-amber-200 opacity-20 rounded-full -mr-10 -mt-10 group-hover:scale-110 transition-transform"></div>
-              <h4 className="text-amber-900 font-bold text-base mb-2 relative z-10">✈️ Parceiros Oficiais</h4>
-              <p className="text-xs text-amber-800 mb-3 relative z-10">Empresas líderes em aviação</p>
-              <button className="bg-amber-600 hover:bg-amber-700 text-white text-xs px-4 py-1 rounded font-bold transition-colors relative z-10">Saiba Mais</button>
-            </div>
-            
-            {/* AVIATION COMPANY PARTNERSHIP #2 */}
-            <div className="h-40 bg-gradient-to-br from-sky-50 to-sky-100 rounded-xl shadow-lg border-2 border-sky-400 flex flex-col items-center justify-center p-4 text-center relative overflow-hidden hover:shadow-xl transition-shadow group">
-              <div className="absolute top-0 right-0 w-20 h-20 bg-sky-200 opacity-20 rounded-full -mr-10 -mt-10 group-hover:scale-110 transition-transform"></div>
-              <h4 className="text-sky-900 font-bold text-base mb-2 relative z-10">🎓 Certificações</h4>
-              <p className="text-xs text-sky-800 mb-3 relative z-10">Prepare-se para suas provas</p>
-              <button className="bg-sky-600 hover:bg-sky-700 text-white text-xs px-4 py-1 rounded font-bold transition-colors relative z-10">Explorar</button>
-            </div>
+          <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+            <h3 className="text-blue-900 font-bold mb-2">Clima &amp; METAR</h3>
+            <p className="text-sm text-slate-600 mb-3">Consulte condições rapidamente e planeje seus voos.</p>
+            <div className="text-xs text-slate-500">Acesse ferramentas de clima no painel após login.</div>
           </div>
-
-        </div>
+        </section>
       </main>
 
-      {/* MODAL LOGIN */}
-      {showLoginModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl p-8 border border-slate-200 w-full max-w-md relative">
-            <button
-              onClick={() => setShowLoginModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-xl"
-            >
-              ×
-            </button>
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-blue-900">Bem-vindo de volta!</h2>
-              <p className="text-slate-500 mt-2">Acesse sua conta para continuar.</p>
-            </div>
-            <LoginForm onSuccess={() => setShowLoginModal(false)} />
-            <div className="mt-6 text-center text-sm text-slate-600">
-              Não tem uma conta?{' '}
-              <button
-                onClick={() => { setShowLoginModal(false); setShowRegisterModal(true); }}
-                className="text-blue-600 font-bold hover:underline"
-              >
-                Cadastre-se
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Modal open={loginOpen} onClose={() => setLoginOpen(false)} title="Entrar">
+        <LoginForm onSuccess={() => setLoginOpen(false)} />
+      </Modal>
 
-      {/* MODAL REGISTER */}
-      {showRegisterModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl p-8 border border-slate-200 w-full max-w-md relative max-h-[90vh] overflow-y-auto">
-            <button
-              onClick={() => setShowRegisterModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-xl z-10"
-            >
-              ×
-            </button>
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-blue-900">Criar Conta</h2>
-              <p className="text-slate-500 mt-2">Junte-se à comunidade de aviação.</p>
-            </div>
-            <RegisterForm onSuccess={() => setShowRegisterModal(false)} />
-            <div className="mt-6 text-center text-sm text-slate-600">
-              Já tem uma conta?{' '}
-              <button
-                onClick={() => { setShowRegisterModal(false); setShowLoginModal(true); }}
-                className="text-blue-600 font-bold hover:underline"
-              >
-                Faça login
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
+      <Modal open={registerOpen} onClose={() => setRegisterOpen(false)} title="Criar conta">
+        <RegisterForm onSuccess={() => { setRegisterOpen(false); setLoginOpen(true); }} />
+      </Modal>
     </div>
   );
 }
