@@ -458,6 +458,16 @@ export default function Home() {
         { name: 'Mentoria', desc: 'Conecte-se com mentores', href: '/mentorship', minPlan: 'pro' },
       ]
     },
+    hangarshare: {
+      name: 'HangarShare',
+      icon: '🏢',
+      minPlan: 'free',
+      features: [
+        { name: 'Buscar Hangares', desc: 'Reserve hangares em aeródromos', href: '/hangarshare', minPlan: 'free' },
+        { name: 'Anunciar Hangar', desc: 'Monetize seu espaço', href: '/hangarshare/owner/register', minPlan: 'free' },
+        { name: 'Minhas Reservas', desc: 'Gerencie suas reservas', href: '/hangarshare/bookings', minPlan: 'free' },
+      ]
+    },
   };
 
   const userPlan = user?.plan || 'free';
