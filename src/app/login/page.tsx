@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext'; // Import AuthContext
+import GoogleAd from '@/components/ads/GoogleAd';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -91,6 +92,12 @@ export default function LoginPage() {
           <Link href="/?tab=register" className="text-blue-600 font-bold hover:underline">
             Cadastre-se
           </Link>
+        </div>
+        <div className="mt-6 border-t border-slate-200 pt-4">
+          <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-1">Patrocínio</div>
+          <div className="flex justify-center">
+            <GoogleAd slot="5734627033" format="auto" />
+          </div>
         </div>
       </div>
     </div>

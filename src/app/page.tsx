@@ -946,6 +946,8 @@ export default function Home() {
           <section className="bg-white rounded-xl shadow border border-slate-200 p-4">
             <div className="text-xs text-slate-400 mb-2">Patrocínio</div>
             <div className="flex justify-center">
+              <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3204295995338267"
+                crossOrigin="anonymous"></script>
               <ins
                 className="adsbygoogle"
                 style={{ display: 'block', width: '100%', minHeight: '120px' }}

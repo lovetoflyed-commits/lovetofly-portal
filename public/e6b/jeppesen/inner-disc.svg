@@ -1,0 +1,27 @@
+<svg width="800" height="650" xmlns="http://www.w3.org/2000/svg">
+  <style>text { font-family: Arial, sans-serif; }</style>
+  <circle cx="400" cy="325" r="280" fill="white" stroke="#999" stroke-width="2"/>
+  <!-- Cardinal marks -->
+  <line x1="400" y1="50" x2="400" y2="70" stroke="#000" stroke-width="3"/>
+  <text x="400" y="40" text-anchor="middle" font-weight="bold" font-size="14">0°</text>
+  <line x1="750" y1="325" x2="730" y2="325" stroke="#000" stroke-width="3"/>
+  <text x="775" y="330" text-anchor="middle" font-weight="bold" font-size="14">90°</text>
+  <line x1="400" y1="600" x2="400" y2="580" stroke="#000" stroke-width="3"/>
+  <text x="400" y="625" text-anchor="middle" font-weight="bold" font-size="14">180°</text>
+  <line x1="50" y1="325" x2="70" y2="325" stroke="#000" stroke-width="3"/>
+  <text x="25" y="330" text-anchor="middle" font-weight="bold" font-size="14">270°</text>
+  <!-- 10° marks -->
+  <g id="ticks">
+    <line x1="400" y1="50" x2="400" y2="65" stroke="#999" stroke-width="1" transform="rotate(10 400 325)"/>
+    <line x1="400" y1="50" x2="400" y2="65" stroke="#999" stroke-width="1" transform="rotate(20 400 325)"/>
+    <line x1="400" y1="50" x2="400" y2="65" stroke="#999" stroke-width="1" transform="rotate(30 400 325)"/>
+    <line x1="400" y1="50" x2="400" y2="65" stroke="#999" stroke-width="1" transform="rotate(40 400 325)"/>
+    <line x1="400" y1="50" x2="400" y2="65" stroke="#999" stroke-width="1" transform="rotate(50 400 325)"/>
+    <line x1="400" y1="50" x2="400" y2="65" stroke="#999" stroke-width="1" transform="rotate(60 400 325)"/>
+    <line x1="400" y1="50" x2="400" y2="65" stroke="#999" stroke-width="1" transform="rotate(70 400 325)"/>
+    <line x1="400" y1="50" x2="400" y2="65" stroke="#999" stroke-width="1" transform="rotate(80 400 325)"/>
+  </g>
+  <circle cx="400" cy="325" r="35" fill="#e8e8e8" stroke="#666" stroke-width="2"/>
+  <text x="400" y="320" text-anchor="middle" font-weight="bold" fill="#666">INNER</text>
+  <text x="400" y="335" text-anchor="middle" font-weight="bold" fill="#666">DISC</text>
+</svg>
