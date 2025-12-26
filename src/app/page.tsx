@@ -451,15 +451,15 @@ export default function Home() {
     return (
       <div className="min-h-screen bg-slate-50 text-slate-900">
         <header className="bg-blue-900 text-white shadow-md">
-          <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <img src="/logo-pac.png" alt="Love to Fly" className="h-10 w-auto" />
-              <span className="font-black tracking-wide text-lg">PORTAL LOVE TO FLY</span>
+              <img src="/logo-pac.png" alt="Love to Fly" style={{ width: '3.5cm', height: 'auto' }} className="object-contain" />
+              <span className="font-black tracking-wide text-lg hidden md:inline">PORTAL LOVE TO FLY</span>
             </div>
             <div className="flex items-center gap-4">
               <span className="text-xs bg-yellow-400 text-blue-900 px-3 py-1 rounded-full font-bold uppercase">{userPlan}</span>
-              <span className="text-sm">Olá, {user.name}</span>
-              <button onClick={logout} className="px-4 py-2 rounded-lg bg-white text-blue-900 font-bold shadow-sm hover:bg-blue-50">Sair</button>
+              <span className="text-sm hidden sm:inline">Olá, {user.name}</span>
+              <button onClick={logout} className="px-4 py-2 rounded-lg bg-white text-blue-900 font-bold shadow-sm hover:bg-blue-50 text-sm">Sair</button>
             </div>
           </div>
         </header>
@@ -590,11 +590,14 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <header className="bg-blue-900 text-white shadow-md">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 font-black tracking-wide text-lg">PORTAL LOVE TO FLY</div>
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={() => setLoginOpen(true)} className="px-4 py-2 rounded-lg bg-white text-blue-900 font-bold shadow-sm hover:bg-blue-50">Entrar</button>
-            <button onClick={() => setRegisterOpen(true)} className="px-4 py-2 rounded-lg bg-yellow-400 text-blue-900 font-bold shadow-sm hover:bg-yellow-300">Cadastrar</button>
+            <img src="/logo-pac.png" alt="Love to Fly" style={{ width: '3.5cm', height: 'auto' }} className="object-contain" />
+            <span className="font-black tracking-wide text-lg hidden md:inline">PORTAL LOVE TO FLY</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <button onClick={() => setLoginOpen(true)} className="px-4 py-2 rounded-lg bg-white text-blue-900 font-bold shadow-sm hover:bg-blue-50 text-sm">Entrar</button>
+            <button onClick={() => setRegisterOpen(true)} className="px-4 py-2 rounded-lg bg-yellow-400 text-blue-900 font-bold shadow-sm hover:bg-yellow-300 text-sm">Cadastrar</button>
           </div>
         </div>
       </header>
