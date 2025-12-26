@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 
 // Helpers for masked fields
@@ -45,7 +45,11 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
     setLoading(true);
     const ok = await login(email, password);
     setLoading(false);
-    if (ok) onSuccess();
+    if (ok) {
+      onSuccess();
+      // Force page reload to show dashboard
+      window.location.reload();
+    }
   };
 
   return (
@@ -380,6 +384,11 @@ export default function Home() {
   const { user, logout } = useAuth();
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
+
+  // Debug: log user state
+  useEffect(() => {
+    console.log('User state:', user);
+  }, [user]);
 
   // Define feature modules with access requirements
   const modules = {
