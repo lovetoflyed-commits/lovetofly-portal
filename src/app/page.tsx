@@ -1,6 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Script from 'next/script';
+
+declare global {
+  interface Window {
+    adsbygoogle: { push: (args: any) => void }[];
+  }
+}
 import { useAuth } from '@/context/AuthContext';
 
 // Helpers for masked fields
@@ -390,6 +397,17 @@ export default function Home() {
     console.log('User state:', user);
   }, [user]);
 
+  // Initialize Google AdSense slot when logged
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined' && (window as any).adsbygoogle) {
+        (window as any).adsbygoogle.push({});
+      }
+    } catch (err) {
+      console.error('AdSense init error:', err);
+    }
+  }, [user]);
+
   // Define feature modules with access requirements
   const modules = {
     navigation: {
@@ -399,6 +417,7 @@ export default function Home() {
       features: [
         { name: 'E6B Flight Computer', desc: 'Calculadora de navegação aérea', href: '/tools/e6b', minPlan: 'free' },
         { name: 'Glass Cockpit Simulator', desc: 'Simulador de cabine com aviônicos moderno', href: '/tools/glass-cockpit', minPlan: 'free' },
+        { name: 'Simulador IFR', desc: 'Procedimentos IFR e precisão', href: '/tools/ifr-simulator', minPlan: 'free' },
         { name: 'Planejamento de Voo', desc: 'Planejar rotas e calcular combustível', href: '/flight-plan', minPlan: 'premium' },
       ]
     },
@@ -427,7 +446,7 @@ export default function Home() {
       minPlan: 'free',
       features: [
         { name: 'Fórum', desc: 'Discussões com pilotos e instrutores', href: '/forum', minPlan: 'free' },
-        { name: 'Marketplace', desc: 'Compra e venda de equipamentos', href: '/marketplace', minPlan: 'free' },
+        { name: 'Pilot Shop', desc: 'Compra e venda de equipamentos', href: '/marketplace', minPlan: 'free' },
       ]
     },
     career: {
@@ -446,10 +465,173 @@ export default function Home() {
 
   const hasAccess = (minPlan: string) => planPriority[userPlan] >= planPriority[minPlan];
 
+  // Weather widget state
+  const [icaoCode, setIcaoCode] = useState('SBCF');
+  const [weatherData, setWeatherData] = useState<any>(null);
+  const [loadingWeather, setLoadingWeather] = useState(false);
+  const [weatherError, setWeatherError] = useState('');
+
+  // News widget state
+  const [newsArticles, setNewsArticles] = useState<any[]>([]);
+  const [loadingNews, setLoadingNews] = useState(false);
+
+  // Classifieds carousel state - Enhanced with more details like controller.com
+  const classifieds = [
+    {
+      title: '2015 CESSNA 172S SKYHAWK',
+      category: 'Monomotor Pistão',
+      price: 'USD $285,000',
+      priceNote: 'Payments as low as USD $2,640.00*',
+      year: '2015',
+      hours: '2,150 Total Time',
+      location: 'São Paulo, Brasil',
+      seller: 'LANE AVIATION',
+      phone: '+55 (11) 98765-4321',
+      featured: true,
+      image: 'https://images.unsplash.com/photo-1540962351504-03099e0a754b?auto=format&fit=crop&w=1200&q=80'
+    },
+    {
+      title: '2020 EXTRA 330LX',
+      category: 'Aerodesportiva',
+      price: 'USD $495,000',
+      priceNote: 'Payments as low as USD $4,580.00*',
+      year: '2020',
+      hours: '450 Total Time',
+      location: 'Rio de Janeiro, Brasil',
+      seller: 'AirplanesUSA',
+      phone: '+55 (21) 97654-3210',
+      featured: true,
+      image: '/extra330.png'
+    },
+    {
+      title: '2018 BEECHCRAFT KING AIR 350i',
+      category: 'Bimotor Turboélice',
+      price: 'USD $6,500,000',
+      priceNote: 'Payments as low as USD $60,200.00*',
+      year: '2018',
+      hours: '1,890 Total Time',
+      location: 'Belo Horizonte, Brasil',
+      seller: 'G2G Aviation',
+      phone: '+55 (31) 99876-5432',
+      featured: true,
+      image: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1200&q=80'
+    },
+    {
+      title: '2012 CESSNA CITATION M2',
+      category: 'Jato de Pequeno Porte',
+      price: 'USD $3,250,000',
+      priceNote: 'Payments as low as USD $30,100.00*',
+      year: '2012',
+      hours: '2,400 Total Time',
+      location: 'Dallas, Texas, EUA',
+      seller: 'Ava Aviation',
+      phone: '+1 (214) 73305-4567',
+      featured: true,
+      image: 'https://images.unsplash.com/photo-1474302770737-173ee21bab63?auto=format&fit=crop&w=1200&q=80'
+    }
+  ];
+
+  const [listingIndex, setListingIndex] = useState(0);
+
+  // Tab navigation state
+  const [activeTab, setActiveTab] = useState('painel');
+
+  // Fetch default airport weather and news on mount
+  useEffect(() => {
+    if (user) {
+      fetchWeather('SBCF');
+      fetchNews();
+    }
+  }, [user]);
+
+  // Auto-rotate classifieds
+  useEffect(() => {
+    const id = setInterval(() => {
+      setListingIndex((prev) => (prev + 1) % classifieds.length);
+    }, 5500);
+    return () => clearInterval(id);
+  }, [classifieds.length]);
+
+  const fetchNews = async () => {
+    setLoadingNews(true);
+    try {
+      const response = await fetch('/api/news/aviation');
+      if (response.ok) {
+        const data = await response.json();
+        setNewsArticles(data.articles || []);
+      }
+    } catch (error) {
+      console.error('News fetch error:', error);
+    } finally {
+      setLoadingNews(false);
+    }
+  };
+
+  const getTimeAgo = (dateString: string) => {
+    const now = new Date();
+    const published = new Date(dateString);
+    const diffMs = now.getTime() - published.getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    if (diffDays > 0) return `Há ${diffDays} dia${diffDays > 1 ? 's' : ''}`;
+    if (diffHours > 0) return `Há ${diffHours} hora${diffHours > 1 ? 's' : ''}`;
+    return 'Agora';
+  };
+
+  const fetchWeather = async (icao: string) => {
+    if (icao.length !== 4) return;
+    
+    setLoadingWeather(true);
+    setWeatherError('');
+    setWeatherData(null);
+    
+    try {
+      const response = await fetch(`/api/weather/metar?icao=${icao}`);
+      
+      if (!response.ok) {
+        let errorMessage = 'Aeroporto não encontrado';
+        try {
+          const error = await response.json();
+          errorMessage = error.error || errorMessage;
+        } catch {
+          // Se não conseguir parsear o JSON, usa a mensagem padrão
+        }
+        throw new Error(errorMessage);
+      }
+      
+      const data = await response.json();
+      setWeatherData(data);
+      setWeatherError('');
+    } catch (error: any) {
+      setWeatherError(error.message || 'Erro ao buscar dados. Verifique o código ICAO.');
+      setWeatherData(null);
+      console.error('Weather fetch error:', error);
+    } finally {
+      setLoadingWeather(false);
+    }
+  };
+
+  const getFlightCategory = (category?: string) => {
+    switch(category) {
+      case 'VFR': return { label: 'VFR', color: 'text-green-600', bg: 'bg-green-50' };
+      case 'MVFR': return { label: 'MVFR', color: 'text-blue-600', bg: 'bg-blue-50' };
+      case 'IFR': return { label: 'IFR', color: 'text-red-600', bg: 'bg-red-50' };
+      case 'LIFR': return { label: 'LIFR', color: 'text-purple-600', bg: 'bg-purple-50' };
+      default: return { label: 'N/A', color: 'text-slate-600', bg: 'bg-slate-50' };
+    }
+  };
+
   // If user is logged in, show modular dashboard
   if (user) {
     return (
       <div className="min-h-screen bg-slate-50 text-slate-900">
+        <Script
+          id="adsense-script"
+          strategy="afterInteractive"
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3204295995338267"
+          crossOrigin="anonymous"
+        />
         <header className="bg-blue-900 text-white shadow-md">
           <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3 h-12">
@@ -467,63 +649,311 @@ export default function Home() {
         <main className="max-w-7xl mx-auto px-4 py-8 space-y-6">
           {/* Welcome Section */}
           <section className="bg-white rounded-2xl shadow p-6 border border-slate-100">
-            <h1 className="text-3xl md:text-4xl font-black text-blue-900 mb-2">Bem vindo ao seu cockpit</h1>
-            <p className="text-sm text-slate-600">Acesse suas ferramentas e acompanhe informações em tempo real.</p>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h1 className="text-3xl md:text-4xl font-black text-blue-900 mb-2">Bem vindo ao seu cockpit</h1>
+                <p className="text-sm text-slate-600">Acesse suas ferramentas e acompanhe informações em tempo real.</p>
+              </div>
+              
+              {/* Menu de abas horizontais com cores complementares */}
+              <nav className="hidden lg:flex items-center gap-2">
+                {[
+                  { id: 'painel', label: 'Painel', icon: '📊' },
+                  { id: 'academia', label: 'Academia', icon: '🎓' },
+                  { id: 'ferramentas', label: 'Ferramentas', icon: '🛠️' },
+                  { id: 'comunidade', label: 'Comunidade', icon: '💬' },
+                  { id: 'marketplace', label: 'Pilot Shop', icon: '🧑‍✈️' }
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`
+                      flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold
+                      transition-all duration-200
+                      ${activeTab === tab.id 
+                        ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-200 scale-105' 
+                        : 'bg-transparent text-blue-900 hover:bg-orange-50 hover:text-orange-600 hover:shadow-md'
+                      }
+                    `}
+                  >
+                    <span className="text-base">{tab.icon}</span>
+                    <span>{tab.label}</span>
+                  </button>
+                ))}
+              </nav>
+            </div>
           </section>
 
-          {/* Widgets Row */}
+          {/* Widgets Row in 3 columns: left weather, middle classifieds, right clock+news */}
           <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Widget 1: UTC Clock */}
-            <div className="bg-white rounded-xl shadow border border-slate-200 p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-2xl">🕐</span>
-                <h3 className="text-lg font-bold text-blue-900">Relógio UTC</h3>
-              </div>
-              <div className="text-center">
-                <div className="text-4xl font-black text-blue-900 mb-1">
-                  {new Date().toUTCString().split(' ')[4]}
-                </div>
-                <div className="text-sm text-slate-500">
-                  {new Date().toUTCString().split(',')[0]}
-                </div>
-              </div>
-            </div>
-
-            {/* Widget 2: Airport Weather */}
+            {/* Col 1: Airport Weather */}
             <div className="bg-white rounded-xl shadow border border-slate-200 p-5">
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-2xl">☁️</span>
                 <h3 className="text-lg font-bold text-blue-900">Clima Aeroporto</h3>
               </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-600">SBGR</span>
-                  <span className="font-bold text-green-600">VFR</span>
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="ICAO (ex: SBGR)"
+                    maxLength={4}
+                    value={icaoCode}
+                    onChange={(e) => setIcaoCode(e.target.value.toUpperCase())}
+                    className="flex-1 rounded border border-slate-300 px-2 py-1 text-sm uppercase focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                  <button 
+                    onClick={() => fetchWeather(icaoCode)}
+                    disabled={loadingWeather || icaoCode.length !== 4}
+                    className="px-3 py-1 bg-blue-900 text-white text-xs font-bold rounded hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loadingWeather ? '...' : 'Buscar'}
+                  </button>
                 </div>
-                <div className="text-xs text-slate-500">
-                  Temperatura: 28°C<br/>
-                  Vento: 090/12kt<br/>
-                  Visibilidade: 10km
+                
+                {weatherError && (
+                  <div className="text-xs text-red-600 bg-red-50 p-2 rounded">
+                    {weatherError}
+                  </div>
+                )}
+                
+                {weatherData ? (
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-slate-600 font-bold">{weatherData.station}</span>
+                      <span className={`font-bold px-2 py-1 rounded text-xs ${getFlightCategory(weatherData.flight_category).bg} ${getFlightCategory(weatherData.flight_category).color}`}>
+                        {getFlightCategory(weatherData.flight_category).label}
+                      </span>
+                    </div>
+                    
+                    <div className="text-xs text-slate-700 space-y-1">
+                      {weatherData.temperature && (
+                        <div>🌡️ Temp: {weatherData.temperature.repr}°C{weatherData.dewpoint && ` • Dew: ${weatherData.dewpoint.repr}°C`}</div>
+                      )}
+                      {weatherData.wind_direction && weatherData.wind_speed && (
+                        <div>💨 Vento: {weatherData.wind_direction.repr}°/{weatherData.wind_speed.repr} KT
+                          {weatherData.wind_gust && ` G${weatherData.wind_gust.repr} KT`}
+                        </div>
+                      )}
+                      {weatherData.visibility && (
+                        <div>👁️ Vis: {weatherData.visibility.repr} KM</div>
+                      )}
+                      {weatherData.altimeter && (
+                        <div>🎚️ QNH: {weatherData.altimeter.repr} inHg</div>
+                      )}
+                      {weatherData.clouds && weatherData.clouds.length > 0 && (
+                        <div>☁️ Nuvens: {weatherData.clouds.join(', ')} FT</div>
+                      )}
+                    </div>
+                    
+                    <div className="text-xs text-slate-600 bg-slate-50 p-2 rounded font-mono break-all leading-relaxed">
+                      {weatherData.raw}
+                    </div>
+                    
+                    <div className="text-xs text-slate-400">
+                      ⏰ {weatherData.time ? new Date(weatherData.time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + 'Z' : 'N/A'}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-xs text-slate-500 text-center py-4">
+                    Digite um código ICAO e clique em Buscar
+                  </div>
+                )}
+              </div>
+
+              {/* Mock Ad: Empresa de Manutenção de Aeronaves */}
+              <div className="mt-4 pt-4 border-t border-slate-200">
+                <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-1">Anúncio</div>
+                <div className="bg-gradient-to-r from-slate-50 to-white border border-slate-200 rounded-lg p-3 flex gap-3 items-center">
+                  <img
+                    src="https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&w=500&q=70"
+                    alt="MRO Manutenção Aeronáutica"
+                    className="w-20 h-16 object-cover rounded"
+                  />
+                  <div className="flex-1">
+                    <h4 className="text-sm font-bold text-blue-900 leading-tight">MRO Prime Aviation</h4>
+                    <p className="text-[11px] text-slate-600">Inspeções, motores, aviônicos e pintura. Certificação ANAC.</p>
+                    <button className="mt-1 px-2 py-1 text-[11px] bg-blue-900 text-white rounded hover:bg-blue-800">Solicitar orçamento</button>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Widget 3: Latest News */}
-            <div className="bg-white rounded-xl shadow border border-slate-200 p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-2xl">📰</span>
-                <h3 className="text-lg font-bold text-blue-900">Últimas Notícias</h3>
+            {/* Col 2: Classifieds Carousel - Enhanced Design */}
+            <div className="bg-white rounded-xl shadow border border-slate-200 p-5 space-y-3">
+              <div className="flex items-center justify-between mb-1">
+                <div>
+                  <div className="text-xs font-semibold text-blue-900 uppercase tracking-wide">Classificados Premium</div>
+                  <h3 className="text-lg font-black text-blue-900">Aeronaves à Venda</h3>
+                </div>
+                {classifieds[listingIndex].featured && (
+                  <span className="bg-yellow-400 text-blue-900 px-2 py-1 rounded text-xs font-bold">Featured</span>
+                )}
               </div>
+
+              <div className="overflow-hidden rounded-xl border border-slate-200 shadow-sm relative">
+                <img
+                  src={classifieds[listingIndex].image}
+                  alt={classifieds[listingIndex].title}
+                  className="w-full h-40 object-cover"
+                />
+                <button 
+                  className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center hover:bg-white shadow-lg"
+                  title="Favoritar"
+                >
+                  <span className="text-slate-600">♡</span>
+                </button>
+              </div>
+
               <div className="space-y-2">
-                <div className="text-xs text-slate-600 border-b border-slate-100 pb-2">
-                  <p className="font-semibold">Nova rota SBSP-SBBR</p>
-                  <p className="text-slate-400">Há 2 horas</p>
+                <div>
+                  <h4 className="text-base font-bold text-blue-900">{classifieds[listingIndex].title}</h4>
+                  <p className="text-xs text-slate-500">{classifieds[listingIndex].category}</p>
                 </div>
-                <div className="text-xs text-slate-600">
-                  <p className="font-semibold">Atualização NOTAM</p>
-                  <p className="text-slate-400">Há 5 horas</p>
+
+                <div className="flex items-baseline gap-2">
+                  <span className="text-lg font-black text-green-700">{classifieds[listingIndex].price}</span>
+                </div>
+                
+                <div className="text-xs text-slate-600 space-y-1 bg-slate-50 rounded-lg p-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold">📅 Ano:</span>
+                    <span>{classifieds[listingIndex].year}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold">⏱️ Horas:</span>
+                    <span>{classifieds[listingIndex].hours}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold">📍 Local:</span>
+                    <span>{classifieds[listingIndex].location}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold">🏢 Vendedor:</span>
+                    <span>{classifieds[listingIndex].seller}</span>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <button className="flex-1 px-3 py-2 bg-blue-900 text-white text-xs font-bold rounded hover:bg-blue-800">
+                    📧 Email Seller
+                  </button>
+                  <button className="flex-1 px-3 py-2 bg-orange-500 text-white text-xs font-bold rounded hover:bg-orange-600">
+                    📞 {classifieds[listingIndex].phone}
+                  </button>
                 </div>
               </div>
+
+              <div className="flex items-center justify-between pt-2 border-t border-slate-200">
+                <button
+                  aria-label="Anterior"
+                  onClick={() => setListingIndex((listingIndex - 1 + classifieds.length) % classifieds.length)}
+                  className="h-8 w-8 rounded-full border border-slate-300 flex items-center justify-center text-slate-600 hover:bg-slate-100 font-bold"
+                >
+                  ‹
+                </button>
+                
+                <div className="flex gap-1.5">
+                  {classifieds.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setListingIndex(i)}
+                      className={`h-2 rounded-full transition-all ${i === listingIndex ? 'bg-blue-900 w-6' : 'bg-slate-300 w-2 hover:bg-slate-400'}`}
+                      aria-label={`Ir para anúncio ${i + 1}`}
+                    />
+                  ))}
+                </div>
+
+                <button
+                  aria-label="Próximo"
+                  onClick={() => setListingIndex((listingIndex + 1) % classifieds.length)}
+                  className="h-8 w-8 rounded-full border border-slate-300 flex items-center justify-center text-slate-600 hover:bg-slate-100 font-bold"
+                >
+                  ›
+                </button>
+              </div>
+
+              
+            </div>
+
+            {/* Col 3: Clock + Latest News */}
+            <div className="bg-white rounded-xl shadow border border-slate-200 p-5 space-y-4">
+              <div className="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">🕐</span>
+                  <h3 className="text-sm font-bold text-blue-900">UTC</h3>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-black text-blue-900">
+                    {new Date().toUTCString().split(' ')[4]}
+                  </div>
+                  <div className="text-[11px] text-slate-500 leading-tight">
+                    {new Date().toUTCString().split(',')[0]}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-2xl">📰</span>
+                  <h3 className="text-lg font-bold text-blue-900">Notícias Aviação</h3>
+                </div>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {loadingNews ? (
+                    <div className="text-xs text-slate-500 text-center py-4">Carregando...</div>
+                  ) : newsArticles.length > 0 ? (
+                    newsArticles.slice(0, 3).map((article, index) => (
+                      <a
+                        key={index}
+                        href={article.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block text-xs text-slate-600 border-b border-slate-100 pb-2 hover:bg-slate-50 px-2 -mx-2 rounded transition-colors"
+                      >
+                        <p className="font-semibold line-clamp-2">{article.title}</p>
+                        <div className="flex justify-between items-center mt-1">
+                          <p className="text-slate-400">{getTimeAgo(article.publishedAt)}</p>
+                          <p className="text-slate-400 text-xs">{article.source.name}</p>
+                        </div>
+                      </a>
+                    ))
+                  ) : (
+                    <div className="text-xs text-slate-500 text-center py-4">Sem notícias disponíveis</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Mock Ad: Condomínio Aeronáutico (movido para coluna da direita) */}
+              <div className="pt-3 border-t border-slate-200">
+                <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-1">Anúncio</div>
+                <div className="bg-gradient-to-r from-amber-50 to-white border border-amber-200 rounded-lg p-3 flex gap-3 items-center">
+                  <img
+                    src="https://images.unsplash.com/photo-1519677100203-a0e668c92439?auto=format&fit=crop&w=500&q=70"
+                    alt="Condomínio Aeronáutico"
+                    className="w-20 h-16 object-cover rounded"
+                  />
+                  <div className="flex-1">
+                    <h4 className="text-sm font-bold text-blue-900 leading-tight">SkyPark Condomínio Aeronáutico</h4>
+                    <p className="text-[11px] text-slate-600">Lotes e hangares prontos. Pista asfaltada, abastecimento e lounge.</p>
+                    <button className="mt-1 px-2 py-1 text-[11px] bg-orange-500 text-white rounded hover:bg-orange-600">Saiba mais</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* AdSense block */}
+          <section className="bg-white rounded-xl shadow border border-slate-200 p-4">
+            <div className="text-xs text-slate-400 mb-2">Patrocínio</div>
+            <div className="flex justify-center">
+              <ins
+                className="adsbygoogle"
+                style={{ display: 'block', width: '100%', minHeight: '120px' }}
+                data-ad-client="ca-pub-3204295995338267"
+                data-ad-slot="1234567890"
+                data-ad-format="auto"
+                data-full-width-responsive="true"
+              />
             </div>
           </section>
 
