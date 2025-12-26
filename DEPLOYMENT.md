@@ -1,3 +1,30 @@
+## Admin Plan Upgrade
+
+To promote accounts as requested (you + any email containing "kaiser" to Pro, remaining users to Premium), use the admin endpoint shipped at `src/app/api/admin/upgrade-plans/route.ts`.
+
+Prerequisites:
+- Set `ADMIN_SECRET` in your hosting environment (e.g., Netlify/Render/Vercel) to a strong value.
+- Ensure `DATABASE_URL` and `JWT_SECRET` are configured.
+
+Run (production):
+
+```
+curl -X POST https://<your-domain>/api/admin/upgrade-plans \
+   -H "x-admin-secret: <ADMIN_SECRET>" \
+   -H "Content-Type: application/json"
+```
+
+Optional: include your JWT to mark the caller as Pro (in addition to all emails with "kaiser"):
+
+```
+curl -X POST https://<your-domain>/api/admin/upgrade-plans \
+   -H "x-admin-secret: <ADMIN_SECRET>" \
+   -H "Authorization: Bearer <YOUR_JWT_TOKEN>" \
+   -H "Content-Type: application/json"
+```
+
+The response includes counts: `meUpdated`, `proUpdatedKaiser`, and `premiumUpdated`.
+
 # Deployment Guide for Love to Fly Portal
 
 ## Option 1: Deploy to Netlify (Recommended for simplicity)

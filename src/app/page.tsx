@@ -1051,7 +1051,10 @@ export default function Home() {
           <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
             <h3 className="text-blue-900 font-bold mb-2">E6B Flight Computer</h3>
             <p className="text-sm text-slate-600 mb-3">Calculadora de navegação aérea profissional.</p>
-            <button onClick={() => setLoginOpen(true)} className="px-4 py-2 rounded-lg bg-blue-900 text-white font-bold shadow hover:bg-blue-800">Faça login para usar</button>
+            <div className="flex gap-2">
+              <a href="/tools/e6b" className="px-4 py-2 rounded-lg bg-blue-900 text-white font-bold shadow hover:bg-blue-800">Abrir E6B</a>
+              <button onClick={() => setLoginOpen(true)} className="px-4 py-2 rounded-lg bg-white text-blue-900 font-bold border border-blue-200 hover:bg-blue-50">Entrar</button>
+            </div>
           </div>
 
           <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
@@ -1060,6 +1063,52 @@ export default function Home() {
             <div className="text-xs text-slate-500">Acesse ferramentas de clima no painel após login.</div>
           </div>
         </section>
+
+        {/* Prévia de ferramentas e módulos (visível sem login) */}
+        {Object.entries(modules).map(([key, module]) => {
+          const moduleHasAccess = hasAccess(module.minPlan);
+          const accessibleFeatures = module.features.filter(f => hasAccess(f.minPlan));
+          const lockedFeatures = module.features.filter(f => !hasAccess(f.minPlan));
+
+          // No landing, mostramos apenas o cabeçalho do módulo e as features livres
+          return (
+            <section key={`landing-${key}`} className="space-y-4">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">{module.icon}</span>
+                <h2 className="text-2xl font-bold text-blue-900">{module.name}</h2>
+                {!moduleHasAccess && (
+                  <span className="text-xs bg-slate-200 text-slate-600 px-2 py-1 rounded">Alguns itens requerem {module.minPlan}</span>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {accessibleFeatures.map((feature, idx) => (
+                  <a
+                    key={idx}
+                    href={feature.href}
+                    className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition"
+                  >
+                    <h3 className="text-blue-900 font-bold mb-2">{feature.name}</h3>
+                    <p className="text-sm text-slate-600">{feature.desc}</p>
+                  </a>
+                ))}
+
+                {lockedFeatures.map((feature, idx) => (
+                  <div
+                    key={idx}
+                    className="bg-slate-100 rounded-xl border border-slate-300 p-6 shadow-sm opacity-60 cursor-not-allowed relative"
+                  >
+                    <div className="absolute top-3 right-3 text-xs bg-slate-700 text-white px-2 py-1 rounded">
+                      {feature.minPlan}
+                    </div>
+                    <h3 className="text-slate-700 font-bold mb-2">{feature.name}</h3>
+                    <p className="text-sm text-slate-500">{feature.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          );
+        })}
       </main>
 
       <Modal open={loginOpen} onClose={() => setLoginOpen(false)} title="Entrar">
