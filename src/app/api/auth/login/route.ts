@@ -41,8 +41,15 @@ export async function POST(request: Request) {
         role: user.role || 'user',
       },
     });
-  } catch (error) {
-    console.error('Login error:', error);
-    return NextResponse.json({ message: 'Server error' }, { status: 500 });
+  } catch (error: any) {
+    console.error('Login error details:', {
+      message: error?.message,
+      code: error?.code,
+      detail: error?.detail,
+      fullError: error
+    });
+    
+    const errorMessage = error?.detail || error?.message || 'Server error';
+    return NextResponse.json({ message: errorMessage }, { status: 500 });
   }
 }

@@ -101,7 +101,14 @@ export async function POST(request: Request) {
     }, { status: 201 });
 
   } catch (error: any) {
-    console.error('Register error:', error);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    console.error('Register error details:', {
+      message: error?.message,
+      code: error?.code,
+      detail: error?.detail,
+      fullError: error
+    });
+    
+    const errorMessage = error?.detail || error?.message || 'Server error';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
