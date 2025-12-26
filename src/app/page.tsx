@@ -452,8 +452,8 @@ export default function Home() {
       <div className="min-h-screen bg-slate-50 text-slate-900">
         <header className="bg-blue-900 text-white shadow-md">
           <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <img src="/logo-pac.png" alt="Love to Fly" style={{ width: '3.5cm', height: 'auto' }} className="object-contain" />
+            <div className="flex items-center gap-3 h-12">
+              <img src="/logo-pac.png" alt="Love to Fly" className="h-full w-auto object-contain" />
               <span className="font-black tracking-wide text-lg hidden md:inline">PORTAL LOVE TO FLY</span>
             </div>
             <div className="flex items-center gap-4">
@@ -591,8 +591,8 @@ export default function Home() {
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <header className="bg-blue-900 text-white shadow-md">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src="/logo-pac.png" alt="Love to Fly" style={{ width: '3.5cm', height: 'auto' }} className="object-contain" />
+          <div className="flex items-center gap-3 h-12">
+            <img src="/logo-pac.png" alt="Love to Fly" className="h-full w-auto object-contain" />
             <span className="font-black tracking-wide text-lg hidden md:inline">PORTAL LOVE TO FLY</span>
           </div>
           <div className="flex items-center gap-3">
