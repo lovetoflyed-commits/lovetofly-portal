@@ -1,14 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 
 export default function HangarOwnerRegisterPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [prefilled, setPrefilled] = useState<{ idNumber?: boolean; idCountry?: boolean }>({});
+  const [profile, setProfile] = useState<any | null>(null);
 
   // Form Data
   const [formData, setFormData] = useState({
@@ -31,6 +33,33 @@ export default function HangarOwnerRegisterPage() {
     selfie: null,
     ownershipProof: null,
   });
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await fetch('/api/user/profile', {
+          cache: 'no-store',
+          headers: user?.id && token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setProfile(data);
+          setFormData(prev => ({
+            ...prev,
+            idNumber: data.cpf ? String(data.cpf) : prev.idNumber,
+            idCountry: data.addressCountry ? String(data.addressCountry) : prev.idCountry,
+          }));
+          setPrefilled({
+            idNumber: Boolean(data.cpf),
+            idCountry: Boolean(data.addressCountry),
+          });
+        }
+      } catch (e) {
+        // silent fail
+      }
+    };
+    if (user) fetchProfile();
+  }, [user]);
 
   const handleFileChange = (field: string, file: File | null) => {
     setFiles(prev => ({ ...prev, [field]: file }));
@@ -58,6 +87,9 @@ export default function HangarOwnerRegisterPage() {
       Object.keys(formData).forEach(key => {
         formDataToSend.append(key, String(formData[key as keyof typeof formData]));
       });
+      if (user?.id) {
+        formDataToSend.append('userId', String(user.id));
+      }
       Object.keys(files).forEach(key => {
         const file = files[key as keyof typeof files];
         if (file !== null) {
@@ -114,6 +146,18 @@ export default function HangarOwnerRegisterPage() {
           <p className="text-slate-600 mt-2">
             Complete o cadastro para começar a anunciar seu hangar
           </p>
+          {profile && (
+            <div className="mt-4 bg-slate-50 border border-slate-200 rounded-lg p-4">
+              <p className="text-sm text-slate-700">
+                Alguns dados foram preenchidos automaticamente do seu perfil.
+              </p>
+              <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                <div><span className="font-bold text-blue-900">Nome:</span> {profile.firstName} {profile.lastName}</div>
+                <div><span className="font-bold text-blue-900">Email:</span> {profile.email}</div>
+                <div><span className="font-bold text-blue-900">CPF:</span> {profile.cpf || '—'}</div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Progress Bar */}
@@ -167,6 +211,7 @@ export default function HangarOwnerRegisterPage() {
                     value={formData.idNumber}
                     onChange={(e) => setFormData({ ...formData, idNumber: e.target.value })}
                     className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
+                    readOnly={Boolean(prefilled.idNumber)}
                     required
                   />
                 </div>
@@ -179,6 +224,7 @@ export default function HangarOwnerRegisterPage() {
                       value={formData.idCountry}
                       onChange={(e) => setFormData({ ...formData, idCountry: e.target.value })}
                       className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
+                      readOnly={Boolean(prefilled.idCountry)}
                     />
                   </div>
                   <div>
