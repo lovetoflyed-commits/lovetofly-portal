@@ -19,5 +19,6 @@ CREATE TABLE users (
   aviation_role_other VARCHAR(100),
   newsletter_opt_in BOOLEAN DEFAULT FALSE,
   terms_agreed BOOLEAN DEFAULT FALSE,
+  plan VARCHAR(20) DEFAULT 'free',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
