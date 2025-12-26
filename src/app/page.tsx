@@ -359,7 +359,7 @@ export default function Home() {
       minPlan: 'free',
       features: [
         { name: 'E6B Flight Computer', desc: 'Calculadora de navegação aérea', href: '/tools/e6b', minPlan: 'free' },
-        { name: 'Glass Cockpit Simulator', desc: 'Simulador de cabine com aviônicos moderno', href: '/tools/glass-cockpit', minPlan: 'pro' },
+        { name: 'Glass Cockpit Simulator', desc: 'Simulador de cabine com aviônicos moderno', href: '/tools/glass-cockpit', minPlan: 'free' },
         { name: 'Planejamento de Voo', desc: 'Planejar rotas e calcular combustível', href: '/flight-plan', minPlan: 'premium' },
       ]
     },
