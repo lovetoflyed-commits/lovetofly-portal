@@ -29,7 +29,7 @@ INSERT INTO airport_icao (icao_code, iata_code, airport_name, city, state, count
 ('SBRJ', 'SDU', 'Rio de Janeiro/Santos Dumont', 'Rio de Janeiro', 'RJ', 'Brasil', true, true),
 ('SBRF', 'REC', 'Recife/Guararapes', 'Recife', 'PE', 'Brasil', true, true),
 ('SBAM', 'MAO', 'Manaus/Eduardo Gomes', 'Manaus', 'AM', 'Brasil', true, true),
-('SBCF', 'CNF', 'Belo Horizonte/Pampulha', 'Belo Horizonte', 'MG', 'Brasil', true, true),
+('SBCF', 'CNF', 'Belo Horizonte/Confins - Tancredo Neves', 'Belo Horizonte', 'MG', 'Brasil', true, true),
 ('SBKT', 'BSB', 'Brasília/Presidente Juscelino Kubitschek', 'Brasília', 'DF', 'Brasil', true, true),
 ('SBPA', 'POA', 'Porto Alegre/Salgado Filho', 'Porto Alegre', 'RS', 'Brasil', true, true),
 ('SBCT', 'CWB', 'Curitiba/Afonso Pena', 'Curitiba', 'PR', 'Brasil', true, true),

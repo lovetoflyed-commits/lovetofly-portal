@@ -1,0 +1,10 @@
+id,Created date (UTC),Amount,Amount Refunded,Currency,Captured,Converted Amount,Converted Amount Refunded,Converted Currency,Decline Reason,Description,Fee,Refunded date (UTC),Statement Descriptor,Status,Seller Message,Taxes On Fee,Card ID,Customer ID,Customer Description,Customer Email,Invoice ID,Transfer,nights (metadata),checkOut (metadata),hangarNumber (metadata),userId (metadata),hangarId (metadata),checkIn (metadata)
+,2025-12-26 21:17:46,1050.00,,brl,,,,,,Reserva de hangar H-12A (SBSP) - 4 noite(s),,,,requires_payment_method,,,,,,,,,4,2025-12-31,H-12A,6,6,2025-12-27
+,2025-12-26 21:17:46,1050.00,,brl,,,,,,Reserva de hangar H-12A (SBSP) - 4 noite(s),,,,requires_payment_method,,,,,,,,,4,2025-12-31,H-12A,6,6,2025-12-27
+,2025-12-26 21:17:09,4987.50,,brl,,,,,,Reserva de hangar H-12A (SBSP) - 22 noite(s),,,,requires_payment_method,,,,,,,,,22,2026-01-22,H-12A,6,6,2025-12-31
+,2025-12-26 21:17:08,4987.50,,brl,,,,,,Reserva de hangar H-12A (SBSP) - 22 noite(s),,,,requires_payment_method,,,,,,,,,22,2026-01-22,H-12A,6,6,2025-12-31
+,2025-12-26 21:16:37,262.50,,brl,,,,,,Reserva de hangar H-12A (SBSP) - 1 noite(s),,,,requires_payment_method,,,,,,,,,1,2025-12-28,H-12A,6,6,2025-12-27
+,2025-12-26 21:16:20,262.50,,brl,,,,,,Reserva de hangar H-12A (SBSP) - 1 noite(s),,,,requires_payment_method,,,,,,,,,1,2025-12-28,H-12A,6,6,2025-12-27
+,2025-12-26 20:59:35,262.50,,brl,,,,,,Reserva de hangar H-12A (SBSP) - 1 noite(s),,,,requires_payment_method,,,,,,,,,1,2025-12-28,H-12A,6,6,2025-12-27
+,2025-12-26 20:47:22,262.50,,brl,,,,,,Reserva de hangar H-12A (SBSP) - 1 noite(s),,,,requires_payment_method,,,,,,,,,1,2025-12-28,H-12A,6,6,2025-12-27
+,2025-12-26 20:46:18,262.50,,brl,,,,,,Reserva de hangar H-12A (SBSP) - 1 noite(s),,,,requires_payment_method,,,,,,,,,1,2025-12-28,H-12A,6,6,2025-12-27

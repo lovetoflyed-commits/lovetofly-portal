@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
       'SBCF': {
         icao_code: 'SBCF',
         iata_code: 'CNF',
-        airport_name: 'Belo Horizonte/Pampulha',
+        airport_name: 'Belo Horizonte/Confins - Tancredo Neves',
         city: 'Belo Horizonte',
         state: 'MG',
         country: 'Brasil',

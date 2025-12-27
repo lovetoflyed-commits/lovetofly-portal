@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import E6BDrills from '@/components/tools/E6BDrills';
-import GoogleAd from '@/components/ads/GoogleAd';
 
 export default function E6BExercisesPage() {
   const router = useRouter();
@@ -72,13 +71,6 @@ export default function E6BExercisesPage() {
           </div>
         </section>
 
-        {/* Patrocínio */}
-        <section className="mt-8 bg-white rounded-xl shadow border border-slate-200 p-4">
-          <div className="text-xs text-slate-400 mb-2">Patrocínio</div>
-          <div className="flex justify-center">
-            <GoogleAd slot="5734627033" format="auto" />
-          </div>
-        </section>
       </div>
 
       {/* Footer */}

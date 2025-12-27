@@ -4,7 +4,6 @@ import { useAuth } from '@/context/AuthContext';
 import E6BComputer from '@/components/tools/E6BComputer';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import GoogleAd from '@/components/ads/GoogleAd';
 
 export default function E6BDigitalPage() {
   const { user } = useAuth();
@@ -12,29 +11,7 @@ export default function E6BDigitalPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <header className="bg-blue-900 text-white shadow-md">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3 h-12">
-            <img src="/logo-pac.png" alt="Love to Fly" className="h-full w-auto object-contain" />
-            <span className="font-black tracking-wide text-lg hidden md:inline">PORTAL LOVE TO FLY</span>
-          </div>
-          <div className="flex gap-2">
-            <button 
-              onClick={() => router.push('/tools/e6b')}
-              className="px-4 py-2 rounded-lg bg-white text-blue-900 font-bold shadow-sm hover:bg-blue-50 text-sm"
-            >
-              ← E6B Hub
-            </button>
-            <button 
-              onClick={() => router.push('/')}
-              className="px-4 py-2 rounded-lg bg-white text-blue-900 font-bold shadow-sm hover:bg-blue-50 text-sm"
-            >
-              Página Inicial
-            </button>
-          </div>
-        </div>
-      </header>
+
 
       {/* Main */}
       {user ? (
@@ -51,9 +28,7 @@ export default function E6BDigitalPage() {
           <section className="mt-8">
             <h2 className="text-xl font-bold text-blue-900 mb-3">Anúncios — Aeroclubes e Escolas de Aviação</h2>
             <div className="bg-white rounded-lg border border-slate-200 p-4">
-              <GoogleAd slot="5734627033" format="fluid" layoutKey="-fb+5w+4e-db+86" />
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {[
                   { name: 'Aeroclube XYZ', city: 'São Paulo', link: '#', badge: '/LOGOS_LTF/Badge_PP.png' },
                   { name: 'Escola de Aviação Alpha', city: 'Campinas', link: '#', badge: '/LOGOS_LTF/Badge_PC_IFR.png' },

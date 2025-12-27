@@ -1,8 +1,8 @@
 # Love to Fly Portal - Quick Reference Guide
 
-**Last Updated**: December 25, 2025
+**Last Updated**: December 26, 2025
 **Project**: Aviation Portal (Next.js + PostgreSQL)
-**Status**: ✅ PRODUCTION READY
+**Status**: ✅ PRODUCTION READY + HangarShare Active Development
 
 ---
 
@@ -60,7 +60,7 @@ git status
 
 # Commit changes
 git add .
-git commit -m "Your message here"
+git commit -m "Adding Google Ads"
 
 # Push to GitHub
 git push origin main
@@ -93,6 +93,7 @@ git show HEAD
 | `src/utils` | Utility functions (E6B logic, etc) |
 | `src/config` | Configuration files (DB config) |
 | `src/migrations` | Database migration scripts |
+| `public` | Static assets (images, ads.txt) |
 
 ### Documentation
 | File | Purpose |
@@ -154,6 +155,13 @@ NETLIFY_NEXT_PLUGIN_SKIP_CACHE="true"
 | Endpoint | Method | Purpose | Auth Required |
 |----------|--------|---------|----------------|
 | `/api/user/profile` | GET | Get user profile data | ✅ Yes |
+
+### HangarShare
+| Endpoint | Method | Purpose | Auth Required |
+|----------|--------|---------|----------------|
+| `/api/hangarshare/owners` | POST | Create advertiser profile | ✅ Yes |
+| `/api/hangarshare/owners` | GET | List advertisers (mock) | ❌ No |
+| `/api/hangarshare/airport/search` | GET | ICAO airport lookup (mock) | ❌ No |
 
 ### Request/Response Examples
 ```bash
@@ -247,6 +255,38 @@ CREATE TABLE user_plans (
   status VARCHAR(20),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   expires_at TIMESTAMP
+);
+```
+
+### hangar_owners table (HangarShare)
+```sql
+CREATE TABLE hangar_owners (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER UNIQUE REFERENCES users(id),
+  company_name VARCHAR(255),
+  cnpj VARCHAR(18) UNIQUE,
+  phone VARCHAR(20),
+  bank_name VARCHAR(100),
+  bank_account VARCHAR(50),
+  is_active BOOLEAN DEFAULT true,
+  is_verified BOOLEAN DEFAULT false,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### airport_icao table (HangarShare)
+```sql
+CREATE TABLE airport_icao (
+  id SERIAL PRIMARY KEY,
+  icao_code VARCHAR(4) UNIQUE NOT NULL,
+  airport_name VARCHAR(255),
+  city VARCHAR(100),
+  state VARCHAR(50),
+  country VARCHAR(50),
+  latitude DECIMAL(10, 8),
+  longitude DECIMAL(11, 8),
+  elevation INTEGER,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
@@ -454,9 +494,27 @@ find src -name "*.tsx" -o -name "*.ts" | xargs grep "searchTerm"
 ✅ **Database**: Full user profile schema with 19 fields
 ✅ **Frontend**: Professional dashboard with E6B integration
 ✅ **Deployment**: Live at https://lovetofly.com.br
-✅ **Documentation**: 1000+ lines across 4 documents
+✅ **Documentation**: 1000+ lines across 5 documents
 ✅ **Strategy**: 4-phase growth roadmap
+✅ **HangarShare**: Auto-prefill forms, advertiser profiles, ICAO search
+✅ **AdSense**: ads.txt configured for monetization
 
 ---
 
-**Status**: ✅ PRODUCTION READY | **Last Updated**: December 25, 2025
+## 🆕 Recent Updates (December 26, 2025)
+
+### HangarShare Marketplace
+- **User Profile API**: `/api/user/profile` returns authenticated user data
+- **Auto-Prefill Forms**: Register form prefills CPF and country from user profile
+- **Read-Only Fields**: Pre-populated data locked for consistency
+- **Advertiser Setup**: Simplified 6-field company/banking form
+- **Dashboard**: Stats, listings, PDF/CSV export with jsPDF
+- **ICAO Auto-Fetch**: Airport data lookup by ICAO code
+- **Migrations**: `008_create_hangar_owners_table.sql`, `009_create_airport_icao_table.sql`
+
+### Monetization
+- **AdSense Ready**: `public/ads.txt` with publisher ID `pub-5771584641465131`
+
+---
+
+**Status**: ✅ PRODUCTION READY | **Last Updated**: December 26, 2025

@@ -5,7 +5,9 @@ import jwt from 'jsonwebtoken';
 
 export async function POST(request: Request) {
   try {
-    const { email, password } = await request.json();
+    const body = await request.json();
+    const email = body.email || body.identifier;
+    const password = body.password;
 
     if (!email || !password) {
       return NextResponse.json({ message: 'Email and password required' }, { status: 400 });

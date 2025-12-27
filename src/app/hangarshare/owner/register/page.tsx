@@ -11,6 +11,8 @@ export default function HangarOwnerRegisterPage() {
   const [loading, setLoading] = useState(false);
   const [prefilled, setPrefilled] = useState<{ idNumber?: boolean; idCountry?: boolean }>({});
   const [profile, setProfile] = useState<any | null>(null);
+  const [documentValidation, setDocumentValidation] = useState<any>(null);
+  const [validatingDocs, setValidatingDocs] = useState(false);
 
   // Form Data
   const [formData, setFormData] = useState({
@@ -27,7 +29,12 @@ export default function HangarOwnerRegisterPage() {
     termsAccepted: false,
   });
 
-  const [files, setFiles] = useState({
+  const [files, setFiles] = useState<{
+    idFront: File | null;
+    idBack: File | null;
+    selfie: File | null;
+    ownershipProof: File | null;
+  }>({
     idFront: null,
     idBack: null,
     selfie: null,
@@ -44,18 +51,21 @@ export default function HangarOwnerRegisterPage() {
         if (res.ok) {
           const data = await res.json();
           setProfile(data);
+          // Pré-preencher apenas dados existentes (segurança anti-fraude)
           setFormData(prev => ({
             ...prev,
             idNumber: data.cpf ? String(data.cpf) : prev.idNumber,
             idCountry: data.addressCountry ? String(data.addressCountry) : prev.idCountry,
           }));
+          // Marcar campos como pré-preenchidos (read-only)
           setPrefilled({
             idNumber: Boolean(data.cpf),
             idCountry: Boolean(data.addressCountry),
           });
         }
       } catch (e) {
-        // silent fail
+        console.error('Erro ao carregar perfil:', e);
+        // silent fail - usuário pode preencher manualmente
       }
     };
     if (user) fetchProfile();
@@ -73,9 +83,58 @@ export default function HangarOwnerRegisterPage() {
     setStep(prev => prev - 1);
   };
 
+  const validateDocumentsBeforeSubmit = async () => {
+    if (!files.idFront || !files.selfie) {
+      alert('Documentos idFront e selfie são obrigatórios para validação');
+      return false;
+    }
+
+    setValidatingDocs(true);
+    try {
+      const formDataToValidate = new FormData();
+      formDataToValidate.append('idFront', files.idFront);
+      if (files.idBack) {
+        formDataToValidate.append('idBack', files.idBack);
+      }
+      formDataToValidate.append('selfie', files.selfie);
+
+      const response = await fetch('/api/hangarshare/owner/validate-documents', {
+        method: 'POST',
+        body: formDataToValidate,
+      });
+
+      const validation = await response.json();
+      setDocumentValidation(validation);
+
+      if (!response.ok || !validation.valid) {
+        const issuesText = validation.issues?.join('\n• ') || '';
+        const suggestionsText = validation.suggestions?.join('\n• ') || '';
+
+        alert(
+          `❌ Documentos rejeitados\n\nProblemas:\n• ${issuesText}\n\nSugestões:\n• ${suggestionsText}`
+        );
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Erro na validação:', error);
+      alert('Erro ao validar documentos. Tente novamente.');
+      return false;
+    } finally {
+      setValidatingDocs(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!formData.termsAccepted) {
       alert('Você precisa aceitar o Contrato de Anúncio para continuar.');
+      return;
+    }
+
+    // Validar documentos antes de enviar
+    const docsValid = await validateDocumentsBeforeSubmit();
+    if (!docsValid) {
       return;
     }
 
@@ -102,7 +161,7 @@ export default function HangarOwnerRegisterPage() {
       //   body: formDataToSend,
       // });
 
-      alert('Cadastro enviado! Aguarde a verificação da equipe (48-72h).');
+      alert('✅ Cadastro enviado! Aguarde a verificação da equipe (48-72h).');
       router.push('/hangarshare/owner/dashboard');
     } catch (error) {
       console.error('Error:', error);
@@ -242,6 +301,10 @@ export default function HangarOwnerRegisterPage() {
 
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <h3 className="font-bold text-blue-900 mb-3">📸 Upload de Documentos</h3>
+                  <p className="text-xs text-blue-800 mb-3 bg-blue-100 p-2 rounded">
+                    ⚠️ Nossos sistemas de IA verificarão: legibilidade, autenticidade, correspondência facial e detecção de fraude.
+                    Envie documentos reais, legíveis e em boa qualidade.
+                  </p>
                   <div className="space-y-3">
                     <div>
                       <label className="block text-sm font-bold text-slate-700 mb-2">
@@ -252,7 +315,11 @@ export default function HangarOwnerRegisterPage() {
                         accept="image/*"
                         onChange={(e) => handleFileChange('idFront', e.target.files?.[0] || null)}
                         className="w-full text-sm"
+                        required
                       />
+                      {files.idFront && (
+                        <p className="text-xs text-green-600 mt-1">✓ {files.idFront.name}</p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-bold text-slate-700 mb-2">
@@ -264,6 +331,7 @@ export default function HangarOwnerRegisterPage() {
                         onChange={(e) => handleFileChange('idBack', e.target.files?.[0] || null)}
                         className="w-full text-sm"
                       />
+                      {files.idBack && <p className="text-xs text-green-600 mt-1">✓ {files.idBack.name}</p>}
                     </div>
                     <div>
                       <label className="block text-sm font-bold text-slate-700 mb-2">
@@ -274,7 +342,14 @@ export default function HangarOwnerRegisterPage() {
                         accept="image/*"
                         onChange={(e) => handleFileChange('selfie', e.target.files?.[0] || null)}
                         className="w-full text-sm"
+                        required
                       />
+                      {files.selfie && (
+                        <p className="text-xs text-green-600 mt-1">✓ {files.selfie.name}</p>
+                      )}
+                      <p className="text-xs text-slate-500 mt-2">
+                        💡 Dica: A selfie deve mostrar seu rosto claramente e o documento de forma legível
+                      </p>
                     </div>
                   </div>
                 </div>

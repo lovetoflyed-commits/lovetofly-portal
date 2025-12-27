@@ -2,28 +2,13 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import GoogleAd from '@/components/ads/GoogleAd';
 
 export default function E6BPage() {
   const router = useRouter();
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Header do Portal - Mesmo estilo da página principal */}
-      <header className="bg-blue-900 text-white shadow-md">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3 h-12">
-            <img src="/logo-pac.png" alt="Love to Fly" className="h-full w-auto object-contain" />
-            <span className="font-black tracking-wide text-lg hidden md:inline">PORTAL LOVE TO FLY</span>
-          </div>
-          <button 
-            onClick={() => router.push('/')}
-            className="px-4 py-2 rounded-lg bg-white text-blue-900 font-bold shadow-sm hover:bg-blue-50 text-sm"
-          >
-            ← Voltar
-          </button>
-        </div>
-      </header>
+
 
       {/* Hub de Ferramentas E6B */}
       <div className="max-w-7xl mx-auto px-4 py-12">
@@ -65,12 +50,6 @@ export default function E6BPage() {
         <div className="bg-white rounded-xl shadow-md p-6 border border-slate-200">
           <h2 className="text-xl font-bold text-blue-900 mb-3">Sobre o E6B</h2>
           <p className="text-sm text-slate-700">Use o E6B Digital para cálculos rápidos e o E6B Analógico para treinar conceitos de vento e deriva.</p>
-        </div>
-        <div className="mt-6 bg-white rounded-xl shadow-md p-6 border border-slate-200">
-          <div className="text-xs text-slate-400 mb-2">Patrocínio</div>
-          <div className="flex justify-center">
-            <GoogleAd slot="5734627033" format="auto" />
-          </div>
         </div>
       </div>
 

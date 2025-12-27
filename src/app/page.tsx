@@ -1,13 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Script from 'next/script';
-
-declare global {
-  interface Window {
-    adsbygoogle: { push: (args: any) => void }[];
-  }
-}
 import { useAuth } from '@/context/AuthContext';
 
 // Helpers for masked fields
@@ -391,22 +384,158 @@ export default function Home() {
   const { user, logout } = useAuth();
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
 
   // Debug: log user state
   useEffect(() => {
     console.log('User state:', user);
   }, [user]);
 
-  // Initialize Google AdSense slot when logged
-  useEffect(() => {
-    try {
-      if (typeof window !== 'undefined' && (window as any).adsbygoogle) {
-        (window as any).adsbygoogle.push({});
-      }
-    } catch (err) {
-      console.error('AdSense init error:', err);
+  const toggleMenu = (menuName: string) => {
+    setOpenMenus(prev => ({
+      ...prev,
+      [menuName]: !prev[menuName]
+    }));
+  };
+
+  // Menu structure in alphabetical order
+  const menuItems = [
+    {
+      name: 'Aeroclubes e CIAC\'s',
+      children: []
+    },
+    {
+      name: 'Aeronaves',
+      children: [
+        { name: 'Aluguel' },
+        { name: 'Arrendamento' },
+        { name: 'Compartilhamento' },
+        { name: 'Compra/Venda' }
+      ]
+    },
+    {
+      name: 'ANAC',
+      children: []
+    },
+    {
+      name: 'Anúncios',
+      children: []
+    },
+    {
+      name: 'Aviação Geral',
+      children: []
+    },
+    {
+      name: 'Awards',
+      children: []
+    },
+    {
+      name: 'Carreira',
+      children: [
+        { name: 'Busca' },
+        {
+          name: 'Ofertas de Trabalho',
+          children: ['Seleções Abertas', 'Vagas disponíveis']
+        },
+        {
+          name: 'Profissionais',
+          children: ['Agrícola', 'Executiva', 'Freelancers', 'Instrutores/Checadores', 'Linha Aérea', 'Particular', 'SAE', 'Traslados']
+        }
+      ]
+    },
+    {
+      name: 'CENIPA',
+      children: []
+    },
+    {
+      name: 'Comercial',
+      children: []
+    },
+    {
+      name: 'Comunidade',
+      children: [
+        { name: 'Fóruns' },
+        { name: 'Mídias Sociais' }
+      ]
+    },
+    {
+      name: 'Empresas',
+      children: []
+    },
+    {
+      name: 'Eventos',
+      children: []
+    },
+    {
+      name: 'Ferramentas Online',
+      children: []
+    },
+    {
+      name: 'Hangares',
+      children: []
+    },
+    {
+      name: 'História da Aviação',
+      children: []
+    },
+    {
+      name: 'Indústria',
+      children: []
+    },
+    {
+      name: 'Internacional',
+      children: []
+    },
+    {
+      name: 'Manutenção',
+      children: []
+    },
+    {
+      name: 'Meteorologia',
+      children: []
+    },
+    {
+      name: 'Museu Virtual',
+      children: []
+    },
+    {
+      name: 'Navegação Aérea',
+      children: []
+    },
+    {
+      name: 'Pilot Shop',
+      children: []
+    },
+    {
+      name: 'PORTAL',
+      children: []
+    },
+    {
+      name: 'Privado',
+      children: []
+    },
+    {
+      name: 'SIPAER',
+      children: []
+    },
+    {
+      name: 'Treinamento',
+      children: [
+        { name: 'Capacitação' },
+        { name: 'Cursos' },
+        { name: 'Graduação' },
+        { name: 'Mentoria' },
+        { name: 'Outros' },
+        { name: 'Simuladores' },
+        { name: 'Workshops' }
+      ]
+    },
+    {
+      name: 'AJUDA',
+      children: []
     }
-  }, [user]);
+  ];
 
   // Define feature modules with access requirements
   const modules = {
@@ -636,26 +765,6 @@ export default function Home() {
   if (user) {
     return (
       <div className="min-h-screen bg-slate-50 text-slate-900">
-        <Script
-          id="adsense-script"
-          strategy="afterInteractive"
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3204295995338267"
-          crossOrigin="anonymous"
-        />
-        <header className="bg-blue-900 text-white shadow-md">
-          <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3 h-12">
-              <img src="/logo-pac.png" alt="Love to Fly" className="h-full w-auto object-contain" />
-              <span className="font-black tracking-wide text-lg hidden md:inline">PORTAL LOVE TO FLY</span>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="text-xs bg-yellow-400 text-blue-900 px-3 py-1 rounded-full font-bold uppercase">{userPlan}</span>
-              <span className="text-sm hidden sm:inline">Olá, {user.name}</span>
-              <button onClick={logout} className="px-4 py-2 rounded-lg bg-white text-blue-900 font-bold shadow-sm hover:bg-blue-50 text-sm">Sair</button>
-            </div>
-          </div>
-        </header>
-
         <main className="max-w-7xl mx-auto px-4 py-8 space-y-6">
           {/* Welcome Section */}
           <section className="bg-white rounded-2xl shadow p-6 border border-slate-100">
@@ -952,23 +1061,6 @@ export default function Home() {
             </div>
           </section>
 
-          {/* AdSense block */}
-          <section className="bg-white rounded-xl shadow border border-slate-200 p-4">
-            <div className="text-xs text-slate-400 mb-2">Patrocínio</div>
-            <div className="flex justify-center">
-              <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3204295995338267"
-                crossOrigin="anonymous"></script>
-              <ins
-                className="adsbygoogle"
-                style={{ display: 'block', width: '100%', minHeight: '120px' }}
-                data-ad-client="ca-pub-3204295995338267"
-                data-ad-slot="1234567890"
-                data-ad-format="auto"
-                data-full-width-responsive="true"
-              />
-            </div>
-          </section>
-
           {/* Tools/Modules Section */}
           {Object.entries(modules).map(([key, module]) => {
             const moduleHasAccess = hasAccess(module.minPlan);
@@ -1031,48 +1123,85 @@ export default function Home() {
   // Landing page for non-logged users
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
-      <header className="bg-blue-900 text-white shadow-md">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3 h-12">
-            <img src="/logo-pac.png" alt="Love to Fly" className="h-full w-auto object-contain" />
-            <span className="font-black tracking-wide text-lg hidden md:inline">PORTAL LOVE TO FLY</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <button onClick={() => setLoginOpen(true)} className="px-4 py-2 rounded-lg bg-white text-blue-900 font-bold shadow-sm hover:bg-blue-50 text-sm">Entrar</button>
-            <button onClick={() => setRegisterOpen(true)} className="px-4 py-2 rounded-lg bg-yellow-400 text-blue-900 font-bold shadow-sm hover:bg-yellow-300 text-sm">Cadastrar</button>
-          </div>
-        </div>
-      </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-8 space-y-6">
-        <section className="bg-white rounded-2xl shadow p-6 border border-slate-100">
-          <div className="flex flex-col gap-2">
-            <p className="text-sm uppercase tracking-[0.2em] text-blue-700 font-semibold">O SEU PORTAL DA AVIAÇÃO CIVIL</p>
-            <h1 className="text-3xl md:text-4xl font-black text-blue-900">Tudo em um só lugar</h1>
-            <p className="text-sm text-slate-600 max-w-2xl">Acompanhe tempo, navegação, notícias e ferramentas essenciais. Entre ou cadastre-se para usar a E6B e recursos avançados.</p>
-            <div className="flex flex-wrap gap-3 mt-3">
-              <button onClick={() => setLoginOpen(true)} className="px-5 py-2 rounded-lg bg-blue-900 text-white font-bold shadow hover:bg-blue-800">Fazer login</button>
-              <button onClick={() => setRegisterOpen(true)} className="px-5 py-2 rounded-lg bg-white text-blue-900 font-bold border border-blue-200 hover:bg-blue-50">Criar conta</button>
-            </div>
-          </div>
-        </section>
+      {/* Sidebar & Main Content Layout */}
+      <div className="flex min-h-[calc(100vh-210px)]">
+        {/* Sidebar */}
+        <aside className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-40 w-72 bg-gray-100 text-gray-800 transition-transform duration-300 overflow-y-auto border-r border-gray-200`} style={{top: '210px'}}>
+          <nav className="p-4 space-y-2">
+            {menuItems.map((item, index) => (
+              <div key={index}>
+                <button
+                  onClick={() => toggleMenu(item.name)}
+                  className="w-full flex items-center justify-between px-4 py-2 rounded-lg transition-colors text-left font-semibold text-gray-800 hover:bg-gray-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-900"
+                >
+                  <span>{item.name}</span>
+                  {item.children && (
+                    <svg
+                      className={`w-4 h-4 transition-transform ${openMenus[item.name] ? 'rotate-90' : ''}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  )}
+                </button>
+                
+                {item.children && openMenus[item.name] && (
+                  <div className="ml-4 mt-1 space-y-1">
+                    {item.children.map((child, childIndex) => (
+                      <div key={childIndex}>
+                        <button
+                          onClick={() => child.children && toggleMenu(`${item.name}-${child.name}`)}
+                          className="w-full flex items-center justify-between px-4 py-2 rounded-lg transition-colors text-left text-sm text-gray-800 hover:bg-gray-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-900"
+                        >
+                          <span>{child.name}</span>
+                          {child.children && (
+                            <svg
+                              className={`w-3 h-3 transition-transform ${openMenus[`${item.name}-${child.name}`] ? 'rotate-90' : ''}`}
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          )}
+                        </button>
+                        
+                        {child.children && openMenus[`${item.name}-${child.name}`] && (
+                          <div className="ml-4 mt-1 space-y-1">
+                            {child.children.map((subchild, subchildIndex) => (
+                              <button
+                                key={subchildIndex}
+                                className="w-full px-4 py-2 rounded-lg transition-colors text-left text-xs text-gray-800 hover:bg-gray-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-900"
+                              >
+                                {subchild}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </nav>
+        </aside>
 
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-            <h3 className="text-blue-900 font-bold mb-2">E6B Flight Computer</h3>
-            <p className="text-sm text-slate-600 mb-3">Calculadora de navegação aérea profissional.</p>
-            <div className="flex gap-2">
-              <a href="/tools/e6b" className="px-4 py-2 rounded-lg bg-blue-900 text-white font-bold shadow hover:bg-blue-800">Abrir E6B</a>
-              <button onClick={() => setLoginOpen(true)} className="px-4 py-2 rounded-lg bg-white text-blue-900 font-bold border border-blue-200 hover:bg-blue-50">Entrar</button>
-            </div>
-          </div>
+        {/* Overlay para mobile */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+            style={{top: '210px'}}
+          />
+        )}
 
-          <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-            <h3 className="text-blue-900 font-bold mb-2">Clima &amp; METAR</h3>
-            <p className="text-sm text-slate-600 mb-3">Consulte condições rapidamente e planeje seus voos.</p>
-            <div className="text-xs text-slate-500">Acesse ferramentas de clima no painel após login.</div>
-          </div>
-        </section>
+        {/* Main Content */}
+        <main className="flex-1 px-4 py-8 space-y-6 max-w-6xl mx-auto w-full">
+        {/* Conteúdo principal permanece */}
 
         {/* Prévia de ferramentas e módulos (visível sem login) */}
         {Object.entries(modules).map(([key, module]) => {
@@ -1120,6 +1249,7 @@ export default function Home() {
           );
         })}
       </main>
+      </div>
 
       <Modal open={loginOpen} onClose={() => setLoginOpen(false)} title="Entrar">
         <LoginForm onSuccess={() => setLoginOpen(false)} />

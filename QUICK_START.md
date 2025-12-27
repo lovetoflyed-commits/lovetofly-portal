@@ -120,6 +120,7 @@ CREATE TABLE users (
 - Advanced navigation
 - Flight planning
 - Career tools
+- HitchFlying (carona aérea estilo BlaBlaCar — roadmap global)
 
 ---
 

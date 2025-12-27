@@ -4,7 +4,6 @@ import { useAuth } from '@/context/AuthContext';
 import E6BAnalogImage from '@/components/tools/E6BAnalogImage';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import GoogleAd from '@/components/ads/GoogleAd';
 
 export default function E6BAnalogPage() {
   const { user } = useAuth();
@@ -51,9 +50,7 @@ export default function E6BAnalogPage() {
           <section className="mt-8">
             <h2 className="text-xl font-bold text-blue-900 mb-3">Anúncios — Aeroclubes e Escolas de Aviação</h2>
             <div className="bg-white rounded-lg border border-slate-200 p-4">
-              <GoogleAd slot="5734627033" format="fluid" layoutKey="-fb+5w+4e-db+86" />
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {[
                   { name: 'Aeroclube XYZ', city: 'Belo Horizonte', link: '#', badge: '/LOGOS_LTF/Badge_PP_2.png' },
                   { name: 'Escola Bravo', city: 'Curitiba', link: '#', badge: '/LOGOS_LTF/Badge_PC_IFR_MLTE.png' },

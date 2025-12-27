@@ -31,26 +31,17 @@ export async function POST(request: Request) {
     const cleanedPhone = (mobilePhone || '').replace(/\D/g, '');
     const cleanedZip = (addressZip || '').replace(/\D/g, '');
 
-    if (!firstName || !lastName || !email || !password || !cleanedCPF || !birthDate) {
+    if (!firstName || !lastName || !email || !password) {
       return NextResponse.json({ error: 'Please fill required fields' }, { status: 400 });
     }
 
-    if (!terms) {
-      return NextResponse.json({ error: 'You must accept terms' }, { status: 400 });
-    }
-
     const existingUser = await pool.query(
-      'SELECT * FROM users WHERE email = $1 OR cpf = $2',
-      [email, cleanedCPF]
+      'SELECT * FROM users WHERE email = $1',
+      [email]
     );
 
     if (existingUser.rows.length > 0) {
-      const existing = existingUser.rows[0];
-      if (existing.email === email) {
-        return NextResponse.json({ error: 'Email already registered' }, { status: 409 });
-      } else {
-        return NextResponse.json({ error: 'CPF already registered' }, { status: 409 });
-      }
+      return NextResponse.json({ error: 'Email already registered' }, { status: 409 });
     }
 
     const salt = await bcrypt.genSalt(10);

@@ -9,34 +9,21 @@ export default function HangarSharePage() {
   const { user } = useAuth();
   const [searchICAO, setSearchICAO] = useState('');
   const [searchCity, setSearchCity] = useState('');
+  const [minPrice, setMinPrice] = useState(0);
+  const [maxPrice, setMaxPrice] = useState(20000);
 
   const handleSearch = () => {
     const params = new URLSearchParams();
     if (searchICAO) params.append('icao', searchICAO);
     if (searchCity) params.append('city', searchCity);
+    if (minPrice > 0) params.append('minPrice', minPrice.toString());
+    if (maxPrice < 20000) params.append('maxPrice', maxPrice.toString());
     router.push(`/hangarshare/search?${params.toString()}`);
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-      {/* Header */}
-      <header className="bg-blue-900 text-white shadow-md">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🏢</span>
-            <div>
-              <h1 className="font-black text-xl">HangarShare</h1>
-              <p className="text-xs text-blue-200">Compartilhe e reserve hangares com segurança</p>
-            </div>
-          </div>
-          <button 
-            onClick={() => router.push('/')}
-            className="px-4 py-2 rounded-lg bg-white text-blue-900 font-bold shadow-sm hover:bg-blue-50 text-sm"
-          >
-            ← Voltar ao Portal
-          </button>
-        </div>
-      </header>
+
 
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-blue-900 to-blue-700 text-white py-20">
@@ -50,35 +37,134 @@ export default function HangarSharePage() {
 
           {/* Search Box */}
           <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-4xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="md:col-span-1">
-                <label className="block text-left text-sm font-bold text-slate-700 mb-2">Código ICAO</label>
-                <input
-                  type="text"
-                  placeholder="SBSP, SBGR..."
-                  maxLength={4}
-                  value={searchICAO}
-                  onChange={(e) => setSearchICAO(e.target.value.toUpperCase())}
-                  className="w-full px-4 py-3 rounded-lg border border-slate-300 text-slate-900 font-mono uppercase focus:ring-2 focus:ring-blue-500 outline-none"
-                />
+            <div className="grid grid-cols-1 gap-6">
+              {/* ICAO and City Search */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-1">
+                  <label className="block text-left text-sm font-bold text-slate-700 mb-2">Código ICAO</label>
+                  <input
+                    type="text"
+                    placeholder="SBSP, SBGR..."
+                    maxLength={4}
+                    value={searchICAO}
+                    onChange={(e) => setSearchICAO(e.target.value.toUpperCase())}
+                    className="w-full px-4 py-3 rounded-lg border border-slate-300 text-slate-900 font-mono uppercase focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+                <div className="md:col-span-1">
+                  <label className="block text-left text-sm font-bold text-slate-700 mb-2">Cidade</label>
+                  <input
+                    type="text"
+                    placeholder="São Paulo, Campinas..."
+                    value={searchCity}
+                    onChange={(e) => setSearchCity(e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg border border-slate-300 text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <button
+                    onClick={handleSearch}
+                    className="w-full px-6 py-3 bg-blue-900 text-white font-bold rounded-lg hover:bg-blue-800 shadow-lg text-lg"
+                  >
+                    🔍 Buscar Hangares
+                  </button>
+                </div>
               </div>
-              <div className="md:col-span-1">
-                <label className="block text-left text-sm font-bold text-slate-700 mb-2">Cidade ou Estado</label>
-                <input
-                  type="text"
-                  placeholder="São Paulo, Campinas..."
-                  value={searchCity}
-                  onChange={(e) => setSearchCity(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border border-slate-300 text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-              </div>
-              <div className="flex items-end">
-                <button
-                  onClick={handleSearch}
-                  className="w-full px-6 py-3 bg-blue-900 text-white font-bold rounded-lg hover:bg-blue-800 shadow-lg text-lg"
-                >
-                  🔍 Buscar Hangares
-                </button>
+
+              {/* Price Range Filter */}
+              <div className="border-t border-slate-200 pt-6">
+                <label className="block text-left text-sm font-bold text-slate-700 mb-3">
+                  💰 Faixa de Preço Mensal
+                </label>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between text-sm text-slate-600 mb-2">
+                    <span className="font-bold text-blue-900">
+                      R$ {minPrice.toLocaleString('pt-BR')}
+                    </span>
+                    <span className="text-slate-500">até</span>
+                    <span className="font-bold text-blue-900">
+                      {maxPrice >= 20000 ? 'R$ 20.000+' : `R$ ${maxPrice.toLocaleString('pt-BR')}`}
+                    </span>
+                  </div>
+                  
+                  {/* Min Price Slider */}
+                  <div>
+                    <label className="text-xs text-slate-600 mb-1 block">Preço Mínimo</label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="20000"
+                      step="500"
+                      value={minPrice}
+                      onChange={(e) => {
+                        const value = Number(e.target.value);
+                        if (value < maxPrice) {
+                          setMinPrice(value);
+                        }
+                      }}
+                      className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                      style={{
+                        background: `linear-gradient(to right, #1e3a8a 0%, #1e3a8a ${(minPrice/20000)*100}%, #e2e8f0 ${(minPrice/20000)*100}%, #e2e8f0 100%)`
+                      }}
+                    />
+                  </div>
+
+                  {/* Max Price Slider */}
+                  <div>
+                    <label className="text-xs text-slate-600 mb-1 block">Preço Máximo</label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="20000"
+                      step="500"
+                      value={maxPrice}
+                      onChange={(e) => {
+                        const value = Number(e.target.value);
+                        if (value > minPrice) {
+                          setMaxPrice(value);
+                        }
+                      }}
+                      className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-900"
+                      style={{
+                        background: `linear-gradient(to right, #1e3a8a 0%, #1e3a8a ${(maxPrice/20000)*100}%, #e2e8f0 ${(maxPrice/20000)*100}%, #e2e8f0 100%)`
+                      }}
+                    />
+                  </div>
+
+                  {/* Quick Price Filters */}
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    <button
+                      onClick={() => { setMinPrice(0); setMaxPrice(3500); }}
+                      className="px-3 py-1 text-xs bg-slate-100 hover:bg-blue-100 text-slate-700 hover:text-blue-900 rounded-full font-bold transition-colors"
+                    >
+                      💰 Econômico (até R$ 3.500)
+                    </button>
+                    <button
+                      onClick={() => { setMinPrice(3500); setMaxPrice(6000); }}
+                      className="px-3 py-1 text-xs bg-slate-100 hover:bg-blue-100 text-slate-700 hover:text-blue-900 rounded-full font-bold transition-colors"
+                    >
+                      💼 Standard (R$ 3.500-6.000)
+                    </button>
+                    <button
+                      onClick={() => { setMinPrice(6000); setMaxPrice(10000); }}
+                      className="px-3 py-1 text-xs bg-slate-100 hover:bg-blue-100 text-slate-700 hover:text-blue-900 rounded-full font-bold transition-colors"
+                    >
+                      🌟 Executivo (R$ 6K-10K)
+                    </button>
+                    <button
+                      onClick={() => { setMinPrice(10000); setMaxPrice(20000); }}
+                      className="px-3 py-1 text-xs bg-slate-100 hover:bg-blue-100 text-slate-700 hover:text-blue-900 rounded-full font-bold transition-colors"
+                    >
+                      👑 Premium (R$ 10K+)
+                    </button>
+                    <button
+                      onClick={() => { setMinPrice(0); setMaxPrice(20000); }}
+                      className="px-3 py-1 text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-full font-bold transition-colors"
+                    >
+                      ✖️ Limpar Filtros
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

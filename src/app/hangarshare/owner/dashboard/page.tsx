@@ -30,6 +30,7 @@ interface Listing {
   dailyRate: number;
   weeklyRate: number;
   monthlyRate: number;
+  bookingType: 'Reembolsável' | 'Não reembolsável';
   status: string;
   bookings: number;
   revenue: number;
@@ -63,37 +64,16 @@ export default function AdvertiserDashboard() {
         setProfile(userProfile || null);
       }
 
-      // Mock listings data - TODO: Replace with API call
-      setListings([
-        {
-          id: '1',
-          icao: 'SBSP',
-          hangarNumber: '5',
-          sizeM2: 500,
-          hourlyRate: 150,
-          dailyRate: 1200,
-          weeklyRate: 7000,
-          monthlyRate: 28000,
-          status: 'Ativo',
-          bookings: 12,
-          revenue: 18400,
-          rating: 4.8,
-        },
-        {
-          id: '2',
-          icao: 'SBCF',
-          hangarNumber: 'A-12',
-          sizeM2: 750,
-          hourlyRate: 200,
-          dailyRate: 1600,
-          weeklyRate: 9000,
-          monthlyRate: 35000,
-          status: 'Ativo',
-          bookings: 8,
-          revenue: 12800,
-          rating: 4.9,
-        },
-      ]);
+      // Busca real das listagens do proprietário
+      if (user?.id) {
+        const listingsRes = await fetch(`/api/hangarshare/owner/listings?userId=${user.id}`);
+        if (listingsRes.ok) {
+          const data = await listingsRes.json();
+          setListings(data.listings || []);
+        } else {
+          setListings([]);
+        }
+      }
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -143,13 +123,14 @@ export default function AdvertiserDashboard() {
     doc.text('DETALHES DOS HANGARES', 14, finalY);
 
     const listingsData = [
-      ['ICAO', 'Nº Hangar', 'Tamanho (m²)', 'Preço/Dia', 'Reservas', 'Status', 'Avaliação'],
+      ['ICAO', 'Nº Hangar', 'Tamanho (m²)', 'Preço/Dia', 'Reservas', 'Tipo', 'Status', 'Avaliação'],
       ...listings.map((listing) => [
         listing.icao,
         listing.hangarNumber,
         listing.sizeM2.toString(),
         `R$ ${listing.dailyRate.toLocaleString('pt-BR')}`,
         listing.bookings.toString(),
+        listing.bookingType,
         listing.status,
         `⭐ ${listing.rating.toFixed(1)}`,
       ]),
@@ -175,7 +156,7 @@ export default function AdvertiserDashboard() {
   }, [profile?.id]);
 
   const exportCSV = () => {
-    const headers = ['ICAO', 'Nº Hangar', 'Tamanho (m²)', 'Preço/Hora', 'Preço/Dia', 'Preço/Semana', 'Preço/Mês', 'Reservas', 'Receita', 'Avaliação'];
+    const headers = ['ICAO', 'Nº Hangar', 'Tamanho (m²)', 'Preço/Hora', 'Preço/Dia', 'Preço/Semana', 'Preço/Mês', 'Reservas', 'Receita', 'Tipo', 'Avaliação'];
     const rows = listings.map((listing) => [
       listing.icao,
       listing.hangarNumber,
@@ -186,6 +167,7 @@ export default function AdvertiserDashboard() {
       `R$ ${listing.monthlyRate.toFixed(2)}`,
       listing.bookings.toString(),
       `R$ ${listing.revenue.toFixed(2)}`,
+      listing.bookingType,
       listing.rating.toFixed(1),
     ]);
 
@@ -263,6 +245,18 @@ export default function AdvertiserDashboard() {
               <p className="text-slate-600 mt-2">{profile.companyName}</p>
             </div>
             <div className="flex gap-3">
+              <button
+                onClick={() => router.push('/hangarshare/owner/bookings')}
+                className="px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700"
+              >
+                📋 Reservas
+              </button>
+              <button
+                onClick={() => router.push('/hangarshare/owner/analytics')}
+                className="px-6 py-3 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700"
+              >
+                📈 Análises
+              </button>
               <button
                 onClick={() => setShowReport(true)}
                 className="px-6 py-3 bg-orange-600 text-white font-bold rounded-lg hover:bg-orange-700"
@@ -355,6 +349,7 @@ export default function AdvertiserDashboard() {
                   <th className="px-6 py-4 text-left font-bold text-slate-700">Preço/Dia</th>
                   <th className="px-6 py-4 text-left font-bold text-slate-700">Reservas</th>
                   <th className="px-6 py-4 text-left font-bold text-slate-700">Receita</th>
+                  <th className="px-6 py-4 text-left font-bold text-slate-700">Tipo</th>
                   <th className="px-6 py-4 text-left font-bold text-slate-700">Avaliação</th>
                   <th className="px-6 py-4 text-left font-bold text-slate-700">Status</th>
                   <th className="px-6 py-4 text-center font-bold text-slate-700">Ações</th>
@@ -372,6 +367,15 @@ export default function AdvertiserDashboard() {
                     <td className="px-6 py-4 text-slate-900">{listing.bookings}</td>
                     <td className="px-6 py-4 text-green-600 font-bold">
                       R$ {listing.revenue.toLocaleString('pt-BR')}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
+                        listing.bookingType === 'Não reembolsável'
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-blue-100 text-blue-700'
+                      }`}>
+                        {listing.bookingType}
+                      </span>
                     </td>
                     <td className="px-6 py-4 text-amber-600 font-bold">
                       ⭐ {listing.rating.toFixed(1)}
