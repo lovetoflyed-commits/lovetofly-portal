@@ -154,7 +154,6 @@ function SearchResultsContent() {
           {result?.location && (
             <p className="text-slate-600 mt-1">{result.location}</p>
           )}
-          
           {/* Active Filters */}
           {(minPrice || maxPrice) && (
             <div className="mt-3 flex flex-wrap gap-2 items-center">
@@ -172,25 +171,24 @@ function SearchResultsContent() {
             </div>
           )}
         </div>
-
-
-              </button>
-              <button
-                onClick={() => router.push('/hangarshare/owner/register')}
-                className="px-6 py-3 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700"
-              >
-                📝 Anunciar Meu Hangar
-              </button>
-            </div>
+        {/* Conditional rendering for results or CTA */}
+        {result && result.hangars && result.hangars.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <p className="text-slate-600 mb-6 text-lg font-semibold">Nenhum hangar encontrado para os filtros selecionados.</p>
+            <button
+              onClick={() => router.push('/hangarshare/owner/register')}
+              className="px-6 py-3 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700"
+            >
+              📝 Anunciar Meu Hangar
+            </button>
           </div>
         ) : (
           <>
             <p className="text-slate-600 mb-6">
-              {result.count} hangar{result.count !== 1 ? 'es' : ''} encontrado{result.count !== 1 ? 's' : ''}
+              {result?.count} hangar{result?.count !== 1 ? 'es' : ''} encontrado{result?.count !== 1 ? 's' : ''}
             </p>
-
             <div className="grid grid-cols-1 gap-6">
-              {result.hangars.map((hangar) => (
+              {result?.hangars?.map((hangar) => (
                 <div 
                   key={hangar.id} 
                   className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow border border-slate-200 overflow-hidden"
@@ -220,13 +218,11 @@ function SearchResultsContent() {
                         )}
                       </div>
                     </div>
-
                     {hangar.description && (
                       <p className="text-slate-700 mb-4 leading-relaxed">
                         {hangar.description}
                       </p>
                     )}
-
                     {/* Specifications */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 bg-slate-50 rounded-lg p-4">
                       <div>
@@ -246,7 +242,6 @@ function SearchResultsContent() {
                         <div className="text-lg font-bold text-slate-800">{hangar.maxHeight}m</div>
                       </div>
                     </div>
-
                     {/* Services */}
                     {hangar.services && hangar.services.length > 0 && (
                       <div className="mb-4">
@@ -263,13 +258,11 @@ function SearchResultsContent() {
                         </div>
                       </div>
                     )}
-
                     {hangar.locationDescription && (
                       <p className="text-sm text-slate-600 mb-4">
                         📍 {hangar.locationDescription}
                       </p>
                     )}
-
                     {/* Owner Info */}
                     <div className="flex items-center justify-between pt-4 border-t border-slate-200">
                       <div className="text-sm text-slate-600">
