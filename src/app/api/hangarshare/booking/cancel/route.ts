@@ -3,9 +3,7 @@ import Stripe from 'stripe';
 import pool from '@/config/db';
 import { sendCancellationEmail } from '@/utils/email';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2024-11-20.acacia' as any,
-});
+
 
 interface RefundPolicy {
   name: string;
@@ -22,6 +20,17 @@ const REFUND_POLICIES: RefundPolicy[] = [
 
 export async function POST(request: NextRequest) {
   try {
+    // Initialize Stripe only at request time
+    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+    if (!stripeSecretKey) {
+      return NextResponse.json(
+        { error: 'Stripe secret key is not configured.' },
+        { status: 500 }
+      );
+    }
+    const stripe = new Stripe(stripeSecretKey, {
+      apiVersion: '2024-11-20.acacia' as any,
+    });
     const body = await request.json();
     const { bookingId, reason, refundType = 'full' } = body;
 
@@ -130,6 +139,7 @@ export async function POST(request: NextRequest) {
       console.error('Email error:', emailError);
       // Don't fail the refund if email fails
     }
+
 
     return NextResponse.json({
       success: true,

@@ -4,7 +4,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 
-export default function Sidebar() {
+
+export default function Sidebar({ disabled = false, onFeatureClick }: {
+  disabled?: boolean;
+  onFeatureClick?: (e: React.MouseEvent) => void;
+}) {
   const pathname = usePathname();
   const { user } = useAuth();
 
@@ -39,18 +43,31 @@ export default function Sidebar() {
 
         <nav className="space-y-2">
           {menuItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                pathname === item.href
-                  ? 'bg-blue-900 text-white'
-                  : 'text-gray-700 hover:bg-slate-100'
-              }`}
-            >
-              <span className="text-xl">{item.icon}</span>
-              <span className="font-medium">{item.label}</span>
-            </Link>
+            disabled ? (
+              <button
+                key={item.href}
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors cursor-not-allowed opacity-60 bg-gray-100`}
+                onClick={onFeatureClick}
+                tabIndex={0}
+                type="button"
+              >
+                <span className="text-xl">{item.icon}</span>
+                <span className="font-medium">{item.label}</span>
+              </button>
+            ) : (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                  pathname === item.href
+                    ? 'bg-blue-900 text-white'
+                    : 'text-gray-700 hover:bg-slate-100'
+                }`}
+              >
+                <span className="text-xl">{item.icon}</span>
+                <span className="font-medium">{item.label}</span>
+              </Link>
+            )
           ))}
         </nav>
       </div>

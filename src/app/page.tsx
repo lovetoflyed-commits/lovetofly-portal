@@ -1,37 +1,4 @@
-'use client';
-
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/context/AuthContext';
-
-// Helpers for masked fields
-const isValidCPF = (cpf: string) => {
-  const cleaned = cpf.replace(/[^\d]+/g, '');
-  if (cleaned.length !== 11 || /^(\d)\1{10}$/.test(cleaned)) return false;
-  const digits = cleaned.split('').map(Number);
-  const rest = (count: number) => (
-    (digits.slice(0, count - 12).reduce((sum, el, idx) => sum + el * (count - idx), 0) * 10) % 11
-  ) % 10;
-  return rest(10) === digits[9] && rest(11) === digits[10];
-};
-
-const maskCPF = (value: string) => value
-  .replace(/\D/g, '')
-  .replace(/(\d{3})(\d)/, '$1.$2')
-  .replace(/(\d{3})(\d)/, '$1.$2')
-  .replace(/(\d{3})(\d{1,2})/, '$1-$2')
-  .replace(/(-\d{2})\d+?$/, '$1');
-
-const maskCEP = (value: string) => value
-  .replace(/\D/g, '')
-  .replace(/(\d{5})(\d)/, '$1-$2')
-  .replace(/(-\d{3})\d+?$/, '$1');
-
-const maskPhone = (value: string) => value
-  .replace(/\D/g, '')
-  .replace(/(\d{2})(\d)/, '($1) $2')
-  .replace(/(\d{5})(\d)/, '$1-$2')
-  .replace(/(-\d{4})\d+?$/, '$1');
-
+"use client";
 // Login form
 function LoginForm({ onSuccess }: { onSuccess: () => void }) {
   const { login, error } = useAuth();
@@ -47,7 +14,6 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
     setLoading(false);
     if (ok) {
       onSuccess();
-      // Force page reload to show dashboard
       window.location.reload();
     }
   };
@@ -101,7 +67,13 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
   );
 }
 
-// Register form (keeps required backend fields but simplified layout)
+import { useState, useEffect } from 'react';
+import Sidebar from '@/components/Sidebar';
+import { useAuth } from '@/context/AuthContext';
+
+
+
+    // Register form (keeps required backend fields but simplified layout)
 function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
