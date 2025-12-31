@@ -1,0 +1,2 @@
+-- Migration para adicionar colunas de hangar em users
+-- (adicione aqui o conteúdo original do migration removido)

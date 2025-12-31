@@ -1,0 +1,2 @@
+-- Migration para tornar cpf nullable
+-- (adicione aqui o conteúdo original do migration removido)

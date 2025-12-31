@@ -1,0 +1,2 @@
+-- Migration para popular hangares diversos
+-- (adicione aqui o conteúdo original do migration removido)

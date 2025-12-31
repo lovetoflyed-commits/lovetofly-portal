@@ -7,7 +7,7 @@ const pool = new Pool({
   ...(process.env.DATABASE_URL ? {} : {
     user: process.env.DB_USER || 'postgres',
     host: process.env.DB_HOST || 'localhost',
-    database: process.env.DB_NAME || 'lovetofly_portal',
+    database: process.env.DB_NAME || 'lovetofly-portal',
     password: process.env.DB_PASSWORD || 'Master@51',
     port: Number(process.env.DB_PORT) || 5432,
   }),

@@ -12,7 +12,7 @@
 ### O Que Foi Entregue Hoje
 
 #### ✅ Sistema de Pagamentos Completo
-1. **Banco de Dados** - Tabela `bookings` criada e executada
+1. **Banco de Dados** - Tabela `hangar_bookings` criada e executada
 2. **API Backend** - 2 endpoints Stripe implementados
 3. **Frontend** - 2 páginas de checkout e confirmação
 4. **Webhook** - Sistema de confirmação automática
@@ -20,7 +20,7 @@
 
 #### ✅ 5 Arquivos Novos Criados
 ```
-src/migrations/012_create_bookings_table.sql (executada ✓)
+src/migrations/022_create_hangar_bookings_full.sql (executada ✓)
 src/app/api/hangarshare/booking/confirm/route.ts (4.1KB)
 src/app/api/hangarshare/webhook/stripe/route.ts (2.6KB)
 src/app/hangarshare/booking/checkout/page.tsx (8.6KB)
@@ -70,7 +70,7 @@ STRIPE_WEBHOOK_SECRET=whsec_SUA_KEY
 ## 📋 Checklist de Status
 
 ### ✅ Completo e Funcionando
-- [x] Tabela bookings no banco (PostgreSQL Neon)
+- [x] Tabela hangar_bookings no banco (PostgreSQL Neon)
 - [x] Endpoint de criação de PaymentIntent
 - [x] Página de checkout com Stripe Elements
 - [x] Página de confirmação de sucesso
@@ -166,10 +166,10 @@ Usuário                 Frontend                 Backend              Stripe
 
 ---
 
-## 💾 Estrutura da Tabela Bookings
+## 💾 Estrutura da Tabela hangar_bookings
 
 ```sql
-bookings
+hangar_bookings
 ├─ id (UUID primary key)
 ├─ hangar_id (FK → hangar_listings)
 ├─ user_id (FK → users)
@@ -189,10 +189,10 @@ bookings
 └─ updated_at (TIMESTAMP)
 
 Índices criados:
-✓ idx_bookings_user_id
-✓ idx_bookings_hangar_id
-✓ idx_bookings_status
-✓ idx_bookings_check_in
+✓ idx_hangar_bookings_user_id
+✓ idx_hangar_bookings_hangar_id
+✓ idx_hangar_bookings_status
+✓ idx_hangar_bookings_check_in
 ```
 
 ---
@@ -273,7 +273,7 @@ npm run build
 npm run lint
 
 # Ver banco de dados
-psql "$DATABASE_URL" -c "SELECT * FROM bookings LIMIT 5;"
+psql "$DATABASE_URL" -c "SELECT * FROM hangar_bookings LIMIT 5;"
 ```
 
 ---
@@ -325,7 +325,7 @@ stripe listen --forward-to localhost:3000/api/hangarshare/webhook/stripe
 - Build completo sem erros
 - Servidor rodando (localhost:3000)
 - Sistema de pagamento Stripe integrado
-- Banco de dados com tabela bookings
+- Banco de dados com tabela hangar_bookings
 - Checkout funcional com CardElement
 - Webhook para confirmação automática
 - Documentação completa (6 guias)

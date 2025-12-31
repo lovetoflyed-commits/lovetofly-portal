@@ -37,7 +37,7 @@ export async function GET(request: Request) {
         b.updated_at,
         h.hangar_number,
         h.airport_icao
-      FROM bookings b
+      FROM hangar_bookings b
       JOIN hangar_listings h ON b.hangar_id = h.id
       WHERE b.user_id = $1
       ORDER BY b.created_at DESC`,

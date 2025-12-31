@@ -68,12 +68,14 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
 }
 
 import { useState, useEffect } from 'react';
+import { maskCEP, maskCPF, maskPhone, isValidCPF } from '@/utils/masks';
 import Sidebar from '@/components/Sidebar';
 import { useAuth } from '@/context/AuthContext';
+import HangarCarousel from '@/components/HangarCarousel';
 
 
 
-    // Register form (keeps required backend fields but simplified layout)
+// Register form (keeps required backend fields but simplified layout)
 function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -671,8 +673,8 @@ export default function Home() {
         const data = await response.json();
         setNewsArticles(data.articles || []);
       }
-    } catch (error) {
-      console.error('News fetch error:', error);
+    } catch {
+      // Erro ao buscar notícias
     } finally {
       setLoadingNews(false);
     }
@@ -717,7 +719,7 @@ export default function Home() {
     } catch (error: any) {
       setWeatherError(error.message || 'Erro ao buscar dados. Verifique o código ICAO.');
       setWeatherData(null);
-      console.error('Weather fetch error:', error);
+      // Erro ao buscar clima
     } finally {
       setLoadingWeather(false);
     }
@@ -736,8 +738,9 @@ export default function Home() {
   // If user is logged in, show modular dashboard
   if (user) {
     return (
-      <div className="min-h-screen bg-slate-50 text-slate-900">
-        <main className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+      <div className="min-h-screen bg-slate-50 text-slate-900 flex">
+        <Sidebar />
+        <main className="flex-1 max-w-7xl mx-auto px-4 py-8 space-y-6">
           {/* Welcome Section */}
           <section className="bg-white rounded-2xl shadow p-6 border border-slate-100">
             <div className="flex items-center justify-between mb-4">
@@ -745,7 +748,6 @@ export default function Home() {
                 <h1 className="text-3xl md:text-4xl font-black text-blue-900 mb-2">Bem vindo ao seu cockpit</h1>
                 <p className="text-sm text-slate-600">Acesse suas ferramentas e acompanhe informações em tempo real.</p>
               </div>
-              
               {/* Menu de abas horizontais com cores complementares */}
               <nav className="hidden lg:flex items-center gap-2">
                 {[
@@ -774,6 +776,9 @@ export default function Home() {
               </nav>
             </div>
           </section>
+
+          {/* Carrossel de ofertas de hangares */}
+          <HangarCarousel />
 
           {/* Widgets Row in 3 columns: left weather, middle classifieds, right clock+news */}
           <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -859,7 +864,10 @@ export default function Home() {
                   <img
                     src="https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&w=500&q=70"
                     alt="MRO Manutenção Aeronáutica"
+                    width={80}
+                    height={64}
                     className="w-20 h-16 object-cover rounded"
+                    style={{ objectFit: 'cover', borderRadius: '0.5rem' }}
                   />
                   <div className="flex-1">
                     <h4 className="text-sm font-bold text-blue-900 leading-tight">MRO Prime Aviation</h4>
@@ -1021,7 +1029,10 @@ export default function Home() {
                   <img
                     src="https://images.unsplash.com/photo-1519677100203-a0e668c92439?auto=format&fit=crop&w=500&q=70"
                     alt="Condomínio Aeronáutico"
+                    width={80}
+                    height={64}
                     className="w-20 h-16 object-cover rounded"
+                    style={{ objectFit: 'cover', borderRadius: '0.5rem' }}
                   />
                   <div className="flex-1">
                     <h4 className="text-sm font-bold text-blue-900 leading-tight">SkyPark Condomínio Aeronáutico</h4>
@@ -1097,130 +1108,63 @@ export default function Home() {
     <div className="min-h-screen bg-slate-50 text-slate-900">
 
       {/* Sidebar & Main Content Layout */}
-      <div className="flex min-h-[calc(100vh-210px)]">
-        {/* Sidebar */}
-        <aside className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-40 w-72 bg-gray-100 text-gray-800 transition-transform duration-300 overflow-y-auto border-r border-gray-200`} style={{top: '210px'}}>
-          <nav className="p-4 space-y-2">
-            {menuItems.map((item, index) => (
-              <div key={index}>
-                <button
-                  onClick={() => toggleMenu(item.name)}
-                  className="w-full flex items-center justify-between px-4 py-2 rounded-lg transition-colors text-left font-semibold text-gray-800 hover:bg-gray-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-900"
-                >
-                  <span>{item.name}</span>
-                  {item.children && (
-                    <svg
-                      className={`w-4 h-4 transition-transform ${openMenus[item.name] ? 'rotate-90' : ''}`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  )}
-                </button>
-                
-                {item.children && openMenus[item.name] && (
-                  <div className="ml-4 mt-1 space-y-1">
-                    {item.children.map((child, childIndex) => (
-                      <div key={childIndex}>
-                        <button
-                          onClick={() => child.children && toggleMenu(`${item.name}-${child.name}`)}
-                          className="w-full flex items-center justify-between px-4 py-2 rounded-lg transition-colors text-left text-sm text-gray-800 hover:bg-gray-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-900"
-                        >
-                          <span>{child.name}</span>
-                          {child.children && (
-                            <svg
-                              className={`w-3 h-3 transition-transform ${openMenus[`${item.name}-${child.name}`] ? 'rotate-90' : ''}`}
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                            </svg>
-                          )}
-                        </button>
-                        
-                        {child.children && openMenus[`${item.name}-${child.name}`] && (
-                          <div className="ml-4 mt-1 space-y-1">
-                            {child.children.map((subchild, subchildIndex) => (
-                              <button
-                                key={subchildIndex}
-                                className="w-full px-4 py-2 rounded-lg transition-colors text-left text-xs text-gray-800 hover:bg-gray-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-900"
-                              >
-                                {subchild}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </nav>
-        </aside>
 
-        {/* Overlay para mobile */}
-        {sidebarOpen && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-            style={{top: '210px'}}
-          />
+      <div className="flex min-h-[calc(100vh-210px)]">
+        {/* Sidebar para usuário logado */}
+        {user && (
+          <Sidebar />
         )}
 
         {/* Main Content */}
-        <main className="flex-1 px-4 py-8 space-y-6 max-w-6xl mx-auto w-full">
-        {/* Conteúdo principal permanece */}
+        <main className="flex-1 px-4 py-8 space-y-6 max-w-6xl mx-auto w-full bg-gray-50">
+          <HangarCarousel />
+          {/* Conteúdo principal permanece */}
+          {/* Prévia de ferramentas e módulos (visível sem login) */}
+          {Object.entries(modules).map(([key, module]) => {
+            const moduleHasAccess = hasAccess(module.minPlan);
+            const accessibleFeatures = module.features.filter(f => hasAccess(f.minPlan));
+            const lockedFeatures = module.features.filter(f => !hasAccess(f.minPlan));
 
-        {/* Prévia de ferramentas e módulos (visível sem login) */}
-        {Object.entries(modules).map(([key, module]) => {
-          const moduleHasAccess = hasAccess(module.minPlan);
-          const accessibleFeatures = module.features.filter(f => hasAccess(f.minPlan));
-          const lockedFeatures = module.features.filter(f => !hasAccess(f.minPlan));
+            // No landing, mostramos apenas o cabeçalho do módulo e as features livres
+            return (
+              <section key={`landing-${key}`} className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">{module.icon}</span>
+                  <h2 className="text-2xl font-bold text-blue-900">{module.name}</h2>
+                  {!moduleHasAccess && (
+                    <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded">Alguns itens requerem {module.minPlan}</span>
+                  )}
+                </div>
 
-          // No landing, mostramos apenas o cabeçalho do módulo e as features livres
-          return (
-            <section key={`landing-${key}`} className="space-y-4">
-              <div className="flex items-center gap-3">
-                <span className="text-3xl">{module.icon}</span>
-                <h2 className="text-2xl font-bold text-blue-900">{module.name}</h2>
-                {!moduleHasAccess && (
-                  <span className="text-xs bg-slate-200 text-slate-600 px-2 py-1 rounded">Alguns itens requerem {module.minPlan}</span>
-                )}
-              </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {accessibleFeatures.map((feature, idx) => (
+                    <a
+                      key={idx}
+                      href={feature.href}
+                      className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition"
+                    >
+                      <h3 className="text-blue-900 font-bold mb-2">{feature.name}</h3>
+                      <p className="text-sm text-gray-800">{feature.desc}</p>
+                    </a>
+                  ))}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {accessibleFeatures.map((feature, idx) => (
-                  <a
-                    key={idx}
-                    href={feature.href}
-                    className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition"
-                  >
-                    <h3 className="text-blue-900 font-bold mb-2">{feature.name}</h3>
-                    <p className="text-sm text-slate-600">{feature.desc}</p>
-                  </a>
-                ))}
-
-                {lockedFeatures.map((feature, idx) => (
-                  <div
-                    key={idx}
-                    className="bg-slate-100 rounded-xl border border-slate-300 p-6 shadow-sm opacity-60 cursor-not-allowed relative"
-                  >
-                    <div className="absolute top-3 right-3 text-xs bg-slate-700 text-white px-2 py-1 rounded">
-                      {feature.minPlan}
+                  {lockedFeatures.map((feature, idx) => (
+                    <div
+                      key={idx}
+                      className="bg-gray-100 rounded-xl border border-gray-300 p-6 shadow-sm opacity-60 cursor-not-allowed relative"
+                    >
+                      <div className="absolute top-3 right-3 text-xs bg-blue-900 text-white px-2 py-1 rounded">
+                        {feature.minPlan}
+                      </div>
+                      <h3 className="text-gray-700 font-bold mb-2">{feature.name}</h3>
+                      <p className="text-sm text-gray-500">{feature.desc}</p>
                     </div>
-                    <h3 className="text-slate-700 font-bold mb-2">{feature.name}</h3>
-                    <p className="text-sm text-slate-500">{feature.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </section>
-          );
-        })}
-      </main>
+                  ))}
+                </div>
+              </section>
+            );
+          })}
+        </main>
       </div>
 
       <Modal open={loginOpen} onClose={() => setLoginOpen(false)} title="Entrar">

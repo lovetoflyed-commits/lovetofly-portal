@@ -4,7 +4,7 @@ const user = process.env.DB_USER || 'postgres';
 const password = encodeURIComponent(process.env.DB_PASSWORD || ''); 
 const host = process.env.DB_HOST || 'localhost';
 const port = process.env.DB_PORT || 5432;
-const db = process.env.DB_DATABASE || 'lovetofly_portal';
+const db = process.env.DB_DATABASE || 'lovetofly-portal';
 
 // Monta a URL de conexão
 const databaseUrl = `postgres://${user}:${password}@${host}:${port}/${db}`;

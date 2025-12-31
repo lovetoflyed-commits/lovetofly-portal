@@ -1,0 +1,2 @@
+-- Migration para popular hangares sudeste/centrooeste
+-- (adicione aqui o conteúdo original do migration removido)

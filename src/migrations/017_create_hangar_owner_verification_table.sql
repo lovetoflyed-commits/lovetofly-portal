@@ -1,0 +1,2 @@
+-- Migration para criar a tabela hangar_owner_verification
+-- (adicione aqui o conteúdo original do migration removido)

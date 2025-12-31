@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
 
       // Update booking status to confirmed/paid
       const bookingUpdateResult = await pool.query(
-        `UPDATE bookings 
+        `UPDATE hangar_bookings 
          SET status = $1, stripe_charge_id = $2, payment_date = NOW()
          WHERE stripe_payment_intent_id = $3
          RETURNING id, hangar_id, user_id, check_in, check_out, nights, total_price`,
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
         `SELECT b.id, b.hangar_id, b.user_id, b.check_in, b.check_out, b.total_price,
                 u.first_name, u.last_name, u.email,
                 h.hangar_number
-         FROM bookings b
+         FROM hangar_bookings b
          JOIN users u ON b.user_id = u.id
          JOIN hangar_listings h ON b.hangar_id = h.id
          WHERE b.stripe_payment_intent_id = $1`,
@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
 
       // Update booking status to cancelled
       await pool.query(
-        `UPDATE bookings 
+        `UPDATE hangar_bookings 
          SET status = $1
          WHERE stripe_payment_intent_id = $2`,
         ['cancelled', paymentIntent.id]

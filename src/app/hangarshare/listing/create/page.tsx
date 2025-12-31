@@ -49,6 +49,19 @@ export default function HangarListingPage() {
     cancellationPolicy: 'flexible',
   });
 
+  // Imagens do hangar
+  const [photos, setPhotos] = useState<File[]>([]);
+  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+  const [photoError, setPhotoError] = useState('');
+
+  // Preview das imagens selecionadas
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    setPhotos(files);
+    setPhotoPreviews(files.map(file => URL.createObjectURL(file)));
+    setPhotoError(files.length === 0 ? 'Adicione pelo menos uma imagem do hangar.' : '');
+  };
+
   const handleIcaoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const code = e.target.value.toUpperCase();
     setFormData({ ...formData, icaoCode: code });
@@ -76,6 +89,10 @@ export default function HangarListingPage() {
       setIcaoError('Por favor, insira um ICAO válido');
       return;
     }
+    if (step === 2 && photos.length === 0) {
+      setPhotoError('Adicione pelo menos uma imagem do hangar.');
+      return;
+    }
     setStep(prev => prev + 1);
   };
 
@@ -84,11 +101,16 @@ export default function HangarListingPage() {
   };
 
   const handleSubmit = async () => {
+    if (photos.length === 0) {
+      setPhotoError('Adicione pelo menos uma imagem do hangar.');
+      setStep(2);
+      return;
+    }
     setLoading(true);
 
     try {
-      // TODO: Implement API call to create listing
-      alert('Hangar anunciado com sucesso!');
+      // TODO: Implementar upload real das imagens e envio do campo photos para a API
+      alert('Hangar anunciado com sucesso! (Imagens não enviadas neste mock)');
       router.push('/hangarshare/owner/dashboard');
     } catch (error) {
       console.error('Error:', error);
@@ -234,6 +256,25 @@ export default function HangarListingPage() {
             <div>
               <h2 className="text-2xl font-bold text-blue-900 mb-6">Características do Hangar</h2>
               <div className="space-y-6">
+                {/* Upload de imagens */}
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                    Fotos do Hangar *
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handlePhotoChange}
+                    className="mb-2"
+                  />
+                  {photoError && <p className="text-red-600 text-sm mt-1">⚠️ {photoError}</p>}
+                  <div className="flex gap-2 mt-2 flex-wrap">
+                    {photoPreviews.map((src, idx) => (
+                      <img key={idx} src={src} alt={`Foto ${idx+1}`} className="w-24 h-24 object-cover rounded border" />
+                    ))}
+                  </div>
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-2">

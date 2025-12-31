@@ -1,0 +1,2 @@
+-- Migration para tornar novas colunas nullable
+-- (adicione aqui o conteúdo original do migration removido)

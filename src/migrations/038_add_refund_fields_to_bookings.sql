@@ -1,0 +1,4 @@
+-- [REMOVIDO] Migration para bookings substituída por hangar_bookings
+-- (adicione aqui o conteúdo original do migration removido)
+-- Migration para adicionar campos de reembolso em bookings
+-- (adicione aqui o conteúdo original do migration removido)

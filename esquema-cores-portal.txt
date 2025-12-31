@@ -1,0 +1,75 @@
+Análise da Cor Base: #1e3a8a (Azul Profundo)
+● HEX: #1e3a8a
+● RGB: (30,58,138)
+● HSL: (226°,65%,33%)
+
+Cores Complementares e Análogas para Harmonia
+1. Cor Complementar Direta: #8a6e1e, #8a4c1e
+2. Cores Análogas: tons de azul-esverdeado e azul-arroxeado
+3. Cores Triádicas/Tetrádicas: combinações equidistantes
+
+Recomendações de Paleta de Cores para o Site
+
+1. Menu Lateral (Sidebar)
+- Fundo: bg-blue-800 (#1f407a), bg-blue-700 (#2a509f), bg-gray-800 (#2d3748), bg-gray-900 (#1a202c), bg-gray-100 (#f3f4f6)
+- Texto: text-white (#ffffff), text-gray-200
+- Hover/Ativo: blue-500, blue-600, laranja-dourado (#f59e0b)
+
+2. Botões (Calls to Action)
+- Primário: orange-500 (#f97316), amber-500 (#f59e0b), blue-600 (#2563eb), blue-500 (#3b82f6)
+- Secundário: gray-300 (#d1d5db), blue-200, text-gray-800
+- Texto: branco (#ffffff), azul do cabeçalho (#1e3a8a)
+
+3. Texto Geral
+- Principal: gray-800, gray-900
+- Títulos: azul do cabeçalho (#1e3a8a), cinza escuro
+- Links: azul do cabeçalho (#1e3a8a), azul mais claro
+
+4. Caixas de Widgets
+- Fundo: branco (#ffffff), gray-50, gray-100, blue-50, blue-100
+- Bordas: gray-200, gray-300, blue-200
+- Títulos: azul do cabeçalho (#1e3a8a), cinza escuro
+
+5. Footer (Rodapé)
+- Fundo: azul do cabeçalho (#1e3a8a), blue-950, gray-800, gray-900
+- Texto: branco (#ffffff), gray-200
+- Links: branco, azul claro
+
+Tabela de Cores Sugeridas (Tailwind CSS)
+Elemento | Classe | HEX | RGB
+Header | bg-blue-900 | #1e3a8a | (30,58,138)
+Menu Lateral | bg-gray-100 | #f3f4f6 | (243,244,246)
+Menu Lateral | bg-gray-800 | #1f2937 | (31,41,55)
+Menu Lateral (Texto) | text-gray-800 | #1f2937 | (31,41,55)
+Menu Lateral (Texto) | text-white | #ffffff | (255,255,255)
+Botão Primário | bg-orange-500 | #f97316 | (249,115,22)
+Botão Primário (Texto) | text-white | #ffffff | (255,255,255)
+Botão Secundário | bg-gray-300 | #d1d5db | (209,213,219)
+Texto Geral | text-gray-800 | #1f2937 | (31,41,55)
+Títulos | text-blue-900 | #1e3a8a | (30,58,138)
+Links | text-blue-700 | #2a509f | (42,80,159)
+Caixas/Widgets | bg-white | #ffffff | (255,255,255)
+Caixas/Widgets | bg-gray-50 | #f9fafb | (249,250,251)
+Footer | bg-blue-900 | #1e3a8a | (30,58,138)
+Footer | bg-gray-900 | #111827 | (17,24,39)
+Footer (Texto) | text-white | #ffffff | (255,255,255)
+
+Cores de Behavior para Botões
+Botão Primário: #34D399 (normal), #22C55E (hover), #16A34A (active), outline #22C55E (focus)
+Botão Secundário: #D1D5DB (normal), #9CA3AF (hover), #6B7280 (active), outline #9CA3AF (focus)
+Botão "Saiba Mais": #1E3A8A (normal), #2A509F (hover/focus), #1A307A (active)
+
+Menu Lateral (Item):
+Normal: text-[#E5E7EB]
+Hover: bg-[#3F444C] text-white
+Active: bg-[#1E3A8A] text-white
+Focus: outline-[#1E3A8A]
+
+Considerações:
+- Sempre verificar contraste para acessibilidade (WCAG)
+- Manter consistência de aplicação das cores
+- Usar espaço em branco para clareza
+- Feedback visual: verde para sucesso, vermelho para erro, amarelo para aviso
+- Paleta deve reforçar a identidade da marca
+
+Resumo: Use azul profundo (#1e3a8a) como base, tons análogos para harmonia, laranja/amarelo para destaque, verdes para ações principais, cinzas para áreas neutras e branco para clareza.

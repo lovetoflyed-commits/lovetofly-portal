@@ -35,13 +35,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Please fill required fields' }, { status: 400 });
     }
 
-    const existingUser = await pool.query(
-      'SELECT * FROM users WHERE email = $1',
+
+    // Verifica se já existe usuário com o mesmo email
+    const existingUserEmail = await pool.query(
+      'SELECT id FROM users WHERE email = $1',
       [email]
     );
+    if (existingUserEmail.rows.length > 0) {
+      return NextResponse.json({ error: 'E-mail já cadastrado' }, { status: 409 });
+    }
 
-    if (existingUser.rows.length > 0) {
-      return NextResponse.json({ error: 'Email already registered' }, { status: 409 });
+    // Verifica se já existe usuário com o mesmo CPF
+    const existingUserCPF = await pool.query(
+      'SELECT id FROM users WHERE cpf = $1',
+      [cleanedCPF]
+    );
+    if (existingUserCPF.rows.length > 0) {
+      return NextResponse.json({ error: 'CPF já cadastrado' }, { status: 409 });
     }
 
     const salt = await bcrypt.genSalt(10);

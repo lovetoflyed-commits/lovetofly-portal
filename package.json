@@ -35,7 +35,8 @@
     "react-dom": "19.2.3",
     "resend": "^6.6.0",
     "stripe": "^20.1.0",
-    "styled-jsx": "^5.1.7"
+    "styled-jsx": "^5.1.7",
+    "swr": "^2.3.8"
   },
   "devDependencies": {
     "@types/bcryptjs": "^3.0.0",

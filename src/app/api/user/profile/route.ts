@@ -18,6 +18,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
     }
 
+    // Buscar dados do usuário
     const result = await pool.query(
       `SELECT 
         id,
@@ -46,6 +47,13 @@ export async function GET(request: Request) {
 
     const user = result.rows[0];
 
+    // Checar se o usuário é anunciante ativo no HangarShare
+    const hangarResult = await pool.query(
+      `SELECT 1 FROM hangar_listings WHERE owner_id = $1 AND status = 'active' LIMIT 1`,
+      [userId]
+    );
+    const isHangarshareAdvertiser = hangarResult.rows.length > 0;
+
     return NextResponse.json({
       id: user.id,
       firstName: user.first_name,
@@ -63,6 +71,7 @@ export async function GET(request: Request) {
       addressCountry: user.address_country,
       aviationRole: user.aviation_role,
       aviationRoleOther: user.aviation_role_other,
+      isHangarshareAdvertiser,
     });
   } catch (err) {
     return NextResponse.json({ message: 'Server error' }, { status: 500 });

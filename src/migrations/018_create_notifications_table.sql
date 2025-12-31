@@ -1,0 +1,2 @@
+-- Migration para criar a tabela notifications
+-- (adicione aqui o conteúdo original do migration removido)

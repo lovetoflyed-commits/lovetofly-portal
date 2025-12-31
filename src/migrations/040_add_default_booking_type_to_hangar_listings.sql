@@ -1,0 +1,2 @@
+-- Migration para adicionar tipo de booking padrão em hangar_listings
+-- (adicione aqui o conteúdo original do migration removido)

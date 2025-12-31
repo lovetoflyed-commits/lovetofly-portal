@@ -177,7 +177,7 @@ export async function POST(request: NextRequest) {
 
     // Create booking record with pending status
     const bookingResult = await pool.query(
-      `INSERT INTO bookings 
+      `INSERT INTO hangar_bookings 
         (hangar_id, user_id, check_in, check_out, nights, subtotal, fees, total_price, status, payment_method, stripe_payment_intent_id, booking_type, refund_policy_applied)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
        RETURNING id, stripe_payment_intent_id, booking_type`,

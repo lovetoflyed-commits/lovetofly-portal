@@ -1,0 +1,2 @@
+-- Migration para remover coluna anac_code
+-- (adicione aqui o conteúdo original do migration removido)

@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
         u.full_name as user_name,
         hl.owner_id,
         hl.cancellation_policy
-      FROM bookings b
+      FROM hangar_bookings b
       JOIN users u ON b.user_id = u.id
       JOIN hangar_listings hl ON b.hangar_id = hl.id
       WHERE b.id = $1`,
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
 
         // Update booking status
         await pool.query(
-          `UPDATE bookings 
+          `UPDATE hangar_bookings 
           SET status = $1, updated_at = NOW(), refund_amount = $2, refund_id = $3, cancellation_reason = $4
           WHERE id = $5`,
           ['cancelled', refundAmount, refundId, reason, bookingId]
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
         
         // Still update booking status locally even if Stripe fails
         await pool.query(
-          `UPDATE bookings 
+          `UPDATE hangar_bookings 
           SET status = $1, updated_at = NOW(), refund_amount = $2, cancellation_reason = $3
           WHERE id = $4`,
           ['cancelled', refundAmount, reason, bookingId]
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
     } else {
       // No payment to refund (payment not completed or pending)
       await pool.query(
-        `UPDATE bookings 
+        `UPDATE hangar_bookings 
         SET status = $1, updated_at = NOW(), refund_amount = $2, cancellation_reason = $3
         WHERE id = $4`,
         ['cancelled', refundAmount, reason, bookingId]
