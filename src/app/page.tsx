@@ -780,7 +780,7 @@ export default function Home() {
           {/* Carrossel de ofertas de hangares */}
           <HangarCarousel />
 
-          {/* Widgets Row in 3 columns: left weather, middle classifieds, right clock+news */}
+          {/* Widgets Row: Weather + Classifieds (left), News + Income Widgets (right) */}
           <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Col 1: Airport Weather */}
             <div className="bg-white rounded-xl shadow border border-slate-200 p-5">
@@ -974,21 +974,6 @@ export default function Home() {
 
             </div>
 
-            {/* HangarShare destaque abaixo dos classificados */}
-            <div className="bg-gradient-to-r from-blue-50 via-white to-blue-50 border border-blue-100 rounded-xl p-4 shadow-sm">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="space-y-1">
-                  <div className="text-xs font-semibold text-blue-800 uppercase tracking-wide">HangarShare</div>
-                  <h4 className="text-lg font-black text-blue-900">Precisa de hangar ou quer monetizar o seu?</h4>
-                  <p className="text-sm text-slate-600">Busque hangares disponíveis ou publique seu espaço em minutos.</p>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <a href="/hangarshare" className="px-4 py-2 text-sm font-bold rounded-lg bg-blue-900 text-white hover:bg-blue-800 text-center">Buscar hangares</a>
-                  <a href="/hangarshare/owner/register" className="px-4 py-2 text-sm font-bold rounded-lg border border-blue-200 text-blue-900 hover:border-blue-300 bg-white text-center">Anunciar hangar</a>
-                </div>
-              </div>
-            </div>
-
             {/* Col 3: Clock + Latest News */}
             <div className="bg-white rounded-xl shadow border border-slate-200 p-5 space-y-4">
               <div className="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2">
@@ -1058,60 +1043,161 @@ export default function Home() {
             </div>
           </section>
 
-          {/* Tools/Modules Section */}
-          {Object.entries(modules).map(([key, module]) => {
-            const moduleHasAccess = hasAccess(module.minPlan);
-            const accessibleFeatures = module.features.filter(f => hasAccess(f.minPlan));
-            const lockedFeatures = module.features.filter(f => !hasAccess(f.minPlan));
+          {/* HangarShare Featured Listing */}
+          <section className="grid grid-cols-1 gap-4">
+            <div className="bg-white rounded-xl shadow border border-slate-200 p-5 space-y-3">
+              <div className="flex items-center justify-between mb-1">
+                <div>
+                  <div className="text-xs font-semibold text-blue-900 uppercase tracking-wide">HangarShare</div>
+                  <h3 className="text-lg font-black text-blue-900">Espaço para sua Aeronave</h3>
+                </div>
+                <span className="bg-green-400 text-green-900 px-2 py-1 rounded text-xs font-bold">Novo</span>
+              </div>
 
-            if (!moduleHasAccess && accessibleFeatures.length === 0) return null;
+              <div className="overflow-hidden rounded-xl border border-slate-200 shadow-sm relative">
+                <img
+                  src="/hangars/29aec752-cafd-4cbe-b7d7-01ecbbf5c9f9.jpeg"
+                  alt="Hangar para locação"
+                  className="w-full h-40 object-cover"
+                />
+                <button 
+                  className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center hover:bg-white shadow-lg"
+                  title="Favoritar"
+                >
+                  <span className="text-slate-600">♡</span>
+                </button>
+              </div>
 
-            return (
-              <section key={key} className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <span className="text-3xl">{module.icon}</span>
-                  <h2 className="text-2xl font-bold text-blue-900">{module.name}</h2>
-                  {!moduleHasAccess && <span className="text-xs bg-slate-200 text-slate-600 px-2 py-1 rounded">Requer {module.minPlan}</span>}
+              <div className="space-y-2">
+                <div>
+                  <h4 className="text-base font-bold text-blue-900">Reserve ou Anuncie seu Hangar</h4>
+                  <p className="text-xs text-slate-500">Plataforma completa para locação de hangares</p>
+                </div>
+                
+                <div className="text-xs text-slate-600 space-y-1 bg-slate-50 rounded-lg p-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold">🏢 Hangares:</span>
+                    <span>Disponíveis em todo Brasil</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold">💰 Preços:</span>
+                    <span>A partir de R$ 50/dia</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold">📍 Aeródromos:</span>
+                    <span>SBSP, SBRJ, SBCF e mais</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold">⚡ Reserva:</span>
+                    <span>Instantânea e segura</span>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {accessibleFeatures.map((feature, idx) => (
-                    <a
-                      key={idx}
-                      href={feature.href}
-                      className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition"
-                    >
-                      <h3 className="text-blue-900 font-bold mb-2">{feature.name}</h3>
-                      <p className="text-sm text-slate-600">{feature.desc}</p>
-                    </a>
-                  ))}
+                <div className="flex gap-2">
+                  <a 
+                    href="/hangarshare" 
+                    className="flex-1 px-3 py-2 bg-blue-900 text-white text-xs font-bold rounded hover:bg-blue-800 text-center"
+                  >
+                    🔍 Buscar Hangares
+                  </a>
+                  <a 
+                    href="/hangarshare/owner/register" 
+                    className="flex-1 px-3 py-2 bg-orange-500 text-white text-xs font-bold rounded hover:bg-orange-600 text-center"
+                  >
+                    ➕ Anunciar Hangar
+                  </a>
+                </div>
+              </div>
+            </div>
+          </section>
 
-                  {lockedFeatures.map((feature, idx) => (
-                    <div
-                      key={idx}
-                      className="bg-slate-100 rounded-xl border border-slate-300 p-6 shadow-sm opacity-60 cursor-not-allowed relative"
-                    >
-                      <div className="absolute top-3 right-3 text-xs bg-slate-700 text-white px-2 py-1 rounded">
-                        {feature.minPlan}
-                      </div>
-                      <h3 className="text-slate-700 font-bold mb-2">{feature.name}</h3>
-                      <p className="text-sm text-slate-500">{feature.desc}</p>
+          {/* High-Value Income Widgets Row */}
+          <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Aviation Insurance Quote Widget */}
+            <div className="bg-white rounded-xl shadow border border-slate-200 p-5 space-y-3">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">🛡️</span>
+                <div>
+                  <div className="text-xs font-semibold text-blue-900 uppercase tracking-wide">Seguro Aeronáutico</div>
+                  <h3 className="text-lg font-black text-blue-900">Cotação Imediata</h3>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 space-y-3">
+                <p className="text-sm text-blue-900 font-semibold">Proteção completa para sua aeronave</p>
+                
+                <div className="space-y-2">
+                  <div className="text-xs text-blue-800 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span>✓</span>
+                      <span>Responsabilidade Civil</span>
                     </div>
-                  ))}
+                    <div className="flex items-center gap-2">
+                      <span>✓</span>
+                      <span>Danos à Aeronave</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span>✓</span>
+                      <span>Cobertura Internacional</span>
+                    </div>
+                  </div>
                 </div>
-              </section>
-            );
-          })}
 
-          {userPlan === 'free' && (
-            <section className="bg-gradient-to-r from-blue-900 to-blue-700 text-white rounded-2xl shadow-lg p-8">
-              <h2 className="text-2xl font-bold mb-2">Desbloqueie todos os recursos</h2>
-              <p className="mb-4 text-blue-100">Assine Premium ou Pro para acessar funcionalidades avançadas.</p>
-              <button className="px-6 py-3 bg-yellow-400 text-blue-900 font-bold rounded-lg shadow hover:bg-yellow-300">
-                Ver Planos
-              </button>
-            </section>
-          )}
+                <button className="w-full px-4 py-2 bg-blue-900 text-white text-sm font-bold rounded-lg hover:bg-blue-800 transition">
+                  Solicitar Cotação
+                </button>
+              </div>
+
+              <div className="text-xs text-slate-500 text-center">
+                Comparamos as melhores seguradoras do Brasil
+              </div>
+            </div>
+
+            {/* Pilot Shop Deal of the Day */}
+            <div className="bg-white rounded-xl shadow border border-slate-200 p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">🎁</span>
+                  <div>
+                    <div className="text-xs font-semibold text-orange-900 uppercase tracking-wide">Oferta do Dia</div>
+                    <h3 className="text-lg font-black text-blue-900">Pilot Shop</h3>
+                  </div>
+                </div>
+                <span className="bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">-25%</span>
+              </div>
+
+              <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+                <img
+                  src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=500&q=80"
+                  alt="Headset de aviação Bose A20"
+                  className="w-full h-32 object-cover"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <div>
+                  <h4 className="text-base font-bold text-blue-900">Headset Bose A20</h4>
+                  <p className="text-xs text-slate-500">Comunicação profissional com cancelamento de ruído</p>
+                </div>
+
+                <div className="flex items-baseline gap-2">
+                  <span className="text-lg font-black text-green-700">R$ 5.999</span>
+                  <span className="text-sm line-through text-slate-400">R$ 7.999</span>
+                </div>
+
+                <div className="text-xs text-slate-600 bg-slate-50 rounded-lg p-2">
+                  <span className="font-semibold">⏰ Oferta válida por:</span> 23h 45min
+                </div>
+
+                <a
+                  href="/marketplace"
+                  className="w-full px-4 py-2 bg-orange-500 text-white text-sm font-bold rounded-lg hover:bg-orange-600 transition text-center block"
+                >
+                  Ver Oferta Completa
+                </a>
+              </div>
+            </div>
+          </section>
         </main>
       </div>
     );

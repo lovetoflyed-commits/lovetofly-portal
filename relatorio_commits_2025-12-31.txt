@@ -1,0 +1,9 @@
+Últimos commits salvos no repositório (31/12/2025):
+
+7d33654: feat(register): melhorias no fluxo de cadastro, validação de CPF, bloqueio de duplicidade de email/cpf, labels e busca de endereço por CEP
+d0b7959: Prepare for deployment: update, restore, and clean up files
+64c007d: fix: garantir deploy do sidebar para não logados (build local validado)
+84e91e1: chore: force Netlify clean deploy (empty commit)
+a5fdaad: fix: hangarshare search page JSX and build errors
+
+Todas as alterações estão versionadas e sincronizadas com o repositório remoto.

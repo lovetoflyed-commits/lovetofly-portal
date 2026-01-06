@@ -1,0 +1,49 @@
+Relatório de Atividades – 31/12/2025
+
+Resumo Geral:
+- Jornada de trabalho: ~7-8 horas
+- Objetivo: Refatoração, validação e robustez do fluxo de cadastro de usuário, testes, documentação e deploy.
+
+Principais Atividades Realizadas:
+1. Refatoração do formulário de cadastro:
+   - Inclusão de todos os campos obrigatórios (nome, sobrenome, email, senha, CPF, endereço, etc.).
+   - Labels visíveis para todos os campos.
+   - Busca automática de endereço via CEP (ViaCEP).
+   - Validação de CPF no frontend (impede CPFs inválidos).
+   - Redirecionamento automático para login após cadastro.
+
+2. Backend/API:
+   - Validação de duplicidade de e-mail e CPF (bloqueio no backend).
+   - Mensagens de erro claras para duplicidade e campos inválidos.
+   - Integração total do frontend com a API /api/auth/register.
+
+3. Testes e Garantia de Qualidade:
+   - Testes de cadastro com dados válidos e inválidos.
+   - Testes de bloqueio para e-mail e CPF já cadastrados.
+   - Testes de busca de endereço por CEP.
+   - Testes de redirecionamento e mensagens de erro.
+
+4. Build, Versionamento e Deploy:
+   - Build local validado sem erros.
+   - Commit e push de todas as alterações para o GitHub.
+   - Deploy automático via Netlify concluído com sucesso.
+   - Criação de arquivo de log dos últimos commits (relatorio_commits_2025-12-31.txt).
+
+5. Pendências e Observações:
+   - Erro de fetch de notícias (news) permanece na API /api/news/aviation (depende de chave de API ou fonte externa).
+   - Imagem padrão ausente (no-image.png) ainda precisa ser adicionada para evitar erro 404 em imagens faltantes.
+
+6. Últimos Commits:
+- 7d33654: feat(register): melhorias no fluxo de cadastro, validação de CPF, bloqueio de duplicidade de email/cpf, labels e busca de endereço por CEP
+- d0b7959: Prepare for deployment: update, restore, and clean up files
+- 64c007d: fix: garantir deploy do sidebar para não logados (build local validado)
+- 84e91e1: chore: force Netlify clean deploy (empty commit)
+- a5fdaad: fix: hangarshare search page JSX and build errors
+
+Status Final:
+- Sistema pronto para produção com fluxo de cadastro robusto e validado.
+- Deploy realizado e confirmado em produção.
+- Histórico e documentação salvos.
+
+Responsável: GitHub Copilot
+Data: 31/12/2025

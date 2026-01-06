@@ -39,7 +39,7 @@ export default function Sidebar({ onFeatureClick, disabled }: SidebarProps) {
       title: 'Meteorologia',
       items: [
         { href: '/weather', label: 'METAR/TAF', icon: '☁️' },
-        // { href: '/weather/radar', label: 'Radar Meteorológico', icon: '🌦️' }, // descomente se houver subrota
+        { href: '/weather/radar', label: 'Radar Meteorológico', icon: '🌦️' },
       ],
     },
     {
@@ -66,6 +66,7 @@ export default function Sidebar({ onFeatureClick, disabled }: SidebarProps) {
       title: 'Cursos e Treinamento',
       items: [
         { href: '/courses', label: 'Cursos Online', icon: '📚' },
+        { href: '/simulator', label: 'Simulador', icon: '🎮' },
       ],
     },
     {
@@ -77,7 +78,7 @@ export default function Sidebar({ onFeatureClick, disabled }: SidebarProps) {
     {
       title: 'Carreira',
       items: [
-        { href: '/career', label: 'Vagas de Emprego', icon: '🎯' },
+        { href: '/mentorship', label: 'Mentoria', icon: '🤝' },
         // { href: '/career/mentorship', label: 'Mentoria', icon: '🤝' }, // descomente se houver rota
       ],
     },
