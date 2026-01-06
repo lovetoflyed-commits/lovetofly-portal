@@ -648,6 +648,8 @@ export default function Home() {
 
   // Tab navigation state
   const [activeTab, setActiveTab] = useState('painel');
+  // ICAO for Procedures & NOTAMs quick widget
+  const [proceduresIcao, setProceduresIcao] = useState('');
 
   // Fetch default airport weather and news on mount
   useEffect(() => {
@@ -748,32 +750,40 @@ export default function Home() {
                 <h1 className="text-3xl md:text-4xl font-black text-blue-900 mb-2">Bem vindo ao seu cockpit</h1>
                 <p className="text-sm text-slate-600">Acesse suas ferramentas e acompanhe informações em tempo real.</p>
               </div>
-              {/* Menu de abas horizontais com cores complementares */}
-              <nav className="hidden lg:flex items-center gap-2">
-                {[
-                  { id: 'painel', label: 'Painel', icon: '📊' },
-                  { id: 'academia', label: 'Academia', icon: '🎓' },
-                  { id: 'ferramentas', label: 'Ferramentas', icon: '🛠️' },
-                  { id: 'comunidade', label: 'Comunidade', icon: '💬' },
-                  { id: 'marketplace', label: 'Pilot Shop', icon: '🧑‍✈️' }
-                ].map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`
-                      flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold
-                      transition-all duration-200
-                      ${activeTab === tab.id 
-                        ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-200 scale-105' 
-                        : 'bg-transparent text-blue-900 hover:bg-orange-50 hover:text-orange-600 hover:shadow-md'
-                      }
-                    `}
-                  >
-                    <span className="text-base">{tab.icon}</span>
-                    <span>{tab.label}</span>
-                  </button>
-                ))}
-              </nav>
+              {/* Procedimentos & NOTAMs (AISWEB) - substitui os botões de acesso rápido */}
+              <div className="hidden lg:flex items-center gap-2">
+                <div className="flex items-center gap-2 bg-slate-50 rounded-lg px-3 py-2 border border-slate-200">
+                  <span className="text-xl">📑</span>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="ICAO (ex: SBSP)"
+                      maxLength={4}
+                      value={proceduresIcao}
+                      onChange={(e) => setProceduresIcao(e.target.value.toUpperCase())}
+                      className="w-24 rounded border border-slate-300 px-2 py-1 text-sm uppercase focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                    <a
+                      href={(proceduresIcao || '').trim().length === 4 ? `/procedures/${(proceduresIcao || '').trim().toUpperCase()}#procedures` : '#'}
+                      className={`px-3 py-1 text-xs font-bold rounded ${ (proceduresIcao || '').trim().length === 4 ? 'bg-blue-900 text-white hover:bg-blue-800' : 'bg-slate-300 text-slate-600 cursor-not-allowed'}`}
+                    >
+                      Procedimentos
+                    </a>
+                    <a
+                      href={(proceduresIcao || '').trim().length === 4 ? `/procedures/${(proceduresIcao || '').trim().toUpperCase()}#rotaer` : '#'}
+                      className={`px-3 py-1 text-xs font-bold rounded ${ (proceduresIcao || '').trim().length === 4 ? 'bg-indigo-600 text-white hover:bg-indigo-500' : 'bg-slate-300 text-slate-600 cursor-not-allowed'}`}
+                    >
+                      ROTAER
+                    </a>
+                    <a
+                      href={(proceduresIcao || '').trim().length === 4 ? `/procedures/${(proceduresIcao || '').trim().toUpperCase()}#notams` : '#'}
+                      className={`px-3 py-1 text-xs font-bold rounded ${ (proceduresIcao || '').trim().length === 4 ? 'bg-amber-600 text-white hover:bg-amber-500' : 'bg-slate-300 text-slate-600 cursor-not-allowed'}`}
+                    >
+                      NOTAMs
+                    </a>
+                  </div>
+                </div>
+              </div>
             </div>
           </section>
 

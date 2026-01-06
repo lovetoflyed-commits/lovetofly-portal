@@ -113,6 +113,27 @@ async function fetchFromNoaa(icao: string): Promise<ParsedMetar | null> {
   return parseNoaaFallback(text, icao);
 }
 
+// --- TAF helpers ---
+const parseNoaaTaf = (text: string): string | null => {
+  const lines = text.split('\n').map(l => l.trim());
+  const filtered = lines.filter(Boolean);
+  if (filtered.length < 2) return null;
+  // Drop timestamp header, keep remaining lines joined preserving new lines
+  const tafLines = filtered.slice(1);
+  return tafLines.join('\n');
+};
+
+async function fetchFromNoaaTaf(icao: string): Promise<string | null> {
+  const url = `https://tgftp.nws.noaa.gov/data/forecasts/taf/stations/${icao.toUpperCase()}.TXT`;
+  const response = await fetch(url, {
+    headers: { 'User-Agent': 'LoveToFlyPortal/1.0' },
+  });
+  if (!response.ok) return null;
+  const text = await response.text();
+  if (!text || text.trim().length === 0) return null;
+  return parseNoaaTaf(text);
+}
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const icao = searchParams.get('icao');
@@ -123,13 +144,14 @@ export async function GET(request: NextRequest) {
 
   try {
     const primary = await fetchFromAwc(icao);
-    if (primary) {
-      return NextResponse.json(primary);
-    }
+    const fallback = primary ? null : await fetchFromNoaa(icao);
 
-    const fallback = await fetchFromNoaa(icao);
-    if (fallback) {
-      return NextResponse.json(fallback);
+    const metarData = primary || fallback;
+    if (metarData) {
+      // Try to fetch TAF text (best-effort; airport may not have a TAF)
+      const tafText = await fetchFromNoaaTaf(icao);
+      const responseBody = { ...metarData, taf: tafText || null };
+      return NextResponse.json(responseBody);
     }
 
     return NextResponse.json(
