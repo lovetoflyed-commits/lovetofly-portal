@@ -780,8 +780,8 @@ export default function Home() {
           {/* Carrossel de ofertas de hangares */}
           <HangarCarousel />
 
-          {/* Widgets Row: Weather + Classifieds (left), News + Income Widgets (right) */}
-          <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Widgets Row: Weather | Classifieds | News | HangarShare - with stacked Income Widgets in News column */}
+          <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Col 1: Airport Weather */}
             <div className="bg-white rounded-xl shadow border border-slate-200 p-5">
               <div className="flex items-center gap-2 mb-3">
@@ -1041,10 +1041,8 @@ export default function Home() {
                 </div>
               </div>
             </div>
-          </section>
 
-          {/* HangarShare Featured Listing */}
-          <section className="grid grid-cols-1 gap-4">
+            {/* Col 4: HangarShare Featured Listing */}
             <div className="bg-white rounded-xl shadow border border-slate-200 p-5 space-y-3">
               <div className="flex items-center justify-between mb-1">
                 <div>
@@ -1111,7 +1109,7 @@ export default function Home() {
             </div>
           </section>
 
-          {/* High-Value Income Widgets Row */}
+          {/* Income Widgets Row - Below Main Section */}
           <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Aviation Insurance Quote Widget */}
             <div className="bg-white rounded-xl shadow border border-slate-200 p-5 space-y-3">
