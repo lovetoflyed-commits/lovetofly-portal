@@ -796,12 +796,12 @@ export default function Home() {
                     maxLength={4}
                     value={icaoCode}
                     onChange={(e) => setIcaoCode(e.target.value.toUpperCase())}
-                    className="flex-1 rounded border border-slate-300 px-2 py-1 text-sm uppercase focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-24 rounded border border-slate-300 px-2 py-1 text-sm uppercase focus:ring-2 focus:ring-blue-500 outline-none"
                   />
                   <button 
                     onClick={() => fetchWeather(icaoCode)}
                     disabled={loadingWeather || icaoCode.length !== 4}
-                    className="px-3 py-1 bg-blue-900 text-white text-xs font-bold rounded hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-1 bg-blue-900 text-white text-xs font-bold rounded hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                   >
                     {loadingWeather ? '...' : 'Buscar'}
                   </button>
