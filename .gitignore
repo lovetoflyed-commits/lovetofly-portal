@@ -46,3 +46,6 @@ next-env.d.ts
 # Local Netlify folder
 .netlify
 public/charts/
+
+# Build artifacts and local CDN bundle
+dist/
