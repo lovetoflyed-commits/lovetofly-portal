@@ -1,95 +1,78 @@
 import { NextResponse } from 'next/server';
 
+// Enhanced mock aviation news data
+function getAviationNewsData() {
+  const now = Date.now();
+  const newsItems = [
+    {
+      title: 'Boston Dynamics unleashes humanoid robots at CES 2026 with industry-leading AI',
+      description: 'Hyundai-owned Boston Dynamics publicly demonstrated Atlas humanoid robots, showcasing advanced AI integration for factory automation and real-world deployment by 2028',
+      publishedAt: new Date(now - 3600000).toISOString(),
+      source: { name: 'TechCrunch' },
+      url: '#'
+    },
+    {
+      title: 'Nvidia announces Alpamayo platform for autonomous vehicles with human-like reasoning',
+      description: 'Jensen Huang presents breakthrough AI platform enabling self-driving cars to think and reason like humans, shipping in Mercedes-Benz CLA in Q1 2026',
+      publishedAt: new Date(now - 7200000).toISOString(),
+      source: { name: 'Wired' },
+      url: '#'
+    },
+    {
+      title: 'FAA introduces stricter certification standards for advanced autonomous flight systems',
+      description: 'New regulatory framework aims to ensure safety while accelerating adoption of AI-powered aircraft navigation and collision avoidance systems',
+      publishedAt: new Date(now - 10800000).toISOString(),
+      source: { name: 'Aviation Week' },
+      url: '#'
+    },
+    {
+      title: 'Airbus demonstrates hydrogen fuel cell aircraft demonstrator ahead of 2030 targets',
+      description: 'European manufacturer successfully tests zero-emission propulsion system, advancing sustainable aviation goals and regional aircraft development',
+      publishedAt: new Date(now - 14400000).toISOString(),
+      source: { name: 'FlightGlobal' },
+      url: '#'
+    },
+    {
+      title: 'Brazil expands commercial drone regulations to support air mobility operations',
+      description: 'ANAC announces new framework allowing expanded BVLOS (beyond visual line of sight) operations, positioning Brazil as regional leader in advanced air mobility',
+      publishedAt: new Date(now - 18000000).toISOString(),
+      source: { name: 'Aviation International News' },
+      url: '#'
+    }
+  ];
+  return newsItems;
+}
+
 export async function GET() {
   try {
-    // Using NewsAPI.org for aviation news
-    // Free tier: 100 requests/day
-    // You can get a free API key at https://newsapi.org
-    const apiKey = process.env.NEWS_API_KEY || 'demo'; // User should add their own key
+    // Try to fetch real news from NewsAPI
+    const apiKey = process.env.NEWS_API_KEY;
     
-    const response = await fetch(
-      `https://newsapi.org/v2/everything?q=aviation OR aircraft OR airline&language=en&sortBy=publishedAt&pageSize=5&apiKey=${apiKey}`,
-      {
-        headers: {
-          'User-Agent': 'LoveToFlyPortal/1.0'
-        },
-        next: { revalidate: 1800 } // Cache for 30 minutes
+    if (apiKey && apiKey !== 'demo') {
+      const response = await fetch(
+        `https://newsapi.org/v2/everything?q=aviation&language=en&sortBy=publishedAt&pageSize=5&apiKey=${apiKey}`,
+        {
+          headers: {
+            'User-Agent': 'LoveToFlyPortal/1.0'
+          },
+          next: { revalidate: 1800 } // Cache for 30 minutes
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.articles && data.articles.length > 0) {
+          return NextResponse.json({ articles: data.articles });
+        }
       }
-    );
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch news');
     }
-
-    const data = await response.json();
-
-    if (!data.articles || data.articles.length === 0) {
-      // Fallback to mock data if API fails
-      return NextResponse.json({
-        articles: [
-          {
-            title: 'FAA anuncia novas regras para drones comerciais',
-            description: 'Novas regulamentações entram em vigor no próximo trimestre',
-            publishedAt: new Date().toISOString(),
-            source: { name: 'Aviation Week' },
-            url: '#'
-          },
-          {
-            title: 'Boeing entrega primeiro 787 do ano',
-            description: 'A fabricante retoma entregas após período de inspeções',
-            publishedAt: new Date(Date.now() - 3600000).toISOString(),
-            source: { name: 'FlightGlobal' },
-            url: '#'
-          },
-          {
-            title: 'Mercado de aviação executiva cresce 15%',
-            description: 'Setor apresenta recuperação acima do esperado',
-            publishedAt: new Date(Date.now() - 7200000).toISOString(),
-            source: { name: 'Aviation International News' },
-            url: '#'
-          }
-        ]
-      });
-    }
-
-    // Translate titles and descriptions to Portuguese (simplified translation)
-    const translatedArticles = data.articles.map((article: any) => ({
-      title: article.title,
-      description: article.description,
-      publishedAt: article.publishedAt,
-      source: article.source,
-      url: article.url
-    }));
-
-    return NextResponse.json({ articles: translatedArticles });
+    
+    // Return enhanced mock data
+    return NextResponse.json({ articles: getAviationNewsData() });
   } catch (error: any) {
     console.error('News fetch error:', error);
     
-    // Return mock data on error
-    return NextResponse.json({
-      articles: [
-        {
-          title: 'FAA anuncia novas regras para drones comerciais',
-          description: 'Novas regulamentações entram em vigor no próximo trimestre',
-          publishedAt: new Date().toISOString(),
-          source: { name: 'Aviation Week' },
-          url: '#'
-        },
-        {
-          title: 'Boeing entrega primeiro 787 do ano',
-          description: 'A fabricante retoma entregas após período de inspeções',
-          publishedAt: new Date(Date.now() - 3600000).toISOString(),
-          source: { name: 'FlightGlobal' },
-          url: '#'
-        },
-        {
-          title: 'Mercado de aviação executiva cresce 15%',
-          description: 'Setor apresenta recuperação acima do esperado',
-          publishedAt: new Date(Date.now() - 7200000).toISOString(),
-          source: { name: 'Aviation International News' },
-          url: '#'
-        }
-      ]
-    });
+    // Return mock data on any error
+    return NextResponse.json({ articles: getAviationNewsData() });
   }
 }
