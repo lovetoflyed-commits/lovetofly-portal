@@ -252,6 +252,12 @@ export default function AdvertiserDashboard() {
                 📋 Reservas
               </button>
               <button
+                onClick={() => router.push('/hangarshare/owner/documents')}
+                className="px-6 py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700"
+              >
+                📄 Documentos
+              </button>
+              <button
                 onClick={() => router.push('/hangarshare/owner/analytics')}
                 className="px-6 py-3 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700"
               >
@@ -386,7 +392,10 @@ export default function AdvertiserDashboard() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <button className="text-blue-600 hover:text-blue-800 font-bold text-sm">
+                      <button 
+                        onClick={() => router.push(`/hangarshare/listing/${listing.id}/edit`)}
+                        className="text-blue-600 hover:text-blue-800 font-bold text-sm"
+                      >
                         Editar
                       </button>
                     </td>

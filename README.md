@@ -1,36 +1,73 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Love to Fly Portal
 
-## Getting Started
+A comprehensive aviation portal built with Next.js 16, featuring flight tools, hangar marketplace, and aviation community features.
 
-First, run the development server:
+## 🚀 Quick Start
 
 ```bash
-npm run dev
-# or
+# Install dependencies
+yarn install
+
+# Run development server
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# Build for production
+yarn build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to view the application.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📚 Documentation
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+All project documentation is organized in the [`documentation/`](./documentation/) folder:
 
-## Learn More
+- **Getting Started:** [QUICK_START.md](./documentation/QUICK_START.md), [START_HERE.md](./documentation/START_HERE.md)
+- **Setup:** [SETUP_AND_CONNECTIONS.md](./documentation/SETUP_AND_CONNECTIONS.md), [NEON_SETUP.md](./documentation/NEON_SETUP.md)
+- **Features:** HangarShare, Email System, Payment Integration guides
+- **API Reference:** [API_DOCUMENTATION.md](./documentation/API_DOCUMENTATION.md)
 
-To learn more about Next.js, take a look at the following resources:
+👉 **[View Full Documentation Index](./documentation/README.md)**
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🛠️ Tech Stack
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Framework:** Next.js 16 (App Router) + React 19
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS
+- **Database:** PostgreSQL (Neon)
+- **Auth:** JWT + bcrypt
+- **Payments:** Stripe
+- **Email:** Resend
 
-## Deploy on Vercel
+## 🔧 Development
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+yarn dev              # Start dev server
+yarn build            # Production build
+yarn lint             # Run ESLint
+yarn migrate:up       # Run database migrations
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📦 Project Structure
+
+```
+src/
+├── app/              # Next.js pages and API routes
+├── components/       # Shared React components
+├── context/          # React context providers
+├── config/           # Configuration files
+├── migrations/       # Database migrations
+├── types/            # TypeScript definitions
+└── utils/            # Utility functions
+```
+
+## 🤖 AI Development
+
+For AI coding agents, see [.github/copilot-instructions.md](.github/copilot-instructions.md)
+
+## 📄 License
+
+MIT
+
+---
+
+Built with ❤️ for the aviation community

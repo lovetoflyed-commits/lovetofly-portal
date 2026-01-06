@@ -972,7 +972,21 @@ export default function Home() {
                 </button>
               </div>
 
-              
+            </div>
+
+            {/* HangarShare destaque abaixo dos classificados */}
+            <div className="bg-gradient-to-r from-blue-50 via-white to-blue-50 border border-blue-100 rounded-xl p-4 shadow-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-1">
+                  <div className="text-xs font-semibold text-blue-800 uppercase tracking-wide">HangarShare</div>
+                  <h4 className="text-lg font-black text-blue-900">Precisa de hangar ou quer monetizar o seu?</h4>
+                  <p className="text-sm text-slate-600">Busque hangares disponíveis ou publique seu espaço em minutos.</p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <a href="/hangarshare" className="px-4 py-2 text-sm font-bold rounded-lg bg-blue-900 text-white hover:bg-blue-800 text-center">Buscar hangares</a>
+                  <a href="/hangarshare/owner/register" className="px-4 py-2 text-sm font-bold rounded-lg border border-blue-200 text-blue-900 hover:border-blue-300 bg-white text-center">Anunciar hangar</a>
+                </div>
+              </div>
             </div>
 
             {/* Col 3: Clock + Latest News */}

@@ -28,6 +28,10 @@ export default function EditProfilePage() {
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [formData, setFormData] = useState({
+    aviationRole: '',
+    aviationRoleOther: ''
+  });
 
   useEffect(() => {
     async function fetchProfile() {
@@ -38,11 +42,20 @@ export default function EditProfilePage() {
       if (res.ok) {
         const data = await res.json();
         setProfile(data);
+        setFormData({
+          aviationRole: data.aviationRole || '',
+          aviationRoleOther: data.aviationRoleOther || ''
+        });
       }
       setLoading(false);
     }
     if (token) fetchProfile();
   }, [token]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
   if (loading || !profile) {
     return <div className="min-h-screen flex items-center justify-center">Carregando...</div>;
@@ -64,36 +77,48 @@ export default function EditProfilePage() {
         <form className="space-y-5">
           <div>
             <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Nome</label>
-            <input type="text" className="w-full border rounded px-3 py-2" value={profile.firstName} disabled={isBlocked} readOnly={isBlocked} />
+            <input type="text" className="w-full border rounded px-3 py-2" defaultValue={profile.firstName} disabled={isBlocked} readOnly={isBlocked} />
           </div>
           <div>
             <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Sobrenome</label>
-            <input type="text" className="w-full border rounded px-3 py-2" value={profile.lastName} disabled={isBlocked} readOnly={isBlocked} />
+            <input type="text" className="w-full border rounded px-3 py-2" defaultValue={profile.lastName} disabled={isBlocked} readOnly={isBlocked} />
           </div>
           <div>
             <label className="block text-xs font-bold text-slate-400 uppercase mb-1">CPF</label>
-            <input type="text" className="w-full border rounded px-3 py-2" value={profile.cpf} disabled={isBlocked} readOnly={isBlocked} />
+            <input type="text" className="w-full border rounded px-3 py-2" defaultValue={profile.cpf} disabled={isBlocked} readOnly={isBlocked} />
           </div>
           <div>
             <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Email</label>
-            <input type="email" className="w-full border rounded px-3 py-2" value={profile.email} disabled />
+            <input type="email" className="w-full border rounded px-3 py-2" defaultValue={profile.email} disabled readOnly />
           </div>
           <div>
             <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Telefone</label>
-            <input type="text" className="w-full border rounded px-3 py-2" value={profile.mobilePhone} disabled={isBlocked} readOnly={isBlocked} />
+            <input type="text" className="w-full border rounded px-3 py-2" defaultValue={profile.mobilePhone} disabled={isBlocked} readOnly={isBlocked} />
           </div>
           <div>
             <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Endereço</label>
-            <input type="text" className="w-full border rounded px-3 py-2" value={profile.addressStreet} disabled={isBlocked} readOnly={isBlocked} />
+            <input type="text" className="w-full border rounded px-3 py-2" defaultValue={profile.addressStreet} disabled={isBlocked} readOnly={isBlocked} />
           </div>
           {/* Campos não sensíveis podem ser editados normalmente */}
           <div>
             <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Função na Aviação</label>
-            <input type="text" className="w-full border rounded px-3 py-2" value={profile.aviationRole || ""} />
+            <input 
+              type="text" 
+              name="aviationRole"
+              className="w-full border rounded px-3 py-2" 
+              value={formData.aviationRole} 
+              onChange={handleChange}
+            />
           </div>
           <div>
             <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Outra Função</label>
-            <input type="text" className="w-full border rounded px-3 py-2" value={profile.aviationRoleOther || ""} />
+            <input 
+              type="text" 
+              name="aviationRoleOther"
+              className="w-full border rounded px-3 py-2" 
+              value={formData.aviationRoleOther} 
+              onChange={handleChange}
+            />
           </div>
           <button type="submit" className="mt-6 w-full py-3 bg-blue-600 text-white font-bold rounded hover:bg-blue-700">Salvar Alterações</button>
         </form>

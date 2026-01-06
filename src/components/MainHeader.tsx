@@ -3,8 +3,9 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 
 export default function MainHeader() {
-  const { user, userPlan, logout } = useAuth();
+  const { user, logout } = useAuth();
   const router = useRouter();
+  const userPlan = user?.plan || 'free';
 
   return (
     <header className="bg-blue-900 text-white shadow-md">

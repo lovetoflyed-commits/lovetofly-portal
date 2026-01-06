@@ -1,5 +1,6 @@
 import './globals.css';
 import MainHeader from '@/components/MainHeader';
+import { SessionTimeoutWrapper } from '@/components/SessionTimeoutWrapper';
 import type { Metadata } from 'next';
 import { AuthProvider } from '@/context/AuthContext';
 
@@ -20,8 +21,10 @@ export default function RootLayout({
     <html lang="pt-BR">
       <body>
         <AuthProvider>
-          <MainHeader />
-          {children}
+          <SessionTimeoutWrapper>
+            <MainHeader />
+            {children}
+          </SessionTimeoutWrapper>
         </AuthProvider>
       </body>
     </html>

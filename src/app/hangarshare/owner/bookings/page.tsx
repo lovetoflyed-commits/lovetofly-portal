@@ -38,58 +38,44 @@ export default function BookingsPage() {
 
   const loadBookings = async () => {
     try {
-      // TODO: Replace with API call when available
-      // const res = await fetch('/api/hangarshare/owner/bookings');
-      // const data = await res.json();
-      // setBookings(data);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/login');
+        return;
+      }
 
-      // Mock data for demonstration
-      setBookings([
-        {
-          id: '1',
-          clientName: 'João Silva',
-          clientEmail: 'joao@example.com',
-          hangarIcao: 'SBSP',
-          hangarNumber: '5',
-          checkInDate: '2025-01-05',
-          checkOutDate: '2025-01-10',
-          totalDays: 5,
-          dailyRate: 1200,
-          totalAmount: 6000,
-          status: 'confirmed',
-          createdAt: '2024-12-20T10:30:00Z',
+      const res = await fetch('/api/hangarshare/owner/bookings', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
         },
-        {
-          id: '2',
-          clientName: 'Maria Santos',
-          clientEmail: 'maria@example.com',
-          hangarIcao: 'SBCF',
-          hangarNumber: 'A-12',
-          checkInDate: '2025-01-15',
-          checkOutDate: '2025-01-20',
-          totalDays: 5,
-          dailyRate: 1600,
-          totalAmount: 8000,
-          status: 'pending',
-          createdAt: '2024-12-22T14:15:00Z',
-        },
-        {
-          id: '3',
-          clientName: 'Carlos Oliveira',
-          clientEmail: 'carlos@example.com',
-          hangarIcao: 'SBSP',
-          hangarNumber: '5',
-          checkInDate: '2024-12-10',
-          checkOutDate: '2024-12-15',
-          totalDays: 5,
-          dailyRate: 1200,
-          totalAmount: 6000,
-          status: 'completed',
-          createdAt: '2024-12-05T09:00:00Z',
-        },
-      ]);
+      });
+
+      if (!res.ok) {
+        throw new Error('Erro ao carregar reservas');
+      }
+
+      const data = await res.json();
+      
+      // Transform API response to match component interface
+      const transformedBookings = (data.bookings || []).map((booking: any) => ({
+        id: booking.id,
+        clientName: booking.clientName,
+        clientEmail: booking.clientEmail,
+        hangarIcao: booking.icaoCode,
+        hangarNumber: booking.hangarNumber,
+        checkInDate: booking.checkin ? new Date(booking.checkin).toISOString().split('T')[0] : '',
+        checkOutDate: booking.checkout ? new Date(booking.checkout).toISOString().split('T')[0] : '',
+        totalDays: booking.checkout && booking.checkin ? Math.ceil((new Date(booking.checkout).getTime() - new Date(booking.checkin).getTime()) / (1000 * 60 * 60 * 24)) : 0,
+        dailyRate: booking.dailyRate || 0,
+        totalAmount: booking.total || 0,
+        status: booking.booking_status || 'pending',
+        createdAt: booking.created_at,
+      }));
+
+      setBookings(transformedBookings);
     } catch (error) {
       console.error('Error loading bookings:', error);
+      alert('Erro ao carregar reservas. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -97,19 +83,33 @@ export default function BookingsPage() {
 
   const handleStatusChange = async (bookingId: string, newStatus: string) => {
     try {
-      // TODO: Implement API call to update booking status
-      // await fetch(`/api/hangarshare/owner/bookings/${bookingId}`, {
-      //   method: 'PATCH',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ status: newStatus }),
-      // });
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+
+      const res = await fetch(`/api/hangarshare/owner/bookings/${bookingId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ booking_status: newStatus }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Erro ao atualizar reserva');
+      }
       
       setBookings(bookings.map(b => 
         b.id === bookingId ? { ...b, status: newStatus as any } : b
       ));
       setShowModal(false);
+      alert('✓ Reserva atualizada com sucesso!');
     } catch (error) {
       console.error('Error updating booking:', error);
+      alert(`Erro ao atualizar reserva: ${error instanceof Error ? error.message : 'Tente novamente'}`);
     }
   };
 

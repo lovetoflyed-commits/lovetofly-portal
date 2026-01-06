@@ -1,49 +1,145 @@
-# Instruções Copilot para Agentes de IA
+# Instruções para Agentes IA - Love to Fly Portal
 
-## Arquitetura do Projeto
-- **Monorepo, Next.js 16.x, TypeScript-first**: Toda a lógica da aplicação está em `src/`. Utiliza Next.js App Router (`src/app/`), cada subpasta é uma rota (ex: `marketplace/`, `hangarshare/`).
-- **Principais features**: Autenticação, marketplace, logbook, compartilhamento de hangares, ferramentas E6B, pagamentos Stripe. Veja guias como `HANGARSHARE_COMPLETE_GUIDE.md`, `PAYMENT_INTEGRATION.md` para detalhes.
-- **Banco de Dados**: PostgreSQL (Neon). Migrações em `src/migrations/` (gerenciadas por `node-pg-migrate`). Conexão em `src/config/db.ts`. Tipos em `src/types/db.d.ts`.
-- **API**: Todas as rotas em `src/app/api/`, seguindo REST. Coloque lógica junto da feature quando possível.
-- **Componentes**: Componentes React compartilhados em `src/components/` (ex: `Header.tsx`, `Sidebar.tsx`, `AuthGuard.tsx`). Componentes específicos ficam nas pastas de rota em `src/app/`.
-- **Estado**: Use React context para estado global (veja `src/context/`). Estado de auth em `AuthContext.tsx`.
-- **Estilização**: Tailwind CSS via `tailwind.config.js`.
-- **Utilitários**: Lógica compartilhada em `src/utils/` (ex: `e6bLogic.ts`).
+## Arquitetura Core
 
-## Fluxos de Trabalho do Desenvolvedor
-- **Servidor dev**: `npm run dev` (hot reload)
-- **Build produção**: `npm run build` e depois `npm run start`
-- **Lint**: `npm run lint`
-- **Migrações**:
-  - Rodar todas: `npm run migrate`
-  - Passo a passo: `npm run migrate:up` / `npm run migrate:down`
-  - Criar: `npm run migrate:create <nome>`
-- **Ambiente**: Use `.env` (veja `.env.example` para variáveis obrigatórias)
+**Stack:** Next.js 16 (App Router) + React 19 + TypeScript + Neon PostgreSQL + Stripe + Resend  
+**Padrão:** Co-location - APIs vivem no lado da feature (`src/app/api/**/route.ts`), não em "services" separadas
 
-## Convenções e Padrões do Projeto
-- **TypeScript em tudo**: Todo novo código deve ser TypeScript.
-- **Estrutura de rotas API**: Em `src/app/api/feature/route.ts`.
-- **Componentes por feature**: Componentes de feature ficam em `src/app/feature/`.
-- **Migrações**: Sempre em SQL, um arquivo por mudança, numeração sequencial.
-- **Stripe**: Lógica de pagamento em `src/app/marketplace/` e `src/app/api/`. Veja `STRIPE_SETUP.md` e `STRIPE_QUICK_START.md`.
-- **Email (Resend)**: Veja pacote `resend` e guias de email na raiz.
-- **Tipos do BD**: Atualize `src/types/db.d.ts` ao mudar o schema.
-- **UI com estado**: Use hooks e context do React. Veja `src/app/page.tsx` para padrões de dashboard/landing.
-- **Módulos de features**: Veja o objeto `modules` em `src/app/page.tsx` para agrupamento e gating por plano.
-
-## Pontos de Integração
-- **Stripe**: Pagamentos/assinaturas. Veja pacotes `@stripe/stripe-js`, `stripe` e pastas marketplace/api.
-- **Neon**: PostgreSQL hospedado. Setup em `src/config/db.ts`, scripts na raiz (ex: `setup-neon-db.js`).
-- **Resend**: Envio de emails. Veja guias de email na raiz e pacote `resend`.
-
-## Referências-Chave
-- **Guias de features**: `*_GUIDE.md` (ex: `HANGARSHARE_COMPLETE_GUIDE.md`)
-- **Onboarding**: `README.md`, `QUICK_START.md`, `START_HERE.md`
-- **Banco de Dados**: `src/config/db.ts`, `src/types/db.d.ts`, `src/migrations/`
-- **Componentes**: `src/components/`, `src/context/`
-- **API**: `src/app/api/`
-- **Dashboard/Landing**: Veja `src/app/page.tsx` para dashboard modular, gating de features e widgets.
+### Estrutura Crítica
+- **Client State:** `src/context/AuthContext.tsx` → `useAuth()` hook (user, token via localStorage)
+- **DB Connection:** `src/config/db.ts` → `pg.Pool` singleton; schemas em `src/migrations/` (sequencial: `00X_description.sql`)
+- **UI Components:** `src/components/` compartilhados (Header, Sidebar, AuthGuard, HangarCarousel)
+- **Pages:** `src/app/` com `'use client'` em components interativos; layout.tsx raiz wrappa `<AuthProvider>`
 
 ---
 
-Para mais, veja [README.md](../README.md) e os guias na raiz. Em caso de dúvida, siga as melhores práticas de Next.js e TypeScript conforme adaptadas neste repositório.
+## Fluxos de Trabalho Essenciais
+
+### Desenvolvimento
+```bash
+npm run dev              # Inicia Next.js em http://localhost:3000
+npm run build && npm run start  # Build/serve production
+npm run lint            # ESLint check
+```
+
+### Banco de Dados (Neon PostgreSQL via node-pg-migrate)
+```bash
+npm run migrate         # Status das migrations
+npm run migrate:up      # Executa próxima migration pendente
+npm run migrate:down    # Desfaz última migration
+npm run migrate:create  # Cria novo arquivo de migration
+```
+
+**Padrão de Migration:** Cada alteração em arquivo novo (`src/migrations/00X_...sql`). Usar `IF NOT EXISTS` e criar índices para FKs. Atualizar `src/types/db.d.ts` após.
+
+### Variáveis de Ambiente
+Obrigatórias em `.env.local`:
+- `DATABASE_URL` (Neon PostgreSQL connection string)
+- `JWT_SECRET`, `NEXTAUTH_SECRET` (autenticação)
+- `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET` (pagamentos)
+- `RESEND_API_KEY` (emails)
+
+Deploy (Netlify): adicione mesmas variáveis em Settings → Environment Variables
+
+---
+
+## Padrões de Código
+
+### API Routes (`src/app/api/**/route.ts`)
+```typescript
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    // validação, business logic
+    const result = await pool.query('SELECT ...', [params]);
+    return NextResponse.json({ data: result.rows }, { status: 200 });
+  } catch (error) {
+    console.error('Erro descritivo:', error);
+    return NextResponse.json({ message: 'Erro' }, { status: 500 });
+  }
+}
+```
+- Sempre `try/catch` com `console.error()`
+- Resposta: `NextResponse.json({ message|data }, { status })`
+- Auth: JWT no header `Authorization: Bearer <token>` (verificar em autenticação)
+
+### Autenticação
+- Login em `/api/auth/login` → retorna `{ token, user: { id, name, email, plan } }`
+- Context guarda `token` + `user` em localStorage
+- Rotas privadas: usar `<AuthGuard>` ou validar `useAuth()` no client
+
+### Componentes UI
+- **Tailwind CSS** (configurado em `tailwind.config.js`)
+- **Componentes reutilizáveis** em `src/components/`: Header, Sidebar, BookingModal, HangarCarousel
+- **Dashboard modular** em `src/app/page.tsx`: objeto `modules` controla acesso por plano (free/premium/pro)
+
+### Estado Global
+- Usar `useAuth()` para obter `user`, `token`, `login()`, `logout()`
+- localStorage persiste entre refresh
+- Dados sensíveis (senhas, chaves) NUNCA no client
+
+---
+
+## Features Principais
+
+### HangarShare v1.0 (Marketplace de Hangares)
+**Páginas:** `src/app/hangarshare/*`
+- `/hangarshare/owner/setup` → Onboarding simplificado (6 campos de empresa)
+- `/hangarshare/listing/create` → Formulário 4 passos com auto-fetch ICAO
+- `/hangarshare/owner/dashboard` → Estatísticas + tabela de hangares + relatórios (PDF, CSV)
+
+**APIs:**
+- `GET /api/hangarshare/airport/search?icao=SBSP` → Busca aeródromos (migrations 008/009 com 14 aeródromos)
+- `POST/GET /api/hangarshare/owners` → Gerencia perfis de anunciantes
+
+**Nota:** APIs usam **mock data** - TODO conectar ao BD real
+
+### Autenticação & Segurança
+- JWT com `jsonwebtoken` lib, secret em `JWT_SECRET`
+- Senha com `bcryptjs` (hashed em DB)
+- `AuthContext` persiste sessão em localStorage + redireciona `/login` se expirado
+
+### Pagamentos (Stripe)
+- **Client:** `@stripe/react-stripe-js` + `@stripe/stripe-js` (CardElement, confirmPayment)
+- **Server:** lib `stripe` cria PaymentIntent, webhook em `/api/hangarshare/webhook/stripe`
+- Guias: `STRIPE_SETUP.md`, `PAYMENT_INTEGRATION.md`
+
+### Emails (Resend)
+- **Util function** em `src/utils/email.ts` (confirmação booking, notificação owner, falha pagamento)
+- Webhook Stripe dispara envio
+- Guia: `EMAIL_SETUP_GUIDE.md`
+
+### Ferramentas de Voo
+- **E6B Analógico/Digital:** `src/app/tools/e6b`
+- **Assets Jeppesen:** `public/e6b/jeppesen/` (README.md com instruções)
+
+### Relatórios
+- **Libs:** jsPDF + jspdf-autotable
+- **Dashboard HangarShare:** botão exporta PDF, CSV ou imprime
+
+---
+
+## Conhecidas Limitações & TODO
+
+⚠️ **APIs usam mock data:** `/api/hangarshare/airport/search` e `/api/hangarshare/owners` retornam hardcoded data - substituir por queries ao `airport_icao` e `hangar_owners` tables  
+⚠️ **Upload de fotos:** não implementado - será AWS S3 ou storage local  
+⚠️ **Edição de anúncios:** botão existe mas endpoint não  
+
+---
+
+## Documentação de Referência (Prioridade)
+
+1. **Guias de feature:** `HANGARSHARE_COMPLETE_GUIDE.md`, `EMAIL_SETUP_GUIDE.md`, `STRIPE_SETUP.md` (passo a passo)
+2. **Entrega/Status:** `HANGARSHARE_ENHANCED.md`, `HANGARSHARE_DELIVERY_SUMMARY.md`
+3. **Setup inicial:** `QUICK_START.md`, `START_HERE.md`
+4. **Infraestrutura:** `NEON_SETUP.md` (BD), `DEPLOYMENT.md` (Netlify)
+
+---
+
+## Tips para Produtividade
+
+- `src/app/login/page.tsx` é exemplo bom de flow auth client-side
+- `src/app/page.tsx` mostra padrão dashboard com múltiplos módulos e gating por plano
+- Migrations executam em ordem alfabética - sempre criar novo arquivo
+- LocalStorage é o source of truth para auth - sincronize com JWT_SECRET
+- Mock data ajuda development offline - mas TODO conectar ao BD antes de produção

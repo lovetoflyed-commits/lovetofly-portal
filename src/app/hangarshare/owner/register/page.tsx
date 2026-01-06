@@ -470,7 +470,7 @@ export default function HangarOwnerRegisterPage() {
                     <li>Possui alvarás e licenças necessárias</li>
                   </ul>
                   <p className="mt-4">
-                    <a href="/hangarshare/contract" target="_blank" className="text-blue-600 underline">
+                    <a href="/documentation/HANGARSHARE_CONTRACT.md" target="_blank" className="text-blue-600 underline">
                       Leia o contrato completo aqui
                     </a>
                   </p>

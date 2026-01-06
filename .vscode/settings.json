@@ -5,5 +5,14 @@
         "windsurf": true,
         "cursor-global": true,
         "cursor-workspace": true
-    }
+    },
+    "markdown.validate.enabled": false,
+    "markdown.validate.fileLinks.enabled": false,
+    "markdown.validate.fragmentLinks.enabled": false,
+    "markdown.validate.referenceLinks.enabled": false,
+    "github.copilot.chat.codeGeneration.instructions": [
+        {
+            "file": ".github/copilot-instructions.md"
+        }
+    ]
 }

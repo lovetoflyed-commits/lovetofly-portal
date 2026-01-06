@@ -109,12 +109,79 @@ export default function HangarListingPage() {
     setLoading(true);
 
     try {
-      // TODO: Implementar upload real das imagens e envio do campo photos para a API
-      alert('Hangar anunciado com sucesso! (Imagens não enviadas neste mock)');
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Erro: Token de autenticação não encontrado. Faça login novamente.');
+        router.push('/login');
+        return;
+      }
+
+      // Create listing
+      const listingRes = await fetch('/api/hangarshare/listing/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          icaoCode: formData.icaoCode,
+          hangarNumber: formData.hangarNumber,
+          aerodromeName: airportData?.airport_name,
+          city: airportData?.city,
+          state: airportData?.state,
+          hangarSizeSqm: parseFloat(formData.hangarSizeSqm),
+          maxWingspanMeters: parseFloat(formData.maxWingspanMeters) || null,
+          maxLengthMeters: parseFloat(formData.maxLengthMeters) || null,
+          maxHeightMeters: parseFloat(formData.maxHeightMeters) || null,
+          hourlyRate: parseFloat(formData.hourlyRate) || null,
+          dailyRate: parseFloat(formData.dailyRate) || null,
+          weeklyRate: parseFloat(formData.weeklyRate) || null,
+          monthlyRate: parseFloat(formData.monthlyRate) || null,
+          availableFrom: formData.availableFrom,
+          availableUntil: formData.availableUntil || null,
+          acceptsOnlinePayment: formData.acceptsOnlinePayment,
+          acceptsPaymentOnArrival: formData.acceptsPaymentOnArrival,
+          acceptsPaymentOnDeparture: formData.acceptsPaymentOnDeparture,
+          cancellationPolicy: formData.cancellationPolicy,
+          hangarLocationDescription: formData.hangarLocationDescription,
+          description: formData.description,
+          specialNotes: formData.specialNotes,
+        }),
+      });
+
+      if (!listingRes.ok) {
+        const error = await listingRes.json();
+        throw new Error(error.message || 'Erro ao criar anúncio');
+      }
+
+      const { listingId } = await listingRes.json();
+
+      // Upload photos
+      const formDataPhotos = new FormData();
+      photos.forEach((file, idx) => {
+        formDataPhotos.append('photos', file);
+        if (idx === 0) formDataPhotos.append('isPrimary', 'true');
+      });
+
+      const photoRes = await fetch(`/api/hangarshare/listing/${listingId}/photos`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formDataPhotos,
+      });
+
+      if (!photoRes.ok) {
+        console.error('Erro ao enviar fotos:', photoRes.statusText);
+        // Don't fail completely - photos are optional
+      }
+
+      // Success
+      alert('✓ Hangar anunciado com sucesso! Aguardando aprovação do administrador.');
       router.push('/hangarshare/owner/dashboard');
     } catch (error) {
       console.error('Error:', error);
-      alert('Erro ao anunciar hangar. Tente novamente.');
+      alert(`Erro ao anunciar hangar: ${error instanceof Error ? error.message : 'Tente novamente.'}`);
     } finally {
       setLoading(false);
     }

@@ -30,12 +30,14 @@ export default function GoogleAd({
       // Check if the ad element exists and hasn't been filled yet
       const adElement = adRef.current;
       if (adElement && !adElement.hasAttribute('data-adsbygoogle-status')) {
-        // @ts-ignore
-        (window.adsbygoogle = window.adsbygoogle || []).push({});
+        ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
         isAdPushed.current = true;
       }
     } catch (e) {
-      console.error('AdSense error:', e);
+      // AdSense initialization error - silently fail in development
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('AdSense not loaded');
+      }
     }
   }, []);
 

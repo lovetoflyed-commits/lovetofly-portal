@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import pool from '@/config/db';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -12,97 +13,37 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // TODO: Connect to database to fetch from airport_icao table
-    // For now, return mock data
-    const mockAirports: Record<string, any> = {
-      'SBSP': {
-        icao_code: 'SBSP',
-        iata_code: 'GRU',
-        airport_name: 'São Paulo/Congonhas',
-        city: 'São Paulo',
-        state: 'SP',
-        country: 'Brasil',
-        is_public: true,
-      },
-      'SBGR': {
-        icao_code: 'SBGR',
-        iata_code: 'GRU',
-        airport_name: 'São Paulo/Guarulhos',
-        city: 'Guarulhos',
-        state: 'SP',
-        country: 'Brasil',
-        is_public: true,
-      },
-      'SBRJ': {
-        icao_code: 'SBRJ',
-        iata_code: 'SDU',
-        airport_name: 'Rio de Janeiro/Santos Dumont',
-        city: 'Rio de Janeiro',
-        state: 'RJ',
-        country: 'Brasil',
-        is_public: true,
-      },
-      'SBRF': {
-        icao_code: 'SBRF',
-        iata_code: 'REC',
-        airport_name: 'Recife/Guararapes',
-        city: 'Recife',
-        state: 'PE',
-        country: 'Brasil',
-        is_public: true,
-      },
-      'SBCF': {
-        icao_code: 'SBCF',
-        iata_code: 'CNF',
-        airport_name: 'Belo Horizonte/Confins - Tancredo Neves',
-        city: 'Belo Horizonte',
-        state: 'MG',
-        country: 'Brasil',
-        is_public: true,
-      },
-      'SBKT': {
-        icao_code: 'SBKT',
-        iata_code: 'BSB',
-        airport_name: 'Brasília/Presidente Juscelino Kubitschek',
-        city: 'Brasília',
-        state: 'DF',
-        country: 'Brasil',
-        is_public: true,
-      },
-      'SBPA': {
-        icao_code: 'SBPA',
-        iata_code: 'POA',
-        airport_name: 'Porto Alegre/Salgado Filho',
-        city: 'Porto Alegre',
-        state: 'RS',
-        country: 'Brasil',
-        is_public: true,
-      },
-      'SBCT': {
-        icao_code: 'SBCT',
-        iata_code: 'CWB',
-        airport_name: 'Curitiba/Afonso Pena',
-        city: 'Curitiba',
-        state: 'PR',
-        country: 'Brasil',
-        is_public: true,
-      },
-    };
+    // Query airport_icao table with exact match or prefix search
+    const result = await pool.query(
+      `SELECT icao_code, iata_code, airport_name, city, state, country, is_public 
+       FROM airport_icao 
+       WHERE icao_code = $1 OR icao_code LIKE $2 
+       ORDER BY 
+         CASE 
+           WHEN icao_code = $1 THEN 1 
+           ELSE 2 
+         END
+       LIMIT 10`,
+      [icaoCode, `${icaoCode}%`]
+    );
 
-    const airport = mockAirports[icaoCode];
-
-    if (!airport) {
+    if (result.rows.length === 0) {
       return NextResponse.json(
-        { error: 'Airport not found' },
+        { error: 'Airport not found', icao: icaoCode },
         { status: 404 }
       );
     }
 
-    return NextResponse.json(airport);
-  } catch (error) {
-    console.error('Error fetching airport:', error);
+    // Return single airport if exact match, otherwise return array
+    if (result.rows.length === 1 || result.rows[0].icao_code === icaoCode) {
+      return NextResponse.json(result.rows[0]);
+    }
+    
+    return NextResponse.json({ airports: result.rows });
+  } catch (error: any) {
+    console.error('Error searching airports:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Failed to search airports', details: error?.message },
       { status: 500 }
     );
   }
