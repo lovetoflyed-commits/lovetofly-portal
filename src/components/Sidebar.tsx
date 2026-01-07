@@ -57,9 +57,17 @@ export default function Sidebar({ onFeatureClick, disabled }: SidebarProps) {
       ],
     },
     {
-      title: 'Marketplace',
+      title: 'Shop',
       items: [
-        { href: '/marketplace', label: 'Pilot Shop', icon: '🛒' },
+        { href: '/shop', label: 'Pilot Shop', icon: '🛒' },
+      ],
+    },
+    {
+      title: 'Classificados',
+      items: [
+        { href: '/classifieds/aircraft', label: 'Aeronaves', icon: '✈️' },
+        { href: '/classifieds/parts', label: 'Peças e Motores', icon: '🔧' },
+        { href: '/classifieds/avionics', label: 'Aviônicos', icon: '📡' },
       ],
     },
     {

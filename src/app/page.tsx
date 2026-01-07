@@ -137,7 +137,6 @@ function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
     }
 
     setFormData((prev) => ({ ...prev, [name]: finalValue }));
-
     if (name === 'addressZip') {
       const cleanedZip = finalValue.replace(/\D/g, '');
       if (cleanedZip.length === 8) {
@@ -588,9 +587,34 @@ export default function Home() {
   const [newsArticles, setNewsArticles] = useState<any[]>([]);
   const [loadingNews, setLoadingNews] = useState(false);
 
+  const featuredClassifieds = {
+    aircraft: {
+      id: 'cirrus-sr22t-g6-demo',
+      title: 'Cirrus SR22T G6',
+      price: 'R$ 4.250.000',
+      location: 'Jundiaí, SP',
+      thumb: '/classifieds/aircraft-featured.jpg'
+    },
+    parts: {
+      id: 'lycoming-io360-overhaul-demo',
+      title: 'Motor Lycoming IO-360 Overhaul',
+      price: 'R$ 142.000',
+      location: 'Curitiba, PR',
+      thumb: '/classifieds/parts-featured.jpg'
+    },
+    avionics: {
+      id: 'garmin-gtn-750xi-demo',
+      title: 'Garmin GTN 750Xi (TSO)',
+      price: 'R$ 185.000',
+      location: 'São Paulo, SP',
+      thumb: '/classifieds/avionics-featured.jpg'
+    }
+  };
+
   // Classifieds carousel state - Enhanced with more details like controller.com
   const classifieds = [
     {
+      id: 'cessna-172s-2015-demo',
       title: '2015 CESSNA 172S SKYHAWK',
       category: 'Monomotor Pistão',
       price: 'USD $285,000',
@@ -601,9 +625,10 @@ export default function Home() {
       seller: 'LANE AVIATION',
       phone: '+55 (11) 98765-4321',
       featured: true,
-      image: 'https://images.unsplash.com/photo-1540962351504-03099e0a754b?auto=format&fit=crop&w=1200&q=80'
+      image: '/aircrafts/2015-cessna-172s-skyhawk.png'
     },
     {
+      id: 'extra-330lx-2020-demo',
       title: '2020 EXTRA 330LX',
       category: 'Aerodesportiva',
       price: 'USD $495,000',
@@ -617,6 +642,7 @@ export default function Home() {
       image: '/extra330.png'
     },
     {
+      id: 'beechcraft-king-air-350i-2018-demo',
       title: '2018 BEECHCRAFT KING AIR 350i',
       category: 'Bimotor Turboélice',
       price: 'USD $6,500,000',
@@ -627,9 +653,10 @@ export default function Home() {
       seller: 'G2G Aviation',
       phone: '+55 (31) 99876-5432',
       featured: true,
-      image: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1200&q=80'
+      image: '/aircrafts/2018-beechcraft-king-air-350i.png'
     },
     {
+      id: 'cessna-citation-m2-2012-demo',
       title: '2012 CESSNA CITATION M2',
       category: 'Jato de Pequeno Porte',
       price: 'USD $3,250,000',
@@ -640,7 +667,7 @@ export default function Home() {
       seller: 'Ava Aviation',
       phone: '+1 (214) 73305-4567',
       featured: true,
-      image: 'https://images.unsplash.com/photo-1474302770737-173ee21bab63?auto=format&fit=crop&w=1200&q=80'
+      image: '/aircrafts/2012-cessna-citation-m2.png'
     }
   ];
 
@@ -872,7 +899,7 @@ export default function Home() {
                 <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-1">Anúncio</div>
                 <div className="bg-gradient-to-r from-slate-50 to-white border border-slate-200 rounded-lg p-3 flex gap-3 items-center">
                   <img
-                    src="https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&w=500&q=70"
+                    src="/ads/mro-prime-aviation.png"
                     alt="MRO Manutenção Aeronáutica"
                     width={80}
                     height={64}
@@ -901,11 +928,13 @@ export default function Home() {
               </div>
 
               <div className="overflow-hidden rounded-xl border border-slate-200 shadow-sm relative">
-                <img
-                  src={classifieds[listingIndex].image}
-                  alt={classifieds[listingIndex].title}
-                  className="w-full h-40 object-cover"
-                />
+                <a href={`/classifieds/aircraft/${classifieds[listingIndex].id}`} className="block">
+                  <img
+                    src={classifieds[listingIndex].image}
+                    alt={classifieds[listingIndex].title}
+                    className="w-full h-40 object-cover cursor-pointer hover:opacity-90 transition"
+                  />
+                </a>
                 <button 
                   className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center hover:bg-white shadow-lg"
                   title="Favoritar"
@@ -916,7 +945,9 @@ export default function Home() {
 
               <div className="space-y-2">
                 <div>
-                  <h4 className="text-base font-bold text-blue-900">{classifieds[listingIndex].title}</h4>
+                  <a href={`/classifieds/aircraft/${classifieds[listingIndex].id}`} className="hover:text-blue-700">
+                    <h4 className="text-base font-bold text-blue-900">{classifieds[listingIndex].title}</h4>
+                  </a>
                   <p className="text-xs text-slate-500">{classifieds[listingIndex].category}</p>
                 </div>
 
@@ -1036,7 +1067,7 @@ export default function Home() {
                 <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-1">Anúncio</div>
                 <div className="bg-gradient-to-r from-amber-50 to-white border border-amber-200 rounded-lg p-3 flex gap-3 items-center">
                   <img
-                    src="https://images.unsplash.com/photo-1519677100203-a0e668c92439?auto=format&fit=crop&w=500&q=70"
+                    src="/ads/skypark-condominio-aeronautico.png"
                     alt="Condomínio Aeronáutico"
                     width={80}
                     height={64}
@@ -1116,6 +1147,90 @@ export default function Home() {
                   </a>
                 </div>
               </div>
+            </div>
+          </section>
+
+          {/* Classifieds Quick Row (Aircraft | Parts | Avionics) */}
+          <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white rounded-xl shadow border border-slate-200 p-5 flex flex-col gap-3">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">✈️</span>
+                <div>
+                  <div className="text-xs font-semibold text-blue-900 uppercase tracking-wide">Classificados</div>
+                  <h3 className="text-lg font-black text-blue-900">Aeronaves</h3>
+                </div>
+              </div>
+              <p className="text-sm text-slate-700">Compra e venda de aeronaves completas, prontas para voar.</p>
+              <a href={`/classifieds/aircraft/${featuredClassifieds.aircraft.id}`} className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-lg p-2 hover:bg-slate-100 transition">
+                <img
+                  src={featuredClassifieds.aircraft.thumb}
+                  alt={featuredClassifieds.aircraft.title}
+                  className="w-16 h-12 object-cover rounded"
+                />
+                <div className="text-sm">
+                  <div className="font-semibold text-blue-900 line-clamp-1 hover:text-blue-700">{featuredClassifieds.aircraft.title}</div>
+                  <div className="text-green-700 font-bold">{featuredClassifieds.aircraft.price}</div>
+                  <div className="text-xs text-slate-600">{featuredClassifieds.aircraft.location}</div>
+                </div>
+              </a>
+              <a href="/classifieds/aircraft" className="flex items-center gap-2 text-sm font-bold text-blue-900 hover:text-blue-700 transition">
+                Ver anúncios
+                <span className="text-lg">→</span>
+              </a>
+            </div>
+
+            <div className="bg-white rounded-xl shadow border border-slate-200 p-5 flex flex-col gap-3">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">🔧</span>
+                <div>
+                  <div className="text-xs font-semibold text-blue-900 uppercase tracking-wide">Classificados</div>
+                  <h3 className="text-lg font-black text-blue-900">Peças</h3>
+                </div>
+              </div>
+              <p className="text-sm text-slate-700">Componentes e sobressalentes certificados para sua manutenção.</p>
+              <a href={`/classifieds/parts/${featuredClassifieds.parts.id}`} className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-lg p-2 hover:bg-slate-100 transition">
+                <img
+                  src={featuredClassifieds.parts.thumb}
+                  alt={featuredClassifieds.parts.title}
+                  className="w-16 h-12 object-cover rounded"
+                />
+                <div className="text-sm">
+                  <div className="font-semibold text-blue-900 line-clamp-1 hover:text-blue-700">{featuredClassifieds.parts.title}</div>
+                  <div className="text-green-700 font-bold">{featuredClassifieds.parts.price}</div>
+                  <div className="text-xs text-slate-600">{featuredClassifieds.parts.location}</div>
+                </div>
+              </a>
+              <a href="/classifieds/parts" className="flex items-center gap-2 text-sm font-bold text-blue-900 hover:text-blue-700 transition">
+                Ver peças
+                <span className="text-lg">→</span>
+              </a>
+            </div>
+
+            <div className="bg-white rounded-xl shadow border border-slate-200 p-5 flex flex-col gap-3">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">📡</span>
+                <div>
+                  <div className="text-xs font-semibold text-blue-900 uppercase tracking-wide">Classificados</div>
+                  <h3 className="text-lg font-black text-blue-900">Aviônicos</h3>
+                </div>
+              </div>
+              <p className="text-sm text-slate-700">Rádios, GPS, transponders e upgrades para painel.</p>
+              <a href={`/classifieds/avionics/${featuredClassifieds.avionics.id}`} className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-lg p-2 hover:bg-slate-100 transition">
+                <img
+                  src={featuredClassifieds.avionics.thumb}
+                  alt={featuredClassifieds.avionics.title}
+                  className="w-16 h-12 object-cover rounded"
+                />
+                <div className="text-sm">
+                  <div className="font-semibold text-blue-900 line-clamp-1 hover:text-blue-700">{featuredClassifieds.avionics.title}</div>
+                  <div className="text-green-700 font-bold">{featuredClassifieds.avionics.price}</div>
+                  <div className="text-xs text-slate-600">{featuredClassifieds.avionics.location}</div>
+                </div>
+              </a>
+              <a href="/classifieds/avionics" className="flex items-center gap-2 text-sm font-bold text-blue-900 hover:text-blue-700 transition">
+                Ver equipamentos
+                <span className="text-lg">→</span>
+              </a>
             </div>
           </section>
 

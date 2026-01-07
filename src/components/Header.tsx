@@ -2,12 +2,13 @@
 
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 export default function Header() {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
@@ -45,6 +46,8 @@ export default function Header() {
     router.push('/login');
   };
 
+  const hideLogout = pathname?.startsWith('/classifieds');
+
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -67,9 +70,28 @@ export default function Header() {
             <Link href="/tools/e6b" className="text-gray-700 hover:text-blue-900 font-medium transition-colors">
               Tools
             </Link>
-            <Link href="/marketplace" className="text-gray-700 hover:text-blue-900 font-medium transition-colors">
-              Marketplace
+            <Link href="/shop" className="text-gray-700 hover:text-blue-900 font-medium transition-colors">
+              Shop
             </Link>
+            <div className="relative group">
+              <button className="text-gray-700 hover:text-blue-900 font-medium transition-colors flex items-center gap-1">
+                Classificados
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              <div className="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                <Link href="/classifieds/aircraft" className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-900 font-medium rounded-t-lg">
+                  ✈️ Aircraft
+                </Link>
+                <Link href="/classifieds/parts" className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-900 font-medium">
+                  🔧 Parts
+                </Link>
+                <Link href="/classifieds/avionics" className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-900 font-medium rounded-b-lg">
+                  📡 Avionics
+                </Link>
+              </div>
+            </div>
             <Link href="/forum" className="text-gray-700 hover:text-blue-900 font-medium transition-colors">
               Forum
             </Link>
@@ -94,12 +116,20 @@ export default function Header() {
                 <Link href="/profile" className="text-gray-700 hover:text-blue-900 font-medium">
                   {user.name || user.email}
                 </Link>
-                <button
-                  onClick={handleLogout}
-                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
+                <Link
+                  href="/"
+                  className="bg-white text-blue-900 border border-blue-900 px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium"
                 >
-                  Logout
-                </button>
+                  Página inicial
+                </Link>
+                {!hideLogout && (
+                  <button
+                    onClick={handleLogout}
+                    className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
+                  >
+                    Logout
+                  </button>
+                )}
               </>
             ) : (
               <>
