@@ -1,18 +1,24 @@
 "use client";
 import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 export default function MainHeader() {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const userPlan = user?.plan || 'free';
+
+  // Hide header on home page if user is not logged in (landing page handles its own navigation)
+  if (pathname === '/' && !user) {
+    return null;
+  }
 
   return (
     <header className="bg-blue-900 text-white shadow-md">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
         {/* Primeira coluna: Logo 4cm x 4cm centralizada */}
         <div
-          className="flex items-center justify-center"
+          className="flex items-center justify-center cursor-pointer"
           style={{ height: '3.2cm', minWidth: '8cm', width: '8cm' }}
           onClick={() => router.push("/")}
         >
@@ -33,7 +39,7 @@ export default function MainHeader() {
             <span className="text-xs bg-orange-500 text-white px-3 py-1 rounded-full font-bold uppercase">{userPlan}</span>
           )}
           {user && (
-            <span className="text-sm hidden sm:inline text-gray-800">Olá, {user.name}</span>
+            <span className="text-sm hidden sm:inline text-white">Olá, {user.name}</span>
           )}
           {user ? (
             <button onClick={logout} className="px-4 py-2 rounded-lg bg-orange-500 text-white font-bold shadow-sm hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm">Sair</button>

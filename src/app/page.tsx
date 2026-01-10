@@ -72,6 +72,7 @@ import { maskCEP, maskCPF, maskPhone, isValidCPF } from '@/utils/masks';
 import Sidebar from '@/components/Sidebar';
 import { useAuth } from '@/context/AuthContext';
 import HangarCarousel from '@/components/HangarCarousel';
+import LandingPage from '@/components/LandingPage';
 
 
 
@@ -1328,67 +1329,11 @@ export default function Home() {
 
   // Landing page for non-logged users
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-
-      {/* Sidebar & Main Content Layout */}
-
-      <div className="flex min-h-[calc(100vh-210px)]">
-        {/* Sidebar para usuário logado */}
-        {user && (
-          <Sidebar />
-        )}
-
-        {/* Main Content */}
-        <main className="flex-1 px-4 py-8 space-y-6 max-w-6xl mx-auto w-full bg-gray-50">
-          <HangarCarousel />
-          {/* Conteúdo principal permanece */}
-          {/* Prévia de ferramentas e módulos (visível sem login) */}
-          {Object.entries(modules).map(([key, module]) => {
-            const moduleHasAccess = hasAccess(module.minPlan);
-            const accessibleFeatures = module.features.filter(f => hasAccess(f.minPlan));
-            const lockedFeatures = module.features.filter(f => !hasAccess(f.minPlan));
-
-            // No landing, mostramos apenas o cabeçalho do módulo e as features livres
-            return (
-              <section key={`landing-${key}`} className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <span className="text-3xl">{module.icon}</span>
-                  <h2 className="text-2xl font-bold text-blue-900">{module.name}</h2>
-                  {!moduleHasAccess && (
-                    <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded">Alguns itens requerem {module.minPlan}</span>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {accessibleFeatures.map((feature, idx) => (
-                    <a
-                      key={idx}
-                      href={feature.href}
-                      className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition"
-                    >
-                      <h3 className="text-blue-900 font-bold mb-2">{feature.name}</h3>
-                      <p className="text-sm text-gray-800">{feature.desc}</p>
-                    </a>
-                  ))}
-
-                  {lockedFeatures.map((feature, idx) => (
-                    <div
-                      key={idx}
-                      className="bg-gray-100 rounded-xl border border-gray-300 p-6 shadow-sm opacity-60 cursor-not-allowed relative"
-                    >
-                      <div className="absolute top-3 right-3 text-xs bg-blue-900 text-white px-2 py-1 rounded">
-                        {feature.minPlan}
-                      </div>
-                      <h3 className="text-gray-700 font-bold mb-2">{feature.name}</h3>
-                      <p className="text-sm text-gray-500">{feature.desc}</p>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            );
-          })}
-        </main>
-      </div>
+    <>
+      <LandingPage 
+        onOpenLogin={() => setLoginOpen(true)}
+        onOpenRegister={() => setRegisterOpen(true)}
+      />
 
       <Modal open={loginOpen} onClose={() => setLoginOpen(false)} title="Entrar">
         <LoginForm onSuccess={() => setLoginOpen(false)} />
@@ -1397,6 +1342,6 @@ export default function Home() {
       <Modal open={registerOpen} onClose={() => setRegisterOpen(false)} title="Criar conta">
         <RegisterForm onSuccess={() => { setRegisterOpen(false); setLoginOpen(true); }} />
       </Modal>
-    </div>
+    </>
   );
 }
