@@ -16,6 +16,7 @@ interface AuthContextType {
   token: string | null;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
+  updateUser: (updates: Partial<User>) => void;
   error: string | null;
 }
 
@@ -72,10 +73,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
     }
+    // Sempre leva para a página pública principal após logout
+    router.push('/landing');
+  };
+
+  const updateUser = (updates: Partial<User>) => {
+    if (user) {
+      const updatedUser = { ...user, ...updates };
+      setUser(updatedUser);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, error }}>
+    <AuthContext.Provider value={{ user, token, login, logout, updateUser, error }}>
       {children}
     </AuthContext.Provider>
   );

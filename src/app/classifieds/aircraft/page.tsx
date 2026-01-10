@@ -241,6 +241,17 @@ export default function AircraftClassifieds() {
         <div className="flex-1 flex flex-col overflow-hidden">
           <Header />
           <main className="flex-1 overflow-y-auto p-6">
+            {/* Back Button */}
+            <div className="mb-4">
+              <Link
+                href="/"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors"
+              >
+                <span className="text-lg">←</span>
+                Voltar ao Dashboard
+              </Link>
+            </div>
+
             {/* Header */}
             <div className="mb-6 flex justify-between items-center">
               <div>

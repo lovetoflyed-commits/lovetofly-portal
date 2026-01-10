@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 
 export default function HangarSharePage() {
@@ -23,7 +24,18 @@ export default function HangarSharePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-
+      {/* Header with Back Button */}
+      <div className="bg-white border-b border-gray-200 py-4">
+        <div className="max-w-7xl mx-auto px-4">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors"
+          >
+            <span className="text-lg">←</span>
+            Voltar ao Dashboard
+          </Link>
+        </div>
+      </div>
 
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-blue-900 to-blue-700 text-white py-20">

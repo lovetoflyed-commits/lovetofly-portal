@@ -1,10 +1,9 @@
 'use client';
 
 import React from 'react';
-import { motion } from 'framer-motion';
+import Link from 'next/link';
 import { MessageSquare, ThumbsUp, MessageCircle, Eye, Plus } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
-import Header from '../../components/Header';
 
 // Dados mockados de tópicos
 const TOPICS = [
@@ -67,79 +66,109 @@ const TOPICS = [
 
 export default function ForumPage() {
   return (
-    <motion.div 
-      initial={{ opacity: 0 }} 
-      animate={{ opacity: 1 }} 
-      transition={{ duration: 0.5 }}
-      className="h-screen w-full bg-slate-900 text-slate-200 overflow-hidden flex flex-col font-sans"
-    >
-      <Header />
+    <div className="flex min-h-screen bg-gray-50">
+      <Sidebar />
 
-      <main className="flex-1 p-3 grid grid-cols-1 md:grid-cols-12 gap-3 overflow-hidden relative">
+      <div className="flex-1">
+        {/* Back Button */}
+        <div className="bg-white border-b border-gray-200 py-4 px-8">
+          <div className="max-w-6xl mx-auto">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors"
+            >
+              <span className="text-lg">←</span>
+              Voltar ao Dashboard
+            </Link>
+          </div>
+        </div>
 
-        <Sidebar />
-
-        <section className="col-span-1 md:col-span-9 flex flex-col gap-3 overflow-hidden h-full">
-
-          {/* Cabeçalho */}
-          <div className="bg-slate-800/40 rounded-lg border border-slate-700/50 p-4 flex justify-between 
-items-center backdrop-blur-sm shrink-0">
-            <div>
-              <h2 className="text-xl font-bold text-white">Fórum da Comunidade</h2>
-              <p className="text-xs text-slate-400">Participe das discussões e tire suas dúvidas.</p>
+        {/* Hero Section */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-12 px-8">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-3xl font-bold mb-2">Fórum da Comunidade</h1>
+                <p className="text-blue-100">
+                  Participe das discussões e tire suas dúvidas com outros pilotos
+                </p>
+              </div>
+              <button className="flex items-center gap-2 bg-white text-blue-600 hover:bg-blue-50 px-6 py-3 rounded-lg font-semibold transition-colors shadow-lg">
+                <Plus size={18} /> Novo Tópico
+              </button>
             </div>
-            <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 
-rounded-lg text-xs font-bold transition-colors shadow-lg shadow-blue-900/20">
-              <Plus size={14} /> NOVO TÓPICO
-            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="max-w-6xl mx-auto p-8">
+          {/* Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+              <div className="text-sm text-gray-500 mb-1">Total de Tópicos</div>
+              <div className="text-2xl font-bold text-gray-900">1,234</div>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+              <div className="text-sm text-gray-500 mb-1">Respostas</div>
+              <div className="text-2xl font-bold text-gray-900">8,567</div>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+              <div className="text-sm text-gray-500 mb-1">Membros Ativos</div>
+              <div className="text-2xl font-bold text-gray-900">432</div>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+              <div className="text-sm text-gray-500 mb-1">Hoje</div>
+              <div className="text-2xl font-bold text-gray-900">28</div>
+            </div>
           </div>
 
-          {/* Lista de Tópicos */}
-          <div className="flex-1 bg-slate-800/40 rounded-lg border border-slate-700/50 overflow-hidden flex 
-flex-col">
-            <div className="overflow-y-auto custom-scrollbar flex-1 p-2 space-y-2">
+          {/* Topics List */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900">Discussões Recentes</h2>
+            </div>
+            <div className="divide-y divide-gray-200">
               {TOPICS.map((topic) => (
-                <div key={topic.id} className="bg-slate-900/50 border border-slate-800 p-4 rounded-lg 
-hover:border-blue-500/30 hover:bg-slate-800 transition-all cursor-pointer group">
+                <div key={topic.id} className="p-6 hover:bg-gray-50 transition-colors cursor-pointer group">
                   <div className="flex items-start gap-4">
-
                     {/* Avatar */}
-                    <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center 
-font-bold text-slate-400 border border-slate-700 group-hover:border-blue-500/50 group-hover:text-blue-400 
-transition-colors">
+                    <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-600 flex-shrink-0">
                       {topic.avatar}
                     </div>
 
-                    {/* Conteúdo */}
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start">
-                        <h3 className="text-sm font-bold text-slate-200 group-hover:text-white mb-1">
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start gap-4 mb-2">
+                        <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
                           {topic.title}
                         </h3>
-                        <span className="text-[10px] text-slate-500 whitespace-nowrap 
-ml-2">{topic.time}</span>
+                        <span className="text-sm text-gray-500 whitespace-nowrap">
+                          {topic.time}
+                        </span>
                       </div>
 
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded border 
-border-slate-700">
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className="inline-block bg-blue-100 text-blue-700 text-xs font-medium px-3 py-1 rounded-full">
                           {topic.category}
                         </span>
-                        <span className="text-[10px] text-slate-500">
-                          por <span className="text-slate-400 font-medium">{topic.author}</span>
+                        <span className="text-sm text-gray-600">
+                          por <span className="font-medium text-gray-900">{topic.author}</span>
                         </span>
                       </div>
 
-                      {/* Métricas */}
-                      <div className="flex items-center gap-4 text-slate-500">
-                        <div className="flex items-center gap-1 text-[10px]">
-                          <MessageCircle size={12} /> {topic.replies} respostas
+                      {/* Metrics */}
+                      <div className="flex items-center gap-6 text-gray-500">
+                        <div className="flex items-center gap-2 text-sm">
+                          <MessageCircle size={16} />
+                          <span>{topic.replies} respostas</span>
                         </div>
-                        <div className="flex items-center gap-1 text-[10px]">
-                          <Eye size={12} /> {topic.views} views
+                        <div className="flex items-center gap-2 text-sm">
+                          <Eye size={16} />
+                          <span>{topic.views} visualizações</span>
                         </div>
-                        <div className="flex items-center gap-1 text-[10px]">
-                          <ThumbsUp size={12} /> {topic.likes}
+                        <div className="flex items-center gap-2 text-sm">
+                          <ThumbsUp size={16} />
+                          <span>{topic.likes} curtidas</span>
                         </div>
                       </div>
                     </div>
@@ -148,10 +177,9 @@ border-slate-700">
               ))}
             </div>
           </div>
-
-        </section>
-      </main>
-    </motion.div>
+        </div>
+      </div>
+    </div>
   );
 }
 

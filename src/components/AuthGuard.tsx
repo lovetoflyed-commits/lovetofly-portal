@@ -23,7 +23,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     // Only check auth after initial loading
     if (!isChecking && !user) {
       // Lista de rotas públicas que não precisam de login
-      const publicRoutes = ['/', '/login', '/register'];
+      const publicRoutes = ['/', '/login', '/register', '/landing'];
 
       // Se a rota atual não for pública, manda pro login
       if (!publicRoutes.includes(pathname)) {

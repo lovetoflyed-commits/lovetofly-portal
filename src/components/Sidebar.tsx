@@ -21,9 +21,41 @@ export default function Sidebar({ onFeatureClick, disabled }: SidebarProps) {
 
   const menuSections = [
     {
-      title: 'Navegação',
+      title: 'Conta',
       items: [
-        { href: '/', label: 'Dashboard', icon: '🏠' },
+        { href: '/profile', label: 'Meu Perfil', icon: '👤' },
+        // { href: '/profile/settings', label: 'Configurações', icon: '⚙️' }, // descomente se houver rota
+      ],
+    },
+    {
+      title: 'Carreira',
+      items: [
+        { href: '/career', label: 'Central de Carreira', icon: '💼' },
+        { href: '/career/jobs', label: 'Buscar Vagas', icon: '🔍' },
+        user ? { href: '/career/my-applications', label: 'Minhas Candidaturas', icon: '📋' } : null,
+        { href: '/career/companies', label: 'Empresas', icon: '🏢' },
+        { href: '/mentorship', label: 'Mentoria', icon: '🤝' },
+      ].filter(Boolean),
+    },
+    {
+      title: 'Classificados',
+      items: [
+        { href: '/classifieds/aircraft', label: 'Aeronaves', icon: '✈️' },
+        { href: '/classifieds/parts', label: 'Peças e Motores', icon: '🔧' },
+        { href: '/classifieds/avionics', label: 'Aviônicos', icon: '📡' },
+      ],
+    },
+    {
+      title: 'Comunidade',
+      items: [
+        { href: '/forum', label: 'Fórum', icon: '💬' },
+      ],
+    },
+    {
+      title: 'Cursos e Treinamento',
+      items: [
+        { href: '/courses', label: 'Cursos Online', icon: '📚' },
+        { href: '/simulator', label: 'Simulador', icon: '🎮' },
       ],
     },
     {
@@ -36,10 +68,11 @@ export default function Sidebar({ onFeatureClick, disabled }: SidebarProps) {
       ],
     },
     {
-      title: 'Meteorologia',
+      title: 'HangarShare',
       items: [
-        { href: '/weather', label: 'METAR/TAF', icon: '☁️' },
-        { href: '/weather/radar', label: 'Radar Meteorológico', icon: '🌦️' },
+        { href: '/hangarshare', label: 'Buscar Hangares', icon: '🏢' },
+        { href: '/hangarshare/owner/register', label: 'Anunciar Hangar', icon: '➕' },
+        { href: '/hangarshare/bookings', label: 'Minhas Reservas', icon: '📅' },
       ],
     },
     {
@@ -49,52 +82,22 @@ export default function Sidebar({ onFeatureClick, disabled }: SidebarProps) {
       ],
     },
     {
-      title: 'HangarShare',
+      title: 'Meteorologia',
       items: [
-        { href: '/hangarshare', label: 'Buscar Hangares', icon: '🏢' },
-        { href: '/hangarshare/owner/register', label: 'Anunciar Hangar', icon: '➕' },
-        { href: '/hangarshare/bookings', label: 'Minhas Reservas', icon: '📅' },
+        { href: '/weather', label: 'METAR/TAF', icon: '☁️' },
+        { href: '/weather/radar', label: 'Radar Meteorológico', icon: '🌦️' },
+      ],
+    },
+    {
+      title: 'Navegação',
+      items: [
+        { href: '/', label: 'Dashboard', icon: '🏠' },
       ],
     },
     {
       title: 'Shop',
       items: [
         { href: '/shop', label: 'Pilot Shop', icon: '🛒' },
-      ],
-    },
-    {
-      title: 'Classificados',
-      items: [
-        { href: '/classifieds/aircraft', label: 'Aeronaves', icon: '✈️' },
-        { href: '/classifieds/parts', label: 'Peças e Motores', icon: '🔧' },
-        { href: '/classifieds/avionics', label: 'Aviônicos', icon: '📡' },
-      ],
-    },
-    {
-      title: 'Cursos e Treinamento',
-      items: [
-        { href: '/courses', label: 'Cursos Online', icon: '📚' },
-        { href: '/simulator', label: 'Simulador', icon: '🎮' },
-      ],
-    },
-    {
-      title: 'Comunidade',
-      items: [
-        { href: '/forum', label: 'Fórum', icon: '💬' },
-      ],
-    },
-    {
-      title: 'Carreira',
-      items: [
-        { href: '/mentorship', label: 'Mentoria', icon: '🤝' },
-        // { href: '/career/mentorship', label: 'Mentoria', icon: '🤝' }, // descomente se houver rota
-      ],
-    },
-    {
-      title: 'Conta',
-      items: [
-        { href: '/profile', label: 'Meu Perfil', icon: '👤' },
-        // { href: '/profile/settings', label: 'Configurações', icon: '⚙️' }, // descomente se houver rota
       ],
     },
   ];

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import Header from '@/components/Header';
+import Sidebar from '@/components/Sidebar';
 
 // Dados simulados dos cursos
 const COURSES = [
@@ -34,53 +34,73 @@ const COURSES = [
 
 export default function CoursesPage() {
   return (
-    <div className="min-h-screen bg-slate-50 font-sans">
-      <Header />
+    <div className="flex min-h-screen bg-gray-50">
+      <Sidebar />
 
-      <main className="container mx-auto px-4 py-10">
-        <div className="mb-10">
-          <h1 className="text-3xl font-extrabold text-slate-900">Meus Cursos</h1>
-          <p className="text-slate-500 mt-2">Acompanhe seu progresso e continue seus estudos.</p>
+      <div className="flex-1">
+        {/* Back Button */}
+        <div className="bg-white border-b border-gray-200 py-4 px-8">
+          <div className="max-w-6xl mx-auto">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition-colors"
+            >
+              <span className="text-lg">←</span>
+              Voltar ao Dashboard
+            </Link>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {COURSES.map((course) => (
-            <div key={course.id} className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden group hover:shadow-md transition-all">
-              <div className="relative h-48 overflow-hidden">
-                {/* CORREÇÃO AQUI: Uso correto de crases (`) para template string */}
-                <img 
-                  src={course.image} 
-                  alt={course.title} 
-                  className={`w-full h-full object-cover transition-opacity ${course.status === 'locked' ? 'opacity-30 grayscale' : 'opacity-80 group-hover:opacity-100'}`} 
-                />
-
-                {course.status === 'locked' && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="bg-slate-900/70 text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-                      Em Breve
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <div className="p-6">
-                <h3 className="text-xl font-bold text-slate-900 mb-2">{course.title}</h3>
-                <p className="text-slate-500 text-sm mb-4 line-clamp-2">{course.description}</p>
-
-                {course.status === 'available' ? (
-                  <button className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors">
-                    Acessar Aula
-                  </button>
-                ) : (
-                  <button disabled className="w-full py-3 bg-slate-100 text-slate-400 font-bold rounded-xl cursor-not-allowed">
-                    Indisponível
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
+        {/* Hero Section */}
+        <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 text-white py-12 px-8">
+          <div className="max-w-6xl mx-auto">
+            <h1 className="text-3xl font-bold mb-2">Meus Cursos</h1>
+            <p className="text-indigo-100">
+              Acompanhe seu progresso e continue seus estudos
+            </p>
+          </div>
         </div>
-      </main>
+
+        {/* Content */}
+        <div className="max-w-6xl mx-auto p-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {COURSES.map((course) => (
+              <div key={course.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow group">
+                <div className="relative h-48 overflow-hidden">
+                  <img 
+                    src={course.image} 
+                    alt={course.title} 
+                    className={`w-full h-full object-cover transition-all ${course.status === 'locked' ? 'opacity-30 grayscale' : 'opacity-90 group-hover:opacity-100 group-hover:scale-105'}`} 
+                  />
+
+                  {course.status === 'locked' && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gray-900/30">
+                      <span className="bg-gray-900/80 text-white px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wider">
+                        Em Breve
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-6">
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">{course.title}</h3>
+                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">{course.description}</p>
+
+                  {course.status === 'available' ? (
+                    <button className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-colors">
+                      Acessar Aula
+                    </button>
+                  ) : (
+                    <button disabled className="w-full py-3 bg-gray-100 text-gray-400 font-semibold rounded-lg cursor-not-allowed">
+                      Indisponível
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,10 +1,9 @@
 'use client';
 
 import React from 'react';
-import { motion } from 'framer-motion';
-import { Filter, Tag, MapPin } from 'lucide-react';
+import Link from 'next/link';
+import { Filter, Tag, MapPin, Search } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
-import Header from '../../components/Header';
 
 // Dados mockados de aeronaves
 const AIRCRAFT_LIST = [
@@ -24,71 +23,104 @@ const AIRCRAFT_LIST = [
 
 export default function MarketplacePage() {
   return (
-    <motion.div 
-      initial={{ opacity: 0 }} 
-      animate={{ opacity: 1 }} 
-      transition={{ duration: 0.5 }}
-      className="h-screen w-full bg-slate-900 text-slate-200 overflow-hidden flex flex-col font-sans"
-    >
-      <Header />
+    <div className="flex min-h-screen bg-gray-50">
+      <Sidebar />
 
-      <main className="flex-1 p-3 grid grid-cols-1 md:grid-cols-12 gap-3 overflow-hidden relative">
+      <div className="flex-1">
+        {/* Back Button */}
+        <div className="bg-white border-b border-gray-200 py-4 px-8">
+          <div className="max-w-6xl mx-auto">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100 transition-colors"
+            >
+              <span className="text-lg">←</span>
+              Voltar ao Dashboard
+            </Link>
+          </div>
+        </div>
 
-        {/* Reutilizando o Menu Lateral */}
-        <Sidebar />
-
-        {/* Área Principal de Conteúdo */}
-        <section className="col-span-1 md:col-span-9 flex flex-col gap-3 overflow-hidden h-full">
-
-          {/* Barra de Título e Filtros */}
-          <div className="bg-slate-800/40 rounded-lg border border-slate-700/50 p-4 flex justify-between 
-items-center backdrop-blur-sm shrink-0">
-            <div>
-              <h2 className="text-xl font-bold text-white">Classificados</h2>
-              <p className="text-xs text-slate-400">Encontre aeronaves, peças e hangares.</p>
+        {/* Hero Section */}
+        <div className="bg-gradient-to-r from-purple-600 to-purple-800 text-white py-12 px-8">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-3xl font-bold mb-2">Classificados de Aviação</h1>
+                <p className="text-purple-100">
+                  Encontre aeronaves, peças, equipamentos e hangares
+                </p>
+              </div>
+              <button className="flex items-center gap-2 bg-white text-purple-600 hover:bg-purple-50 px-6 py-3 rounded-lg font-semibold transition-colors shadow-lg">
+                <Filter size={18} /> Filtros
+              </button>
             </div>
-            <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 
-rounded-lg text-xs font-bold transition-colors">
-              <Filter size={14} /> FILTRAR
-            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="max-w-6xl mx-auto p-8">
+          {/* Search Bar */}
+          <div className="mb-8">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+              <input
+                type="text"
+                placeholder="Buscar por modelo, marca ou tipo..."
+                className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+            </div>
           </div>
 
-          {/* Grid de Anúncios */}
-          <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
-              {AIRCRAFT_LIST.map((item) => (
-                <div key={item.id} className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden 
-hover:border-blue-500/50 transition-all group cursor-pointer">
-                  {/* Imagem */}
-                  <div className="h-32 bg-slate-900 relative overflow-hidden">
-                    <img src={item.image} alt={item.model} className="w-full h-full object-cover opacity-80 
-group-hover:opacity-100 transition-opacity" />
-                    <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md px-2 py-1 rounded 
-text-[10px] font-bold text-white flex items-center gap-1">
-                      <Tag size={10} /> VENDA
-                    </div>
-                  </div>
+          {/* Category Tabs */}
+          <div className="flex gap-2 mb-8 overflow-x-auto">
+            {['Todos', 'Aeronaves', 'Helicópteros', 'Peças', 'Equipamentos', 'Hangares'].map((cat) => (
+              <button
+                key={cat}
+                className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
+                  cat === 'Todos'
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
 
-                  {/* Detalhes */}
-                  <div className="p-4">
-                    <h3 className="font-bold text-white text-sm mb-1">{item.model}</h3>
-                    <p className="text-xs text-slate-500 mb-3">Ano {item.year}</p>
-
-                    <div className="flex items-center justify-between mt-2">
-                      <span className="text-blue-400 font-bold text-sm">{item.price}</span>
-                      <span className="text-[10px] text-slate-600 flex items-center gap-1">
-                        <MapPin size={10} /> {item.location}
-                      </span>
-                    </div>
+          {/* Listings Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {AIRCRAFT_LIST.map((item) => (
+              <div key={item.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow cursor-pointer group">
+                {/* Image */}
+                <div className="relative h-48 overflow-hidden">
+                  <img
+                    src={item.image}
+                    alt={item.model}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute top-3 right-3 bg-white px-3 py-1 rounded-full text-xs font-semibold text-purple-600 flex items-center gap-1 shadow-md">
+                    <Tag size={12} /> À Venda
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
 
-        </section>
-      </main>
-    </motion.div>
+                {/* Details */}
+                <div className="p-5">
+                  <h3 className="font-bold text-gray-900 text-lg mb-1">{item.model}</h3>
+                  <p className="text-sm text-gray-500 mb-4">Ano {item.year}</p>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-purple-600 font-bold text-lg">{item.price}</span>
+                    <span className="text-sm text-gray-500 flex items-center gap-1">
+                      <MapPin size={14} /> {item.location}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 

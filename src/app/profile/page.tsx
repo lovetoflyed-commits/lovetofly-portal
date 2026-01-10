@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import { formatBrazilianPhone } from '@/utils/phoneFormat';
 
 // Definindo a interface completa com todos os campos que o banco possui
 interface UserProfile {
@@ -12,8 +13,17 @@ interface UserProfile {
   email: string;
   anac_code: string;
   role: string;
-  phone_number?: string;
-  address?: string;
+  mobilePhone?: string;
+  addressStreet?: string;
+  addressNumber?: string;
+  addressComplement?: string;
+  addressNeighborhood?: string;
+  addressCity?: string;
+  addressState?: string;
+  addressZip?: string;
+  addressCountry?: string;
+  aviationRole?: string;
+  aviationRoleOther?: string;
   course_type?: string;
   current_license?: string;
   current_ratings?: string;
@@ -22,6 +32,7 @@ interface UserProfile {
   previous_ciac_name?: string;
   observations?: string;
   created_at?: string;
+  avatarUrl?: string | null;
 }
 
 export default function ProfilePage() {
@@ -31,23 +42,34 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Se não tiver usuário logado, redireciona para login
-    if (!user && !loading) {
-      router.push('/login');
-      return;
+    async function load() {
+      if (!user) {
+        router.push('/login');
+        return;
+      }
+      try {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+        const res = await fetch('/api/user/profile', {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (res.ok) {
+          const data = await res.json();
+          // merge name for backward compatibility
+          const merged: UserProfile = {
+            ...data,
+            name: (user.name || `${(data.firstName||'').trim()} ${(data.lastName||'').trim()}`.trim()),
+          } as any;
+          setProfileData(merged);
+        } else {
+          // fallback to context user
+          setProfileData(user as unknown as UserProfile);
+        }
+      } finally {
+        setLoading(false);
+      }
     }
-
-    // Carregar dados do perfil
-    if (user) {
-      // Fazemos um cast seguro para UserProfile para o TypeScript aceitar os campos extras
-      setProfileData(user as unknown as UserProfile);
-      setLoading(false);
-    } else {
-      // Pequeno delay para garantir que o AuthContext carregou
-      const timer = setTimeout(() => setLoading(false), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [user, router, loading]);
+    load();
+  }, [user, router]);
 
   if (loading || !profileData) {
     return (
@@ -66,12 +88,25 @@ export default function ProfilePage() {
 
           {/* --- CABEÇALHO DO PERFIL --- */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 mb-8 flex flex-col md:flex-row items-center gap-6">
-            <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-3xl font-bold border-4 border-white shadow-sm">
-              {profileData.name?.charAt(0).toUpperCase() || 'P'}
+            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-sm bg-slate-100 flex items-center justify-center">
+              {profileData.avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={profileData.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-blue-600 text-3xl font-bold">
+                  {profileData.name?.charAt(0).toUpperCase() || 'P'}
+                </span>
+              )}
             </div>
             <div className="text-center md:text-left flex-1">
               <h1 className="text-2xl font-bold text-slate-900">{profileData.name}</h1>
-              <p className="text-slate-500 font-medium tracking-wide">CANAC: {profileData.anac_code}</p>
+              {(profileData.aviationRole || profileData.aviationRoleOther) && (
+                <p className="text-slate-500 font-medium tracking-wide">
+                  {profileData.aviationRole === 'Outro' && profileData.aviationRoleOther 
+                    ? profileData.aviationRoleOther 
+                    : profileData.aviationRole}
+                </p>
+              )}
               <div className="mt-3 flex flex-wrap gap-2 justify-center md:justify-start">
                 <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded-full uppercase border border-blue-100">
                   {profileData.role || 'Piloto'}
@@ -106,11 +141,33 @@ export default function ProfilePage() {
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Telefone</label>
-                    <p className="text-slate-700 font-medium">{profileData.phone_number || 'Não informado'}</p>
+                    <p className="text-slate-700 font-medium">{formatBrazilianPhone(profileData.mobilePhone) || 'Não informado'}</p>
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Endereço</label>
-                    <p className="text-slate-700 font-medium">{profileData.address || 'Não informado'}</p>
+                    <p className="text-slate-700 font-medium leading-relaxed">
+                      {(() => {
+                        const parts = [];
+                        if (profileData.addressStreet) {
+                          parts.push(`${profileData.addressStreet}${profileData.addressNumber ? ', ' + profileData.addressNumber : ''}`);
+                        }
+                        if (profileData.addressComplement) {
+                          parts.push(profileData.addressComplement);
+                        }
+                        if (profileData.addressNeighborhood) {
+                          parts.push(profileData.addressNeighborhood);
+                        }
+                        if (profileData.addressCity && profileData.addressState) {
+                          parts.push(`${profileData.addressCity} - ${profileData.addressState}`);
+                        } else if (profileData.addressCity) {
+                          parts.push(profileData.addressCity);
+                        }
+                        if (profileData.addressZip) {
+                          parts.push(`CEP: ${profileData.addressZip}`);
+                        }
+                        return parts.length > 0 ? parts.join(', ') : 'Não informado';
+                      })()}
+                    </p>
                   </div>
                 </div>
               </div>

@@ -1,165 +1,188 @@
 'use client';
 
 import React from 'react';
-import { motion } from 'framer-motion';
-import { Briefcase, MapPin, DollarSign, FileText, Upload } from 'lucide-react';
-import Sidebar from '../../components/Sidebar';
-import Header from '../../components/Header';
-
-// Dados mockados de vagas
-const JOBS = [
-  {
-    id: 1,
-    role: 'Piloto Comercial (PC) - Caravan C208',
-    company: 'Azul Conecta',
-    location: 'Jundiaí, SP',
-    salary: 'R$ 5.500 - R$ 7.000',
-    type: 'Full-time',
-    posted: '2 dias atrás'
-  },
-  {
-    id: 2,
-    role: 'Instrutor de Voo (INVA)',
-    company: 'Aeroclube de São Paulo',
-    location: 'São Paulo, SP',
-    salary: 'R$ 80/hora',
-    type: 'Freelance',
-    posted: '5 dias atrás'
-  },
-  {
-    id: 3,
-    role: 'Co-Piloto King Air C90',
-    company: 'Táxi Aéreo XYZ',
-    location: 'Belo Horizonte, MG',
-    salary: 'A combinar',
-    type: 'Full-time',
-    posted: '1 semana atrás'
-  },
-  {
-    id: 4,
-    role: 'Mecânico de Aeronaves (Célula)',
-    company: 'Oficina Bravo',
-    location: 'Sorocaba, SP',
-    salary: 'R$ 4.500',
-    type: 'Full-time',
-    posted: '2 semanas atrás'
-  }
-];
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import Sidebar from '@/components/Sidebar';
+import { useAuth } from '@/context/AuthContext';
 
 export default function CareerPage() {
+  const router = useRouter();
+  const { user } = useAuth();
+
+  const features = [
+    {
+      icon: '🔍',
+      title: 'Encontre sua próxima vaga',
+      description: 'Busque entre milhares de oportunidades na aviação',
+      action: 'Ver vagas',
+      href: '/career/jobs',
+    },
+    {
+      icon: '📋',
+      title: 'Acompanhe suas candidaturas',
+      description: 'Monitore o status em tempo real',
+      action: 'Minhas candidaturas',
+      href: user ? '/career/my-applications' : '/login',
+    },
+    {
+      icon: '👤',
+      title: 'Construa seu perfil',
+      description: 'Mostre suas qualificações e experiência profissional',
+      action: 'Criar perfil',
+      href: user ? '/career/profile' : '/login',
+    },
+    {
+      icon: '⭐',
+      title: 'Conheça as empresas',
+      description: 'Leia avaliações e pesquise empregadores',
+      action: 'Ver empresas',
+      href: '/career/companies',
+    },
+    {
+      icon: '🤝',
+      title: 'Encontre mentoria',
+      description: 'Conecte-se com mentores experientes na aviação',
+      action: 'Achar mentores',
+      href: '/mentorship',
+    },
+    {
+      icon: '💰',
+      title: 'Dados de salários',
+      description: 'Compare remuneração e negocie melhor',
+      action: 'Ver dados',
+      href: '/career/salary-data',
+    },
+  ];
+
   return (
-    <motion.div 
-      initial={{ opacity: 0 }} 
-      animate={{ opacity: 1 }} 
-      transition={{ duration: 0.5 }}
-      className="h-screen w-full bg-slate-900 text-slate-200 overflow-hidden flex flex-col font-sans"
-    >
-      <Header />
+    <div className="flex min-h-screen bg-gray-50">
+      <Sidebar />
 
-      <main className="flex-1 p-3 grid grid-cols-1 md:grid-cols-12 gap-3 overflow-hidden relative">
+      <div className="flex-1">
+        {/* Back Button */}
+        <div className="bg-white border-b border-gray-200 py-4 px-8">
+          <div className="max-w-6xl mx-auto">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors"
+            >
+              <span className="text-lg">←</span>
+              Voltar ao Dashboard
+            </Link>
+          </div>
+        </div>
 
-        <Sidebar />
-
-        <section className="col-span-1 md:col-span-9 flex flex-col gap-3 overflow-hidden h-full">
-
-          {/* Cabeçalho */}
-          <div className="bg-slate-800/40 rounded-lg border border-slate-700/50 p-4 flex justify-between 
-items-center backdrop-blur-sm shrink-0">
-            <div>
-              <h2 className="text-xl font-bold text-white">Central de Carreira</h2>
-              <p className="text-xs text-slate-400">Encontre oportunidades e gerencie seu currículo.</p>
-            </div>
-            <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 
-rounded-lg text-xs font-bold transition-colors shadow-lg shadow-blue-900/20">
-              <FileText size={14} /> MEU CURRÍCULO
+        {/* Hero Section */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-16 px-8">
+          <div className="max-w-6xl mx-auto">
+            <h1 className="text-4xl font-bold mb-4">
+              Central de Carreira em Aviação
+            </h1>
+            <p className="text-xl text-blue-100 mb-8">
+              Encontre sua vaga dos sonhos, conecte-se com mentores e avance na carreira
+            </p>
+            <button
+              onClick={() => router.push('/career/jobs')}
+              className="px-8 py-3 bg-white text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition"
+            >
+              Ver vagas agora →
             </button>
           </div>
+        </div>
 
-          <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-3 overflow-hidden">
+        {/* Features Grid */}
+        <div className="p-8">
+          <div className="max-w-6xl mx-auto">
+            <h2 className="text-2xl font-bold text-gray-900 mb-8">
+              Tudo para sua carreira na aviação
+            </h2>
 
-            {/* Coluna Esquerda: Vagas */}
-            <div className="lg:col-span-2 bg-slate-800/40 rounded-lg border border-slate-700/50 flex flex-col 
-overflow-hidden">
-              <div className="p-3 border-b border-slate-700/50 flex justify-between items-center">
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <Briefcase size={14} className="text-blue-400" /> Vagas Recentes
-                </h3>
-                <span className="text-[10px] text-slate-500">Mostrando 4 vagas</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {features.map((feature, index) => (
+                <div
+                  key={index}
+                  className="bg-white rounded-lg border border-blue-200 p-6 hover:shadow-lg transition"
+                >
+                  <div className="text-4xl mb-4">{feature.icon}</div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    {feature.title}
+                  </h3>
+                  <p className="text-gray-600 mb-6">
+                    {feature.description}
+                  </p>
+                  <button
+                    onClick={() => router.push(feature.href)}
+                    className="text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    {feature.action} →
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Stats Section */}
+        <div className="bg-blue-50 py-16 px-8">
+          <div className="max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
+              <div>
+                <p className="text-3xl font-bold text-blue-600 mb-2">500+</p>
+                <p className="text-gray-700">Vagas ativas</p>
               </div>
-
-              <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-3">
-                {JOBS.map((job) => (
-                  <div key={job.id} className="bg-slate-900/50 border border-slate-800 p-4 rounded-lg 
-hover:border-blue-500/30 hover:bg-slate-800 transition-all cursor-pointer group">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h4 className="text-sm font-bold text-white group-hover:text-blue-400 
-transition-colors">{job.role}</h4>
-                        <p className="text-xs text-slate-400 font-medium">{job.company}</p>
-                      </div>
-                      <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-1 rounded border 
-border-slate-700">
-                        {job.type}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-4 text-[10px] text-slate-500 mt-3">
-                      <span className="flex items-center gap-1"><MapPin size={10} /> {job.location}</span>
-                      <span className="flex items-center gap-1"><DollarSign size={10} /> {job.salary}</span>
-                      <span className="ml-auto text-slate-600">{job.posted}</span>
-                    </div>
-                  </div>
-                ))}
+              <div>
+                <p className="text-3xl font-bold text-blue-600 mb-2">200+</p>
+                <p className="text-gray-700">Empresas verificadas</p>
+              </div>
+              <div>
+                <p className="text-3xl font-bold text-blue-600 mb-2">50K+</p>
+                <p className="text-gray-700">Membros na comunidade</p>
+              </div>
+              <div>
+                <p className="text-3xl font-bold text-blue-600 mb-2">1000+</p>
+                <p className="text-gray-700">Contratações bem-sucedidas</p>
               </div>
             </div>
+          </div>
+        </div>
 
-            {/* Coluna Direita: Upload e Dicas */}
-            <div className="flex flex-col gap-3">
-
-              {/* Upload de CV */}
-              <div className="bg-slate-800/40 rounded-lg border border-slate-700/50 p-4 flex flex-col 
-items-center justify-center text-center">
-                <div className="w-12 h-12 bg-slate-900 rounded-full flex items-center justify-center mb-3 
-border border-slate-700 border-dashed">
-                  <Upload size={20} className="text-slate-500" />
-                </div>
-                <h4 className="text-xs font-bold text-white mb-1">Atualize seu CV</h4>
-                <p className="text-[10px] text-slate-500 mb-3">Mantenha seu perfil atualizado para 
-recrutadores.</p>
-                <button className="w-full bg-slate-700 hover:bg-slate-600 text-white text-[10px] font-bold 
-py-2 rounded transition-colors">
-                  ENVIAR PDF
+        {/* CTA Section */}
+        <div className="bg-gray-900 text-white py-16 px-8">
+          <div className="max-w-6xl mx-auto text-center">
+            <h2 className="text-3xl font-bold mb-4">
+              Pronto para avançar sua carreira?
+            </h2>
+            <p className="text-gray-300 mb-8 text-lg">
+              Junte-se a milhares de profissionais de aviação usando nossa plataforma
+            </p>
+            {user ? (
+              <div className="space-x-4">
+                <button
+                  onClick={() => router.push('/career/jobs')}
+                  className="px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition"
+                >
+                  Explorar vagas
+                </button>
+                <button
+                  onClick={() => router.push('/career/my-applications')}
+                  className="px-8 py-3 border border-white text-white font-semibold rounded-lg hover:bg-white hover:text-gray-900 transition"
+                >
+                  Minhas candidaturas
                 </button>
               </div>
-
-              {/* Dicas Rápidas */}
-              <div className="flex-1 bg-slate-800/40 rounded-lg border border-slate-700/50 p-4 
-overflow-y-auto custom-scrollbar">
-                <h3 className="text-xs font-bold text-white mb-3 border-b border-slate-700 pb-2">Dicas de 
-Carreira</h3>
-                <ul className="space-y-3">
-                  <li className="text-[10px] text-slate-400">
-                    <strong className="text-blue-400 block mb-0.5">Inglês ICAO</strong>
-                    Mantenha sua proficiência em dia. A maioria das companhias exige nível 4 ou superior.
-                  </li>
-                  <li className="text-[10px] text-slate-400">
-                    <strong className="text-blue-400 block mb-0.5">Networking</strong>
-                    Participe de eventos e mantenha contato com seus instrutores.
-                  </li>
-                  <li className="text-[10px] text-slate-400">
-                    <strong className="text-blue-400 block mb-0.5">Jet Training</strong>
-                    Um diferencial importante para quem busca a linha aérea.
-                  </li>
-                </ul>
-              </div>
-
-            </div>
-
+            ) : (
+              <button
+                onClick={() => router.push('/register')}
+                className="px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition"
+              >
+                Criar conta gratuita
+              </button>
+            )}
           </div>
-
-        </section>
-      </main>
-    </motion.div>
+        </div>
+      </div>
+    </div>
   );
 }
 

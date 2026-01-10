@@ -42,8 +42,8 @@ export default function Header() {
   }, [user]);
 
   const handleLogout = () => {
+    // AuthContext already redirects to /landing on logout
     logout();
-    router.push('/login');
   };
 
   const hideLogout = pathname?.startsWith('/classifieds');
