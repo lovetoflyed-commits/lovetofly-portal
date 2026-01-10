@@ -5,6 +5,74 @@ async function getResendClient() {
 }
 
 /**
+ * Send password reset email with reset code
+ */
+export async function sendPasswordResetEmail({
+  email,
+  userName,
+  resetCode,
+}: {
+  email: string;
+  userName: string;
+  resetCode: string;
+}) {
+  try {
+    const resend = await getResendClient();
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; background: #f9f9f9; }
+    .header { background: #2563eb; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+    .content { background: white; padding: 20px; }
+    .code-box { background: #f0f0f0; border: 2px solid #2563eb; padding: 15px; text-align: center; border-radius: 5px; margin: 20px 0; }
+    .code { font-size: 32px; font-weight: bold; color: #2563eb; letter-spacing: 5px; }
+    .footer { background: #f0f0f0; padding: 15px; text-align: center; font-size: 12px; color: #666; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Redefinir Senha - Love to Fly</h1>
+    </div>
+    <div class="content">
+      <p>Olá ${userName},</p>
+      <p>Você solicitou para redefinir sua senha na plataforma Love to Fly.</p>
+      <p>Seu código de redefinição é:</p>
+      <div class="code-box">
+        <div class="code">${resetCode}</div>
+      </div>
+      <p><strong>Este código expira em 15 minutos.</strong></p>
+      <p>Se você não solicitou esta redefinição de senha, ignore este email.</p>
+      <p>Atenciosamente,<br><strong>Equipe Love to Fly</strong></p>
+    </div>
+    <div class="footer">
+      <p>&copy; 2026 Love to Fly. Todos os direitos reservados.</p>
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+    await resend.emails.send({
+      from: 'noreply@lovetofly.com.br',
+      to: email,
+      subject: 'Redefinir Senha - Love to Fly',
+      html: htmlContent,
+    });
+
+    return true;
+  } catch (error) {
+    console.error('Error sending password reset email:', error);
+    throw error;
+  }
+}
+
+/**
  * Send booking confirmation email to customer
  */
 export async function sendBookingConfirmation({
