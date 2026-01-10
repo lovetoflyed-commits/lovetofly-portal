@@ -8,7 +8,12 @@ export default function E6BPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-
+      {/* Back button */}
+      <div className="max-w-7xl mx-auto px-4 pt-4">
+        <Link href="/" className="inline-block mb-6 px-4 py-2 text-blue-700 hover:bg-blue-50 rounded-lg font-bold">
+          ← Voltar ao Dashboard
+        </Link>
+      </div>
 
       {/* Hub de Ferramentas E6B */}
       <div className="max-w-7xl mx-auto px-4 py-12">
