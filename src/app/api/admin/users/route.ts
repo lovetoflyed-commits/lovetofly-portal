@@ -4,7 +4,7 @@ import pool from '@/config/db';
 export async function GET() {
   try {
     const result = await pool.query(
-      'SELECT id, first_name, last_name, email, role, aviation_role, is_hangar_owner, plan, created_at FROM users ORDER BY created_at DESC'
+      'SELECT id, first_name, last_name, email, role, aviation_role, plan, created_at FROM users ORDER BY created_at DESC'
     );
     // Map to include full name
     const users = result.rows.map(u => ({

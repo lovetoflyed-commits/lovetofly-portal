@@ -12,7 +12,7 @@ export async function GET(
     // Get user basic info
     const userResult = await pool.query(
       `SELECT 
-        id, first_name, last_name, email, role, aviation_role, is_hangar_owner,
+        id, first_name, last_name, email, role, aviation_role,
         plan, cpf, birth_date, mobile_phone, 
         address_street, address_number, address_complement, address_neighborhood,
         address_city, address_state, address_zip, address_country,
@@ -52,15 +52,13 @@ export async function GET(
       [userId]
     );
 
-    // Get hangar owner info if applicable
-    let hangarOwnerResult = null;
-    if (user.is_hangar_owner) {
-      hangarOwnerResult = await pool.query(
-        `SELECT id, company_name, cnpj, phone, address, website, description, verification_status, created_at
-        FROM hangar_owners WHERE user_id = $1`,
-        [userId]
-      );
-    }
+    // Get hangar owner info - will be empty if user is not a hangar owner
+    const hangarOwnerResult = await pool.query(
+      `SELECT id, company_name, cnpj, phone, address, website, description, verification_status, created_at
+      FROM hangar_owners WHERE user_id = $1
+      LIMIT 1`,
+      [userId]
+    );
 
     // Get summary stats
     const statsResult = await pool.query(
