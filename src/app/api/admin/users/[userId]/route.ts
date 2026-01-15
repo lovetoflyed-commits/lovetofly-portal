@@ -10,7 +10,7 @@ export async function GET(
     const { userId } = await params;
     
     const result = await pool.query(
-      'SELECT id, first_name, last_name, email, role, aviation_role, is_hangar_owner, plan, created_at FROM users WHERE id = $1',
+      'SELECT id, first_name, last_name, email, role, aviation_role, plan, created_at FROM users WHERE id = $1',
       [userId]
     );
     
