@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 
@@ -12,13 +12,31 @@ interface AirportData {
   country: string;
 }
 
+interface VerificationStatus {
+  hasProfile: boolean;
+  isVerified: boolean;
+  canCreateListings: boolean;
+  statusMessage: string;
+  nextAction: string;
+  documents?: {
+    uploaded: number;
+    approved: number;
+    pending: number;
+    rejected: number;
+  };
+  uploadUrl?: string;
+  setupUrl?: string;
+}
+
 export default function HangarListingPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [icaoError, setIcaoError] = useState('');
   const [airportData, setAirportData] = useState<AirportData | null>(null);
+  const [verificationStatus, setVerificationStatus] = useState<VerificationStatus | null>(null);
+  const [checkingVerification, setCheckingVerification] = useState(true);
 
   const [formData, setFormData] = useState({
     // Hangar Info
@@ -29,6 +47,11 @@ export default function HangarListingPage() {
     maxWingspanMeters: '',
     maxLengthMeters: '',
     maxHeightMeters: '',
+    
+    // Capacity (multiple aircraft spaces)
+    totalSpaces: '1',
+    availableSpaces: '1',
+    spaceDescription: '',
     
     // Pricing
     hourlyRate: '',
@@ -53,13 +76,108 @@ export default function HangarListingPage() {
   const [photos, setPhotos] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
   const [photoError, setPhotoError] = useState('');
+  const [compressing, setCompressing] = useState(false);
 
-  // Preview das imagens selecionadas
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Compress image to target size (200KB max)
+  const compressImage = async (file: File, maxSizeKB: number = 200): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (e) => {
+        const img = new Image();
+        img.src = e.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let { width, height } = img;
+          
+          // Resize if too large (max 1200px width)
+          const maxWidth = 1200;
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          // Start with high quality and reduce until under size limit
+          let quality = 0.85;
+          const tryCompress = () => {
+            canvas.toBlob(
+              (blob) => {
+                if (!blob) {
+                  reject(new Error('Failed to compress image'));
+                  return;
+                }
+                
+                const sizeKB = blob.size / 1024;
+                
+                if (sizeKB <= maxSizeKB || quality <= 0.3) {
+                  // Create new file from blob
+                  const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {
+                    type: 'image/jpeg',
+                    lastModified: Date.now(),
+                  });
+                  resolve(compressedFile);
+                } else {
+                  // Reduce quality and try again
+                  quality -= 0.1;
+                  tryCompress();
+                }
+              },
+              'image/jpeg',
+              quality
+            );
+          };
+          
+          tryCompress();
+        };
+        img.onerror = () => reject(new Error('Failed to load image'));
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+    });
+  };
+
+  // Preview das imagens selecionadas com compressão
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
-    setPhotos(files);
-    setPhotoPreviews(files.map(file => URL.createObjectURL(file)));
-    setPhotoError(files.length === 0 ? 'Adicione pelo menos uma imagem do hangar.' : '');
+    
+    if (files.length === 0) {
+      setPhotoError('Adicione pelo menos uma imagem do hangar.');
+      return;
+    }
+    
+    if (files.length > 5) {
+      setPhotoError('Máximo de 5 fotos permitidas.');
+      return;
+    }
+    
+    setCompressing(true);
+    setPhotoError('');
+    
+    try {
+      // Compress all images
+      const compressedFiles = await Promise.all(
+        files.map(async (file) => {
+          // Only compress if larger than 200KB
+          if (file.size > 200 * 1024) {
+            return await compressImage(file, 200);
+          }
+          return file;
+        })
+      );
+      
+      setPhotos(compressedFiles);
+      setPhotoPreviews(compressedFiles.map(file => URL.createObjectURL(file)));
+    } catch (error) {
+      console.error('Error compressing images:', error);
+      setPhotoError('Erro ao processar imagens. Tente novamente.');
+    } finally {
+      setCompressing(false);
+    }
   };
 
   const handleIcaoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,6 +201,37 @@ export default function HangarListingPage() {
       }
     }
   };
+
+  // Check verification status on mount
+  useEffect(() => {
+    const checkVerification = async () => {
+      if (!user || !token) {
+        setCheckingVerification(false);
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/hangarshare/owner/verification-status', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setVerificationStatus(data);
+        } else {
+          console.error('Failed to check verification status');
+        }
+      } catch (error) {
+        console.error('Error checking verification:', error);
+      } finally {
+        setCheckingVerification(false);
+      }
+    };
+
+    checkVerification();
+  }, [user, token]);
 
   const handleNext = () => {
     if (step === 1 && !airportData) {
@@ -133,6 +282,9 @@ export default function HangarListingPage() {
           maxWingspanMeters: parseFloat(formData.maxWingspanMeters) || null,
           maxLengthMeters: parseFloat(formData.maxLengthMeters) || null,
           maxHeightMeters: parseFloat(formData.maxHeightMeters) || null,
+          totalSpaces: parseInt(formData.totalSpaces) || 1,
+          availableSpaces: parseInt(formData.availableSpaces) || 1,
+          spaceDescription: formData.spaceDescription || null,
           hourlyRate: parseFloat(formData.hourlyRate) || null,
           dailyRate: parseFloat(formData.dailyRate) || null,
           weeklyRate: parseFloat(formData.weeklyRate) || null,
@@ -156,24 +308,38 @@ export default function HangarListingPage() {
 
       const { listingId } = await listingRes.json();
 
-      // Upload photos
-      const formDataPhotos = new FormData();
-      photos.forEach((file, idx) => {
-        formDataPhotos.append('photos', file);
-        if (idx === 0) formDataPhotos.append('isPrimary', 'true');
-      });
+      // Upload photos one by one
+      let photoErrors = 0;
+      for (let i = 0; i < photos.length; i++) {
+        const file = photos[i];
+        const photoFormData = new FormData();
+        photoFormData.append('file', file);
 
-      const photoRes = await fetch(`/api/hangarshare/listing/${listingId}/photos`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        body: formDataPhotos,
-      });
+        try {
+          const photoRes = await fetch(
+            `/api/hangarshare/listings/${listingId}/upload-photo`,
+            {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+              },
+              body: photoFormData,
+            }
+          );
 
-      if (!photoRes.ok) {
-        console.error('Erro ao enviar fotos:', photoRes.statusText);
-        // Don't fail completely - photos are optional
+          if (!photoRes.ok) {
+            console.error(`Erro ao enviar foto ${i + 1}:`, photoRes.statusText);
+            photoErrors++;
+          }
+        } catch (photoError) {
+          console.error(`Erro ao enviar foto ${i + 1}:`, photoError);
+          photoErrors++;
+        }
+      }
+
+      if (photoErrors > 0) {
+        console.warn(`Falha ao enviar ${photoErrors} de ${photos.length} fotos`);
+        // Photos are optional, so we don't fail completely
       }
 
       // Success
@@ -201,6 +367,156 @@ export default function HangarListingPage() {
           >
             Fazer Login
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading state while checking verification
+  if (checkingVerification) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-100">
+        <div className="bg-white rounded-xl shadow-lg p-8 max-w-md text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900 mx-auto mb-4"></div>
+          <p className="text-slate-600">Verificando status...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show verification required message
+  if (verificationStatus && !verificationStatus.canCreateListings) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-100 py-8">
+        <div className="bg-white rounded-xl shadow-lg p-8 max-w-2xl mx-4">
+          <div className="text-center mb-6">
+            {verificationStatus.nextAction === 'upload_documents' && (
+              <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl">📄</span>
+              </div>
+            )}
+            {verificationStatus.nextAction === 'wait_for_review' && (
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl">⏳</span>
+              </div>
+            )}
+            {verificationStatus.nextAction === 'reupload_documents' && (
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl">⚠️</span>
+              </div>
+            )}
+            <h2 className="text-2xl font-bold text-blue-900 mb-2">
+              {!verificationStatus.hasProfile ? 'Perfil Necessário' : 'Verificação Necessária'}
+            </h2>
+            <p className="text-slate-600 text-lg">
+              {verificationStatus.statusMessage}
+            </p>
+          </div>
+
+          {verificationStatus.documents && (
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-6 mb-6">
+              <h3 className="font-bold text-slate-900 mb-4">Status dos Documentos</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">✅</span>
+                  <div>
+                    <p className="font-semibold text-green-700">Aprovados</p>
+                    <p className="text-slate-600">{verificationStatus.documents.approved} de 3</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">⏳</span>
+                  <div>
+                    <p className="font-semibold text-blue-700">Em Análise</p>
+                    <p className="text-slate-600">{verificationStatus.documents.pending}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">❌</span>
+                  <div>
+                    <p className="font-semibold text-red-700">Rejeitados</p>
+                    <p className="text-slate-600">{verificationStatus.documents.rejected}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">📤</span>
+                  <div>
+                    <p className="font-semibold text-slate-700">Enviados</p>
+                    <p className="text-slate-600">{verificationStatus.documents.uploaded} de 3</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            {verificationStatus.nextAction === 'upload_documents' && (
+              <>
+                <p className="text-sm text-slate-600">
+                  Para criar anúncios de hangares, você precisa enviar os seguintes documentos para verificação:
+                </p>
+                <ul className="list-disc list-inside text-sm text-slate-700 space-y-1 bg-slate-50 p-4 rounded-lg">
+                  <li>Documento de identidade (frente)</li>
+                  <li>Documento de identidade (verso)</li>
+                  <li>Selfie segurando o documento</li>
+                </ul>
+                <button
+                  onClick={() => router.push(verificationStatus.uploadUrl || '/hangarshare/owner/validate-documents')}
+                  className="w-full px-6 py-3 bg-blue-900 text-white font-bold rounded-lg hover:bg-blue-800"
+                >
+                  Enviar Documentos →
+                </button>
+              </>
+            )}
+
+            {verificationStatus.nextAction === 'wait_for_review' && (
+              <>
+                <p className="text-sm text-slate-600">
+                  Seus documentos foram enviados e estão sendo analisados pela nossa equipe. 
+                  Este processo geralmente leva de 24 a 48 horas.
+                </p>
+                <p className="text-sm text-slate-600">
+                  Você receberá um e-mail assim que a análise for concluída.
+                </p>
+                <button
+                  onClick={() => router.push('/hangarshare/owner/dashboard')}
+                  className="w-full px-6 py-3 bg-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-300"
+                >
+                  Voltar ao Dashboard
+                </button>
+              </>
+            )}
+
+            {verificationStatus.nextAction === 'reupload_documents' && (
+              <>
+                <p className="text-sm text-slate-600">
+                  Alguns dos seus documentos foram rejeitados. Por favor, revise e envie novos documentos corretos.
+                </p>
+                <button
+                  onClick={() => router.push(verificationStatus.uploadUrl || '/hangarshare/owner/validate-documents')}
+                  className="w-full px-6 py-3 bg-blue-900 text-white font-bold rounded-lg hover:bg-blue-800"
+                >
+                  Reenviar Documentos →
+                </button>
+              </>
+            )}
+
+            {!verificationStatus.hasProfile && verificationStatus.setupUrl && (
+              <button
+                onClick={() => router.push(verificationStatus.setupUrl)}
+                className="w-full px-6 py-3 bg-blue-900 text-white font-bold rounded-lg hover:bg-blue-800"
+              >
+                Completar Cadastro →
+              </button>
+            )}
+
+            <button
+              onClick={() => router.push('/hangarshare')}
+              className="w-full px-6 py-3 bg-white border-2 border-slate-300 text-slate-700 font-bold rounded-lg hover:bg-slate-50"
+            >
+              ← Voltar
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -273,7 +589,7 @@ export default function HangarListingPage() {
                 {airportData && (
                   <div className="bg-green-50 border border-green-200 rounded-lg p-6">
                     <h3 className="font-bold text-green-900 mb-4">✓ Aeródromo Encontrado</h3>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                       <div>
                         <p className="text-slate-600 font-semibold">Nome</p>
                         <p className="text-slate-900">{airportData.airport_name}</p>
@@ -326,23 +642,37 @@ export default function HangarListingPage() {
                 {/* Upload de imagens */}
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">
-                    Fotos do Hangar *
+                    Fotos do Hangar * (máx. 5 fotos, 200KB cada)
                   </label>
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/png,image/webp"
                     multiple
                     onChange={handlePhotoChange}
+                    disabled={compressing}
                     className="mb-2"
                   />
+                  <p className="text-xs text-slate-500 mb-2">
+                    As imagens serão automaticamente otimizadas para o tamanho ideal.
+                  </p>
+                  {compressing && (
+                    <p className="text-blue-600 text-sm mt-1">⏳ Otimizando imagens...</p>
+                  )}
                   {photoError && <p className="text-red-600 text-sm mt-1">⚠️ {photoError}</p>}
                   <div className="flex gap-2 mt-2 flex-wrap">
                     {photoPreviews.map((src, idx) => (
-                      <img key={idx} src={src} alt={`Foto ${idx+1}`} className="w-24 h-24 object-cover rounded border" />
+                      <div key={idx} className="relative">
+                        <img src={src} alt={`Foto ${idx+1}`} className="w-24 h-24 object-cover rounded border" />
+                        {photos[idx] && (
+                          <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs text-center py-0.5">
+                            {Math.round(photos[idx].size / 1024)}KB
+                          </span>
+                        )}
+                      </div>
                     ))}
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-2">
                       Número do Hangar
@@ -428,6 +758,64 @@ export default function HangarListingPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Capacity Section - Multiple Aircraft Spaces */}
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-6 mt-6">
+                  <h4 className="text-lg font-bold text-amber-800 mb-4 flex items-center gap-2">
+                    ✈️ Capacidade do Hangar
+                  </h4>
+                  <p className="text-sm text-amber-700 mb-4">
+                    Se o hangar comporta mais de uma aeronave, informe a capacidade total e quantas vagas estão disponíveis.
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-2">
+                        Total de Vagas *
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="20"
+                        placeholder="1"
+                        value={formData.totalSpaces}
+                        onChange={(e) => {
+                          const total = e.target.value;
+                          const available = parseInt(formData.availableSpaces) > parseInt(total) ? total : formData.availableSpaces;
+                          setFormData({ ...formData, totalSpaces: total, availableSpaces: available });
+                        }}
+                        className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500 outline-none"
+                      />
+                      <p className="text-xs text-slate-500 mt-1">Quantas aeronaves cabem no total?</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-2">
+                        Vagas Disponíveis *
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max={formData.totalSpaces || '20'}
+                        placeholder="1"
+                        value={formData.availableSpaces}
+                        onChange={(e) => setFormData({ ...formData, availableSpaces: e.target.value })}
+                        className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500 outline-none"
+                      />
+                      <p className="text-xs text-slate-500 mt-1">Quantas vagas estão disponíveis para locação?</p>
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <label className="block text-sm font-bold text-slate-700 mb-2">
+                      Descrição das Vagas (opcional)
+                    </label>
+                    <textarea
+                      placeholder="Ex: 2 vagas para aeronaves de pequeno porte, 1 vaga para aeronave de médio porte..."
+                      value={formData.spaceDescription}
+                      onChange={(e) => setFormData({ ...formData, spaceDescription: e.target.value })}
+                      rows={2}
+                      className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500 outline-none resize-none"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="mt-8 flex justify-between">
@@ -457,7 +845,7 @@ export default function HangarListingPage() {
                   <p className="text-sm text-slate-600 mb-4">
                     Preencha pelo menos uma opção de preço (por hora, dia, semana ou mês)
                   </p>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-bold text-slate-700 mb-2">
                         R$ por Hora
@@ -515,7 +903,7 @@ export default function HangarListingPage() {
 
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <h3 className="font-bold text-blue-900 mb-4">Disponibilidade *</h3>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-bold text-slate-700 mb-2">
                         Disponível desde

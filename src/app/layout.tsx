@@ -1,8 +1,9 @@
 import './globals.css';
 import MainHeader from '@/components/MainHeader';
 import { SessionTimeoutWrapper } from '@/components/SessionTimeoutWrapper';
-import type { Metadata } from 'next';
 import { AuthProvider } from '@/context/AuthContext';
+import { LanguageProvider } from '@/context/LanguageContext';
+import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Portal Love to Fly',
@@ -20,12 +21,14 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body>
-        <AuthProvider>
-          <SessionTimeoutWrapper>
-            <MainHeader />
-            {children}
-          </SessionTimeoutWrapper>
-        </AuthProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <SessionTimeoutWrapper>
+              <MainHeader />
+              {children}
+            </SessionTimeoutWrapper>
+          </AuthProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

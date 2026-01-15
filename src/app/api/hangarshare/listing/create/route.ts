@@ -2,6 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/config/db';
 import jwt from 'jsonwebtoken';
+import { checkStrictRateLimit, getClientIdentifier } from '@/lib/ratelimit';
+import * as Sentry from '@sentry/nextjs';
 
 interface JWTPayload {
   userId: string;
@@ -10,6 +12,27 @@ interface JWTPayload {
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting for listing creation (5 per minute)
+    const identifier = getClientIdentifier(request);
+    const rateLimitResult = await checkStrictRateLimit(`listing-create:${identifier}`);
+    
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { 
+          message: 'Too many listing creation attempts. Please try again later.',
+          retryAfter: Math.ceil((rateLimitResult.reset - Date.now()) / 1000)
+        },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': rateLimitResult.reset.toString(),
+          }
+        }
+      );
+    }
+    
     // 1. Authenticate user
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -44,6 +67,9 @@ export async function POST(request: NextRequest) {
       maxWingspanMeters,
       maxLengthMeters,
       maxHeightMeters,
+      totalSpaces,
+      availableSpaces,
+      spaceDescription,
       hourlyRate,
       dailyRate,
       weeklyRate,
@@ -96,6 +122,9 @@ export async function POST(request: NextRequest) {
         max_wingspan,
         max_length,
         max_height,
+        total_spaces,
+        available_spaces,
+        space_description,
         hourly_rate,
         daily_rate,
         weekly_rate,
@@ -113,8 +142,8 @@ export async function POST(request: NextRequest) {
         approval_status
       ) VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
-        $17, $18, $19, $20, $21, $22, $23, $24, true, 'active', 'pending'
-      ) RETURNING id, icao_code, hangar_number, created_at`,
+        $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, true, 'active', 'pending'
+      ) RETURNING id, icao_code, hangar_number, total_spaces, available_spaces, created_at`,
       [
         ownerId,
         icaoCode,
@@ -128,6 +157,9 @@ export async function POST(request: NextRequest) {
         maxWingspanMeters || null,
         maxLengthMeters || null,
         maxHeightMeters || null,
+        totalSpaces || 1,
+        availableSpaces || 1,
+        spaceDescription || null,
         hourlyRate || null,
         dailyRate || null,
         weeklyRate || null,
@@ -149,6 +181,7 @@ export async function POST(request: NextRequest) {
       {
         success: true,
         message: 'Listing created successfully! Pending admin approval.',
+        listingId: newListing.id,
         listing: {
           id: newListing.id,
           icaoCode: newListing.icao_code,
@@ -160,6 +193,16 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
+    Sentry.captureException(error, {
+      tags: {
+        endpoint: 'listing/create',
+        method: 'POST'
+      },
+      extra: {
+        errorMessage: error instanceof Error ? error.message : 'Unknown error'
+      }
+    });
+    
     console.error('Error creating listing:', error);
     return NextResponse.json(
       { message: 'Internal server error', error: error instanceof Error ? error.message : 'Unknown error' },

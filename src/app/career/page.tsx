@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
@@ -8,7 +8,36 @@ import { useAuth } from '@/context/AuthContext';
 
 export default function CareerPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
+  const [hasCareerProfile, setHasCareerProfile] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!token) {
+      setHasCareerProfile(false);
+      return;
+    }
+
+    const fetchProfileExists = async () => {
+      try {
+        const res = await fetch('/api/career/profile', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!res.ok) {
+          setHasCareerProfile(false);
+          return;
+        }
+
+        const { careerProfile } = await res.json();
+        setHasCareerProfile(Boolean(careerProfile));
+      } catch (error) {
+        console.error('Erro ao verificar perfil de carreira:', error);
+        setHasCareerProfile(false);
+      }
+    };
+
+    fetchProfileExists();
+  }, [token]);
 
   const features = [
     {
@@ -27,9 +56,11 @@ export default function CareerPage() {
     },
     {
       icon: '👤',
-      title: 'Construa seu perfil',
-      description: 'Mostre suas qualificações e experiência profissional',
-      action: 'Criar perfil',
+      title: hasCareerProfile ? 'Perfil Profissional (Currículo)' : 'Construa seu perfil',
+      description: hasCareerProfile
+        ? 'Revise e mantenha seu perfil sempre atualizado'
+        : 'Mostre suas qualificações e experiência profissional',
+      action: hasCareerProfile ? 'Editar perfil' : 'Criar perfil',
       href: user ? '/career/profile' : '/login',
     },
     {

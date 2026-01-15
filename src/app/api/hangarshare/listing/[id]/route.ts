@@ -61,8 +61,7 @@ export async function GET(
           json_agg(
             json_build_object(
               'id', p.id,
-              'url', p.photo_url,
-              'isPrimary', p.is_primary,
+              'photoUrl', p.photo_url,
               'displayOrder', p.display_order
             ) ORDER BY p.display_order
           ) FILTER (WHERE p.id IS NOT NULL),

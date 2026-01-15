@@ -168,6 +168,8 @@ export default function BookingModal({ isOpen, onClose, listing }: BookingModalP
           <button
             onClick={onClose}
             className="text-white hover:text-red-300 text-3xl font-bold"
+            aria-label="Close booking modal"
+            title="Close"
           >
             ×
           </button>
@@ -196,41 +198,47 @@ export default function BookingModal({ isOpen, onClose, listing }: BookingModalP
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                  <label htmlFor="aircraft-registration" className="block text-sm font-bold text-slate-700 mb-2">
                     Matrícula da Aeronave *
                   </label>
                   <input
+                    id="aircraft-registration"
                     type="text"
                     placeholder="PP-ABC"
                     value={bookingData.aircraftRegistration}
                     onChange={(e) => setBookingData({ ...bookingData, aircraftRegistration: e.target.value.toUpperCase() })}
                     className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none uppercase"
                     required
+                    aria-required="true"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                  <label htmlFor="aircraft-type" className="block text-sm font-bold text-slate-700 mb-2">
                     Tipo/Modelo *
                   </label>
                   <input
+                    id="aircraft-type"
                     type="text"
                     placeholder="Cessna 172, Cirrus SR22..."
                     value={bookingData.aircraftType}
                     onChange={(e) => setBookingData({ ...bookingData, aircraftType: e.target.value })}
                     className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
                     required
+                    aria-required="true"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">
+                <label htmlFor="aircraft-category" className="block text-sm font-bold text-slate-700 mb-2">
                   Categoria *
                 </label>
                 <select
+                  id="aircraft-category"
                   value={bookingData.aircraftCategory}
                   onChange={(e) => setBookingData({ ...bookingData, aircraftCategory: e.target.value })}
                   className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
+                  aria-required="true"
                 >
                   <option value="single-engine">Monomotor</option>
                   <option value="multi-engine">Multimotor</option>
@@ -242,10 +250,11 @@ export default function BookingModal({ isOpen, onClose, listing }: BookingModalP
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                  <label htmlFor="aircraft-wingspan" className="block text-sm font-bold text-slate-700 mb-2">
                     Envergadura (metros)
                   </label>
                   <input
+                    id="aircraft-wingspan"
                     type="number"
                     step="0.1"
                     placeholder="10.5"
@@ -255,10 +264,11 @@ export default function BookingModal({ isOpen, onClose, listing }: BookingModalP
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                  <label htmlFor="aircraft-length" className="block text-sm font-bold text-slate-700 mb-2">
                     Comprimento (metros)
                   </label>
                   <input
+                    id="aircraft-length"
                     type="number"
                     step="0.1"
                     placeholder="8.5"
@@ -272,24 +282,27 @@ export default function BookingModal({ isOpen, onClose, listing }: BookingModalP
               <hr className="my-4" />
 
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">
+                <label htmlFor="pilot-name" className="block text-sm font-bold text-slate-700 mb-2">
                   Nome do Piloto em Comando *
                 </label>
                 <input
+                  id="pilot-name"
                   type="text"
                   value={bookingData.pilotName}
                   onChange={(e) => setBookingData({ ...bookingData, pilotName: e.target.value })}
                   className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
                   required
+                  aria-required="true"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                  <label htmlFor="pilot-license" className="block text-sm font-bold text-slate-700 mb-2">
                     Número da Licença (CHT/CHT)
                   </label>
                   <input
+                    id="pilot-license"
                     type="text"
                     placeholder="CHT 123456"
                     value={bookingData.pilotLicense}
@@ -298,16 +311,18 @@ export default function BookingModal({ isOpen, onClose, listing }: BookingModalP
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                  <label htmlFor="pilot-phone" className="block text-sm font-bold text-slate-700 mb-2">
                     Telefone de Contato *
                   </label>
                   <input
+                    id="pilot-phone"
                     type="tel"
                     placeholder="(11) 98765-4321"
                     value={bookingData.pilotPhone}
                     onChange={(e) => setBookingData({ ...bookingData, pilotPhone: e.target.value })}
                     className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
                     required
+                    aria-required="true"
                   />
                 </div>
               </div>
@@ -330,23 +345,26 @@ export default function BookingModal({ isOpen, onClose, listing }: BookingModalP
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                  <label htmlFor="check-in-date" className="block text-sm font-bold text-slate-700 mb-2">
                     Data de Entrada *
                   </label>
                   <input
+                    id="check-in-date"
                     type="date"
                     value={bookingData.checkInDate}
                     onChange={(e) => setBookingData({ ...bookingData, checkInDate: e.target.value })}
                     min={new Date().toISOString().split('T')[0]}
                     className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
                     required
+                    aria-required="true"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                  <label htmlFor="check-in-time" className="block text-sm font-bold text-slate-700 mb-2">
                     Horário de Entrada
                   </label>
                   <input
+                    id="check-in-time"
                     type="time"
                     value={bookingData.checkInTime}
                     onChange={(e) => setBookingData({ ...bookingData, checkInTime: e.target.value })}
@@ -357,23 +375,26 @@ export default function BookingModal({ isOpen, onClose, listing }: BookingModalP
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                  <label htmlFor="check-out-date" className="block text-sm font-bold text-slate-700 mb-2">
                     Data de Saída *
                   </label>
                   <input
+                    id="check-out-date"
                     type="date"
                     value={bookingData.checkOutDate}
                     onChange={(e) => setBookingData({ ...bookingData, checkOutDate: e.target.value })}
                     min={bookingData.checkInDate || new Date().toISOString().split('T')[0]}
                     className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
                     required
+                    aria-required="true"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                  <label htmlFor="check-out-time" className="block text-sm font-bold text-slate-700 mb-2">
                     Horário de Saída
                   </label>
                   <input
+                    id="check-out-time"
                     type="time"
                     value={bookingData.checkOutTime}
                     onChange={(e) => setBookingData({ ...bookingData, checkOutTime: e.target.value })}
@@ -395,10 +416,11 @@ export default function BookingModal({ isOpen, onClose, listing }: BookingModalP
               )}
 
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">
+                <label htmlFor="special-requests" className="block text-sm font-bold text-slate-700 mb-2">
                   Solicitações Especiais (opcional)
                 </label>
                 <textarea
+                  id="special-requests"
                   placeholder="Necessidade de energia externa, água, limpeza, etc."
                   value={bookingData.specialRequests}
                   onChange={(e) => setBookingData({ ...bookingData, specialRequests: e.target.value })}

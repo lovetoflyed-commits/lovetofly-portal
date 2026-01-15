@@ -3,6 +3,15 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import PhotoGallery from '@/components/PhotoGallery';
+import ReviewForm from '@/components/ReviewForm';
+import ReviewList from '@/components/ReviewList';
+
+interface Photo {
+  id: number;
+  photoUrl: string;
+  displayOrder: number;
+}
 
 interface HangarListing {
   id: number;
@@ -24,7 +33,7 @@ interface HangarListing {
   services: string[];
   description: string;
   specialNotes: string;
-  photos: string[];
+  photos: Photo[] | string[]; // Support both old and new formats
   isActive: boolean;
   ownerName: string;
   ownerEmail: string;
@@ -69,7 +78,7 @@ const formatMoney = (value: number | string | null | undefined): string => {
 export default function HangarListingDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [hangar, setHangar] = useState<HangarListing | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -80,6 +89,11 @@ export default function HangarListingDetailPage() {
   const [checkOut, setCheckOut] = useState('');
   const [calculatingPrice, setCalculatingPrice] = useState(false);
   const [calculation, setCalculation] = useState<BookingCalculation | null>(null);
+
+  // Reviews states
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviewStats, setReviewStats] = useState<any>(null);
+  const [loadingReviews, setLoadingReviews] = useState(false);
 
   useEffect(() => {
     const fetchHangar = async () => {
@@ -100,6 +114,29 @@ export default function HangarListingDetailPage() {
     if (params.id) {
       fetchHangar();
     }
+  }, [params.id]);
+
+  // Fetch reviews
+  useEffect(() => {
+    const fetchReviews = async () => {
+      if (!params.id) return;
+      
+      setLoadingReviews(true);
+      try {
+        const response = await fetch(`/api/hangarshare/reviews?listing_id=${params.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setReviews(data.reviews || []);
+          setReviewStats(data.stats);
+        }
+      } catch (err) {
+        console.error('Error fetching reviews:', err);
+      } finally {
+        setLoadingReviews(false);
+      }
+    };
+
+    fetchReviews();
   }, [params.id]);
 
   const calculatePrice = async () => {
@@ -252,21 +289,12 @@ export default function HangarListingDetailPage() {
               </div>
             </div>
 
-            {/* Photos */}
+            {/* Photos Gallery */}
             {hangar.photos && hangar.photos.length > 0 && (
-              <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-                <h3 className="text-xl font-bold text-blue-900 mb-4">Fotos</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {hangar.photos.map((photo, index) => (
-                    <img
-                      key={index}
-                      src={photo}
-                      alt={`Hangar ${hangar.hangarNumber} - Foto ${index + 1}`}
-                      className="w-full h-48 object-cover rounded-lg"
-                    />
-                  ))}
-                </div>
-              </div>
+              <PhotoGallery 
+                photos={hangar.photos as Photo[]} 
+                title={`Fotos do Hangar ${hangar.hangarNumber}`}
+              />
             )}
 
             {/* Description */}
@@ -343,7 +371,7 @@ export default function HangarListingDetailPage() {
             )}
 
             {/* Owner Contact */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
               <h3 className="text-xl font-bold text-blue-900 mb-4">Contato do Proprietário</h3>
               <div className="space-y-2">
                 <p className="text-slate-700">
@@ -364,6 +392,49 @@ export default function HangarListingDetailPage() {
                   </p>
                 )}
               </div>
+            </div>
+
+            {/* Reviews Section */}
+            <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+              {!loadingReviews && reviews.length > 0 && reviewStats && (
+                <ReviewList
+                  listingId={parseInt(String(params.id))}
+                  reviews={reviews}
+                  stats={reviewStats}
+                  onReviewDeleted={(reviewId) => {
+                    setReviews(reviews.filter(r => r.id !== reviewId));
+                  }}
+                  onReviewUpdated={(updatedReview) => {
+                    setReviews(reviews.map(r => r.id === updatedReview.id ? updatedReview : r));
+                  }}
+                />
+              )}
+
+              {user && token && (
+                <div className="mt-8 pt-8 border-t border-slate-200">
+                  <ReviewForm
+                    listingId={parseInt(String(params.id))}
+                    onReviewSubmitted={(newReview) => {
+                      // Refresh reviews
+                      setReviews([newReview, ...reviews]);
+                    }}
+                  />
+                </div>
+              )}
+
+              {!user && reviews.length === 0 && (
+                <div className="text-center py-8">
+                  <p className="text-slate-600 mb-4">
+                    Faça login para deixar uma avaliação
+                  </p>
+                  <button
+                    onClick={() => router.push('/login')}
+                    className="px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700"
+                  >
+                    Fazer Login
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 

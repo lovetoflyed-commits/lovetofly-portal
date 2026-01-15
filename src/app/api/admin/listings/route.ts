@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
         hl.*,
         ho.company_name,
         ho.cnpj,
-        ho.verified as owner_verified,
+        (ho.verification_status = 'verified') as owner_verified,
         u.first_name,
         u.last_name,
         u.email

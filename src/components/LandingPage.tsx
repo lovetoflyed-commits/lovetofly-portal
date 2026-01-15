@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import HangarCarousel from './HangarCarousel';
+import LanguageSelector from './LanguageSelector';
 
 interface LandingPageProps {
   onOpenLogin: () => void;
@@ -23,6 +24,7 @@ export default function LandingPage({ onOpenLogin, onOpenRegister }: LandingPage
               </div>
             </div>
             <div className="flex items-center gap-4">
+              <LanguageSelector />
               <button
                 onClick={onOpenLogin}
                 className="text-slate-700 hover:text-blue-900 font-medium transition-colors"
@@ -35,6 +37,16 @@ export default function LandingPage({ onOpenLogin, onOpenRegister }: LandingPage
               >
                 Criar Conta
               </button>
+              <a
+                href="#"
+                onClick={(e) => { e.preventDefault(); onOpenLogin(); }}
+                className="ml-2 text-xs text-slate-400 hover:text-blue-700 underline underline-offset-2 focus:outline-none"
+                style={{ letterSpacing: '0.05em' }}
+                tabIndex={0}
+                aria-label="Acesso restrito ao staff"
+              >
+                Staff
+              </a>
             </div>
           </div>
         </div>

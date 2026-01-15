@@ -1,0 +1,42 @@
+{
+  "master": {
+    "name": "Portal Owner",
+    "permissions": ["full_access"],
+    "canOverride": true
+  },
+  "operations_lead": {
+    "name": "Operations Lead",
+    "permissions": ["manage_system", "view_reports", "escalate_issues"],
+    "reportsTo": "master"
+  },
+  "support_lead": {
+    "name": "Support Lead",
+    "permissions": ["manage_support", "view_reports", "escalate_issues"],
+    "reportsTo": "master"
+  },
+  "content_manager": {
+    "name": "Content/Community Manager",
+    "permissions": ["manage_content", "view_reports", "escalate_issues"],
+    "reportsTo": "master"
+  },
+  "business_manager": {
+    "name": "Business/Employers Manager",
+    "permissions": ["manage_business", "view_reports", "escalate_issues"],
+    "reportsTo": "master"
+  },
+  "finance_manager": {
+    "name": "Finance Manager",
+    "permissions": ["manage_finance", "view_reports", "escalate_issues"],
+    "reportsTo": "master"
+  },
+  "marketing": {
+    "name": "Marketing/Communications",
+    "permissions": ["manage_marketing", "view_reports", "escalate_issues"],
+    "reportsTo": "master"
+  },
+  "compliance": {
+    "name": "Compliance/Security Officer",
+    "permissions": ["manage_compliance", "view_reports", "escalate_issues"],
+    "reportsTo": "master"
+  }
+}

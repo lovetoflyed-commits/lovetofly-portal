@@ -6,7 +6,8 @@ import jwt from 'jsonwebtoken';
 import pool from '@/config/db';
 
 interface JWTPayload {
-  userId: string;
+  userId?: string;
+  id?: string;
   email: string;
   role?: string;
 }
@@ -27,14 +28,21 @@ export async function requireAdmin(request: NextRequest): Promise<NextResponse |
 
     // Verify JWT
     const decoded = jwt.verify(token, secret) as JWTPayload;
+    const resolvedUserId = decoded.userId ?? decoded.id;
+    
+    console.log('[AdminAuth] Decoded token payload:', decoded);
+    console.log('[AdminAuth] Resolved userId:', resolvedUserId);
 
     // Check user role in database
     const result = await pool.query(
       'SELECT id, email, role FROM users WHERE id = $1',
-      [decoded.userId]
+      [resolvedUserId]
     );
+    
+    console.log('[AdminAuth] Database query result:', result.rows.length, 'rows');
 
     if (result.rows.length === 0) {
+      console.error('[AdminAuth] User not found in database for userId:', resolvedUserId);
       return NextResponse.json(
         { message: 'User not found' },
         { status: 404 }
@@ -43,8 +51,8 @@ export async function requireAdmin(request: NextRequest): Promise<NextResponse |
 
     const user = result.rows[0];
 
-    // Check if user is admin or staff
-    if (user.role !== 'admin' && user.role !== 'staff') {
+    // Check if user is admin, staff, or master (master should always pass)
+    if (user.role !== 'admin' && user.role !== 'staff' && user.role !== 'master') {
       return NextResponse.json(
         { message: 'Forbidden - Admin access required' },
         { status: 403 }
@@ -72,10 +80,11 @@ export async function getAdminUser(request: NextRequest): Promise<{ id: string; 
     const token = authHeader.substring(7);
     const secret = process.env.JWT_SECRET || 'your-secret-key';
     const decoded = jwt.verify(token, secret) as JWTPayload;
+    const resolvedUserId = decoded.userId ?? decoded.id;
 
     const result = await pool.query(
       'SELECT id, email, role FROM users WHERE id = $1',
-      [decoded.userId]
+      [resolvedUserId]
     );
 
     if (result.rows.length === 0) {

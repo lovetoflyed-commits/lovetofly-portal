@@ -1,24 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/config/db';
+import MonitoringService from '@/services/monitoring';
 
 /**
  * GET /api/hangarshare/search?icao=SBSP&city=São Paulo
  * Busca hangares disponíveis na tabela hangar_listings
  */
 export async function GET(request: NextRequest) {
+  const startTime = performance.now();
   try {
     const { searchParams } = new URL(request.url);
     const icao = searchParams.get('icao')?.toUpperCase().trim();
     const city = searchParams.get('city')?.trim();
     const minPrice = searchParams.get('minPrice');
     const maxPrice = searchParams.get('maxPrice');
+    
+    // Advanced filters
+    const minSize = searchParams.get('minSize');
+    const maxSize = searchParams.get('maxSize');
+    const minWingspan = searchParams.get('minWingspan');
+    const minLength = searchParams.get('minLength');
+    const minHeight = searchParams.get('minHeight');
+    const hasElectricity = searchParams.get('hasElectricity');
+    const hasWater = searchParams.get('hasWater');
+    const hasBathroom = searchParams.get('hasBathroom');
+    const hasSecurity = searchParams.get('hasSecurity');
+    const acceptsOnlinePayment = searchParams.get('acceptsOnlinePayment');
+    const sortBy = searchParams.get('sortBy') || 'date'; // date, price_asc, price_desc, size
 
     // Permitir busca por preço mesmo sem cidade/ICAO
     const hasPriceFilter = (minPrice && Number(minPrice) > 0) || (maxPrice && Number(maxPrice) < 20000);
+    const hasAdvancedFilter = minSize || maxSize || minWingspan || minLength || minHeight || 
+                             hasElectricity || hasWater || hasBathroom || hasSecurity || acceptsOnlinePayment;
     
-    if (!icao && !city && !hasPriceFilter) {
+    if (!icao && !city && !hasPriceFilter && !hasAdvancedFilter) {
       return NextResponse.json(
-        { error: 'Informe o código ICAO, cidade ou faixa de preço para buscar' },
+        { error: 'Informe ao menos um filtro para buscar' },
         { status: 400 }
       );
     }
@@ -87,7 +104,61 @@ export async function GET(request: NextRequest) {
       query += ` AND h.monthly_rate <= $${params.length}`;
     }
 
-    query += ` ORDER BY h.created_at DESC LIMIT 50`;
+    // Size filters
+    if (minSize && Number(minSize) > 0) {
+      params.push(Number(minSize));
+      query += ` AND h.size_sqm >= $${params.length}`;
+    }
+
+    if (maxSize && Number(maxSize) > 0) {
+      params.push(Number(maxSize));
+      query += ` AND h.size_sqm <= $${params.length}`;
+    }
+
+    // Dimension filters
+    if (minWingspan && Number(minWingspan) > 0) {
+      params.push(Number(minWingspan));
+      query += ` AND h.max_wingspan >= $${params.length}`;
+    }
+
+    if (minLength && Number(minLength) > 0) {
+      params.push(Number(minLength));
+      query += ` AND h.max_length >= $${params.length}`;
+    }
+
+    if (minHeight && Number(minHeight) > 0) {
+      params.push(Number(minHeight));
+      query += ` AND h.max_height >= $${params.length}`;
+    }
+
+    // Amenity filters (hangar_listings doesn't have these columns, skip for now)
+    // These will need to be added via migration or use services array
+
+    if (hasSecurity === 'true') {
+      query += ` AND (h.security_features IS NOT NULL AND array_length(h.security_features, 1) > 0)`;
+    }
+
+    // Payment filter
+    if (acceptsOnlinePayment === 'true') {
+      query += ` AND h.accepts_online_payment = true`;
+    }
+
+    // Sorting
+    switch (sortBy) {
+      case 'price_asc':
+        query += ` ORDER BY h.monthly_rate ASC NULLS LAST`;
+        break;
+      case 'price_desc':
+        query += ` ORDER BY h.monthly_rate DESC NULLS LAST`;
+        break;
+      case 'size':
+        query += ` ORDER BY h.hangar_size_sqm DESC NULLS LAST`;
+        break;
+      default: // 'date'
+        query += ` ORDER BY h.created_at DESC`;
+    }
+    
+    query += ` LIMIT 50`;
 
     const result = await pool.query(query, params);
 
@@ -166,14 +237,29 @@ export async function GET(request: NextRequest) {
       }
     }));
 
+    const duration = performance.now() - startTime;
+    MonitoringService.trackApiPerformance(
+      '/api/hangarshare/search',
+      duration,
+      200
+    );
+
     return NextResponse.json({
       success: true,
       message: `${hangars.length} hangar(es) encontrado(s)`,
       count: hangars.length,
       hangars: hangars
-    });
+    }, { status: 200 });
 
   } catch (error) {
+    const duration = performance.now() - startTime;
+    MonitoringService.trackApiPerformance(
+      '/api/hangarshare/search',
+      duration,
+      500,
+      false
+    );
+    MonitoringService.captureException(error as Error, { endpoint: '/api/hangarshare/search' });
     console.error('Erro ao buscar hangares:', error);
     return NextResponse.json(
       { 

@@ -27,6 +27,9 @@ interface UserProfile {
   course_type?: string;
   current_license?: string;
   current_ratings?: string;
+  licencas?: string;
+  habilitacoes?: string;
+  curso_atual?: string;
   total_flight_hours?: number | string;
   transferred_from_ciac?: boolean;
   previous_ciac_name?: string;
@@ -111,9 +114,14 @@ export default function ProfilePage() {
                 <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded-full uppercase border border-blue-100">
                   {profileData.role || 'Piloto'}
                 </span>
-                {profileData.current_license && (
-                  <span className="px-3 py-1 bg-green-50 text-green-700 text-xs font-bold rounded-full uppercase border border-green-100">
-                    {profileData.current_license}
+                {profileData.licencas && (
+                  <span className="px-3 py-1 bg-green-50 text-green-700 text-xs font-bold rounded-full border border-green-100">
+                    {profileData.licencas}
+                  </span>
+                )}
+                {profileData.habilitacoes && (
+                  <span className="px-3 py-1 bg-purple-50 text-purple-700 text-xs font-bold rounded-full border border-purple-100">
+                    {profileData.habilitacoes}
                   </span>
                 )}
               </div>
@@ -180,26 +188,45 @@ export default function ProfilePage() {
                   <span>✈️</span> Qualificações & Voo
                 </h3>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Licença Atual</label>
-                    <p className="text-lg font-bold text-slate-800">{profileData.current_license || '-'}</p>
+                <div className="space-y-4">
+                  {profileData.licencas && (
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                      <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Licenças</label>
+                      <p className="text-base font-semibold text-slate-800">{profileData.licencas}</p>
+                    </div>
+                  )}
+
+                  {profileData.habilitacoes && (
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                      <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Habilitações</label>
+                      <p className="text-base font-semibold text-slate-800">{profileData.habilitacoes}</p>
+                    </div>
+                  )}
+
+                  <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                    <label className="block text-xs font-bold text-blue-600 uppercase mb-2">Horas Totais de Voo</label>
+                    <p className="text-2xl font-bold text-blue-800">{profileData.total_flight_hours || '0'}h</p>
+                    <p className="text-xs text-blue-600 mt-1">Calculado automaticamente do seu logbook</p>
                   </div>
 
-                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Habilitações</label>
-                    <p className="text-lg font-bold text-slate-800">{profileData.current_ratings || '-'}</p>
-                  </div>
+                  {profileData.curso_atual && (
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                      <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Curso Atual</label>
+                      <p className="text-base font-semibold text-slate-800">{profileData.curso_atual}</p>
+                    </div>
+                  )}
 
-                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Horas Totais</label>
-                    <p className="text-lg font-bold text-slate-800">{profileData.total_flight_hours || '0'}h</p>
-                  </div>
-
-                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Curso Atual</label>
-                    <p className="text-lg font-bold text-slate-800">{profileData.course_type || '-'}</p>
-                  </div>
+                  {!profileData.licencas && !profileData.habilitacoes && !profileData.curso_atual && (
+                    <div className="text-center py-8 text-slate-400">
+                      <p className="mb-2">📝 Nenhuma qualificação cadastrada</p>
+                      <button 
+                        onClick={() => router.push('/profile/edit')}
+                        className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        Adicionar qualificações
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {profileData.observations && (

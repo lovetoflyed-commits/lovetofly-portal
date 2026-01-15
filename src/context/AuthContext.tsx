@@ -33,7 +33,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const storedUser = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
     if (storedToken && storedUser) {
       setToken(storedToken);
-      setUser(JSON.parse(storedUser));
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+      console.log('[AuthContext] Loaded user from localStorage:', parsedUser);
     }
   }, []);
 
@@ -53,8 +55,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(data.user);
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        // Redirect to home page after successful login
-        router.push('/');
+        console.log('[AuthContext] Login response user:', data.user);
+
+        // After login, check membership and downgrade if expired, then sync plan and send notifications
+        // TEMPORARILY DISABLED: Membership checks causing unexpected logouts
+        /*
+        try {
+          const chk = await fetch('/api/membership/check-and-downgrade-v2', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${data.token}` },
+          });
+          if (chk.ok) {
+            const m = await chk.json();
+            if (m?.plan) {
+              const merged = { ...data.user, plan: m.plan };
+              setUser(merged);
+              localStorage.setItem('user', JSON.stringify(merged));
+              console.log('[AuthContext] Membership sync plan:', m.plan, 'status:', m.status, 'days_remaining:', m.days_remaining);
+              if (m.notification_sent) {
+                console.log('[AuthContext] Past-due notification sent to user');
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('[AuthContext] Membership check failed:', e);
+        }
+        */
+
+        // Redirect based on role only
+        if (data.user.role === 'master' || data.user.role === 'admin' || data.user.role === 'staff') {
+          console.log('[AuthContext] Redirecting to /admin for admin/master/staff role');
+          router.push('/admin');
+        } else {
+          console.log('[AuthContext] Redirecting to / for user role:', data.user.role);
+          router.push('/');
+        }
         return true;
       } else {
         setError(data.message || 'Login failed');
@@ -72,9 +107,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      window.location.href = '/';
+    } else {
+      router.push('/');
     }
-    // Sempre leva para a página pública principal após logout
-    router.push('/landing');
   };
 
   const updateUser = (updates: Partial<User>) => {

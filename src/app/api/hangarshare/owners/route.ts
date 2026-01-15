@@ -4,7 +4,23 @@ import pool from '@/config/db';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { userId, companyName, companyCnpj, phone, address, website, description } = body;
+    const { 
+      userId, 
+      ownerType = 'company',
+      companyName, 
+      companyCnpj, 
+      cpf,
+      phone, 
+      address, 
+      website, 
+      description,
+      bankCode,
+      bankAgency,
+      bankAccount,
+      accountHolderName,
+      pixKey,
+      pixKeyType
+    } = body;
 
     if (!userId || !companyName) {
       return NextResponse.json(
@@ -13,12 +29,45 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Validate based on owner type
+    if (ownerType === 'company' && !companyCnpj) {
+      return NextResponse.json(
+        { error: 'CNPJ is required for company owners' },
+        { status: 400 }
+      );
+    }
+    
+    if (ownerType === 'individual' && !cpf) {
+      return NextResponse.json(
+        { error: 'CPF is required for individual owners' },
+        { status: 400 }
+      );
+    }
+
     const result = await pool.query(
       `INSERT INTO hangar_owners 
-       (user_id, company_name, cnpj, phone, address, website, description, verification_status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending')
-       RETURNING id, user_id, company_name, cnpj, phone, verification_status, created_at`,
-      [userId, companyName, companyCnpj, phone, address, website, description]
+       (user_id, owner_type, company_name, cnpj, cpf, phone, address, website, description,
+        bank_code, bank_agency, bank_account, account_holder_name, pix_key, pix_key_type,
+        verification_status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 'pending')
+       RETURNING id, user_id, owner_type, company_name, cnpj, cpf, phone, verification_status, created_at`,
+      [
+        userId, 
+        ownerType,
+        companyName, 
+        companyCnpj || null, 
+        cpf || null,
+        phone, 
+        address, 
+        website, 
+        description,
+        bankCode,
+        bankAgency,
+        bankAccount,
+        accountHolderName,
+        pixKey || null,
+        pixKeyType || null
+      ]
     );
 
     return NextResponse.json(
@@ -34,9 +83,17 @@ export async function POST(req: NextRequest) {
     console.error('Error creating owner:', error);
     
     // Handle duplicate CNPJ
-    if (error?.code === '23505' && error?.constraint === 'hangar_owners_cnpj_key') {
+    if (error?.code === '23505' && error?.constraint?.includes('cnpj')) {
       return NextResponse.json(
         { error: 'CNPJ already registered' },
+        { status: 409 }
+      );
+    }
+    
+    // Handle duplicate CPF
+    if (error?.code === '23505' && error?.constraint?.includes('cpf')) {
+      return NextResponse.json(
+        { error: 'CPF already registered' },
         { status: 409 }
       );
     }

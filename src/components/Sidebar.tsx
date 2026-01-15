@@ -102,23 +102,24 @@ export default function Sidebar({ onFeatureClick, disabled }: SidebarProps) {
     },
   ];
 
+  // Hide sidebar if not authenticated
+  if (!user) return null;
+
   return (
     <aside className="w-64 bg-blue-800 text-white min-h-screen border-r border-blue-900">
       <div className="p-6">
         <div className="text-white font-black text-xl tracking-wider mb-8">
           LOVE TO FLY
         </div>
-        {user && (
-          <div className="mb-6 p-4 bg-blue-900/80 rounded-lg">
-            <div className="text-sm font-medium text-blue-200">Bem-vindo(a),</div>
-            <div className="text-base font-bold text-white">{user.name}</div>
-            {user.plan && (
-              <div className="mt-2 inline-block px-2 py-1 bg-yellow-400 text-yellow-900 text-xs font-bold rounded">
-                {user.plan.toUpperCase()}
-              </div>
-            )}
-          </div>
-        )}
+        <div className="mb-6 p-4 bg-blue-900/80 rounded-lg">
+          <div className="text-sm font-medium text-blue-200">Bem-vindo(a),</div>
+          <div className="text-base font-bold text-white">{user.name}</div>
+          {user.plan && (
+            <div className="mt-2 inline-block px-2 py-1 bg-yellow-400 text-yellow-900 text-xs font-bold rounded">
+              {user.plan.toUpperCase()}
+            </div>
+          )}
+        </div>
         <nav className="space-y-4">
           {menuSections.map((section) => {
             const isExpanded = expandedSection === section.title;

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/config/db';
+import MonitoringService from '@/services/monitoring';
 
 // Importa Stripe dinamicamente apenas durante a execução
 async function getStripe() {
@@ -86,6 +87,7 @@ function determineBookingType(params: { checkIn: string; timeZone: string }): 'r
 }
 
 export async function POST(request: NextRequest) {
+  const startTime = performance.now();
   try {
     const stripe = await getStripe();
     const body = await request.json();
@@ -218,7 +220,29 @@ export async function POST(request: NextRequest) {
         publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
       },
     });
+
+    const duration = performance.now() - startTime;
+    MonitoringService.trackPaymentEvent('initiated', totalPrice, 'BRL', {
+      paymentIntentId: paymentIntent.id,
+      hangarId,
+      userId,
+    });
+    MonitoringService.trackApiPerformance(
+      '/api/hangarshare/booking/confirm',
+      duration,
+      200
+    );
   } catch (error) {
+    const duration = performance.now() - startTime;
+    MonitoringService.trackApiPerformance(
+      '/api/hangarshare/booking/confirm',
+      duration,
+      500,
+      false
+    );
+    const totalPrice = parseFloat(JSON.stringify((await request.json()).totalPrice || '0'));
+    MonitoringService.trackPaymentEvent('failed', totalPrice, 'BRL');
+    MonitoringService.captureException(error as Error, { endpoint: '/api/hangarshare/booking/confirm' });
     console.error('Booking confirmation error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Erro ao confirmar reserva';
     return NextResponse.json(

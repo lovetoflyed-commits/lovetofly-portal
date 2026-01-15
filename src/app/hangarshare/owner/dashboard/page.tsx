@@ -39,12 +39,13 @@ interface Listing {
 
 export default function AdvertiserDashboard() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [profile, setProfile] = useState<AdvertiserProfile | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [showReport, setShowReport] = useState(false);
   const [reportFormat, setReportFormat] = useState<'table' | 'pdf'>('table');
+  const [verificationStatus, setVerificationStatus] = useState<any>(null);
 
   useEffect(() => {
     if (!user) {
@@ -52,7 +53,27 @@ export default function AdvertiserDashboard() {
       return;
     }
     loadData();
+    checkVerification();
   }, [user, router]);
+
+  const checkVerification = async () => {
+    if (!user || !token) return;
+
+    try {
+      const res = await fetch('/api/hangarshare/owner/verification-status', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setVerificationStatus(data);
+      }
+    } catch (error) {
+      console.error('Error checking verification:', error);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -239,6 +260,77 @@ export default function AdvertiserDashboard() {
           >
             ← Voltar
           </button>
+
+          {/* Verification Status Banner */}
+          {verificationStatus && !verificationStatus.isVerified && (
+            <div className={`mb-6 rounded-xl shadow-lg p-6 border-2 ${
+              verificationStatus.nextAction === 'upload_documents' 
+                ? 'bg-amber-50 border-amber-300'
+                : verificationStatus.nextAction === 'wait_for_review'
+                ? 'bg-blue-50 border-blue-300'
+                : 'bg-red-50 border-red-300'
+            }`}>
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  {verificationStatus.nextAction === 'upload_documents' && (
+                    <div className="w-12 h-12 bg-amber-200 rounded-full flex items-center justify-center">
+                      <span className="text-2xl">⚠️</span>
+                    </div>
+                  )}
+                  {verificationStatus.nextAction === 'wait_for_review' && (
+                    <div className="w-12 h-12 bg-blue-200 rounded-full flex items-center justify-center">
+                      <span className="text-2xl">⏳</span>
+                    </div>
+                  )}
+                  {verificationStatus.nextAction === 'reupload_documents' && (
+                    <div className="w-12 h-12 bg-red-200 rounded-full flex items-center justify-center">
+                      <span className="text-2xl">❌</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-slate-900 mb-1">
+                    {verificationStatus.nextAction === 'upload_documents' && 'Verificação Pendente'}
+                    {verificationStatus.nextAction === 'wait_for_review' && 'Documentos em Análise'}
+                    {verificationStatus.nextAction === 'reupload_documents' && 'Documentos Rejeitados'}
+                  </h3>
+                  <p className="text-slate-700 mb-3">
+                    {verificationStatus.statusMessage}
+                  </p>
+                  {verificationStatus.documents && (
+                    <div className="flex gap-4 text-sm mb-3">
+                      <span className="text-green-700">✅ {verificationStatus.documents.approved} aprovados</span>
+                      <span className="text-blue-700">⏳ {verificationStatus.documents.pending} em análise</span>
+                      <span className="text-red-700">❌ {verificationStatus.documents.rejected} rejeitados</span>
+                    </div>
+                  )}
+                  {(verificationStatus.nextAction === 'upload_documents' || verificationStatus.nextAction === 'reupload_documents') && (
+                    <button
+                      onClick={() => router.push(verificationStatus.uploadUrl || '/hangarshare/owner/validate-documents')}
+                      className="px-4 py-2 bg-blue-900 text-white font-bold rounded-lg hover:bg-blue-800 text-sm"
+                    >
+                      {verificationStatus.nextAction === 'upload_documents' ? 'Enviar Documentos →' : 'Reenviar Documentos →'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {verificationStatus && verificationStatus.isVerified && (
+            <div className="mb-6 bg-green-50 border-2 border-green-300 rounded-xl shadow-lg p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-green-200 rounded-full flex items-center justify-center">
+                  <span className="text-xl">✅</span>
+                </div>
+                <div>
+                  <h3 className="font-bold text-green-900">Conta Verificada</h3>
+                  <p className="text-sm text-green-700">Você pode criar e gerenciar anúncios de hangares.</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="flex justify-between items-start mb-6">
             <div>
               <h1 className="text-3xl font-black text-blue-900">Painel de Anunciante</h1>

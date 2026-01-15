@@ -1,0 +1,123 @@
+{
+  "common": {
+    "welcome": "Welcome to your cockpit",
+    "accessTools": "Access your tools and track real-time information",
+    "modules": "Portal Modules",
+    "exploreFeatures": "Explore all features available for your account",
+    "accessModule": "Access Module",
+    "upgrade": "Upgrade Plan",
+    "search": "Search",
+    "loading": "Loading...",
+    "noResults": "No results found"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "birthDate": "Birth Date",
+    "cpf": "CPF",
+    "phone": "Phone",
+    "loginTitle": "Sign in to your account",
+    "registerTitle": "Create your account",
+    "loginSubtitle": "Welcome to Love to Fly Portal",
+    "registerSubtitle": "Join the aviation community",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "loggingIn": "Signing in...",
+    "enteringIn": "Sign In",
+    "forgotPassword": "Forgot your password?",
+    "alreadyHaveAccount": "Already have an account?",
+    "noAccount": "Don't have an account?"
+  },
+  "dashboard": {
+    "weather": "Airport Weather",
+    "weatherSearch": "ICAO (e.g: SBGR)",
+    "news": "Aviation News",
+    "noNews": "No news available at the moment",
+    "temperature": "Temp",
+    "wind": "Wind",
+    "visibility": "Vis",
+    "altimeter": "QNH",
+    "clouds": "Clouds",
+    "airportNotFound": "Airport not found"
+  },
+  "classifieds": {
+    "premium": "Premium Classifieds",
+    "aircraft": "Aircraft for Sale",
+    "parts": "Parts",
+    "avionics": "Avionics",
+    "featured": "⭐ Featured",
+    "year": "Year",
+    "hours": "Hours",
+    "location": "Location",
+    "seller": "Seller",
+    "emailVendor": "Email Seller",
+    "viewListings": "View listings",
+    "viewParts": "View parts",
+    "viewEquipment": "View equipment"
+  },
+  "modules": {
+    "navigation": {
+      "name": "Air Navigation",
+      "description": "Essential tools for flight planning and execution with precision",
+      "e6b": "Classic air navigation calculator. Convert between units, calculate flight time, required fuel, correct wind drift and solve real navigation problems",
+      "glasscockpit": "Advanced flight deck simulator with modern avionics. Practice procedures, system operation and instrumentation in a realistic environment",
+      "ifr": "Specialized instrument flight simulator. Develop IFR skills, practice instrument approaches and emergency procedures",
+      "flightplan": "Plan complete routes, calculate required fuel, optimal altitudes, flight time and operational costs. Generate automatic briefing"
+    },
+    "weather": {
+      "name": "Aeronautical Meteorology",
+      "description": "Accurate and updated meteorological information for safe flight decisions",
+      "metar": "Real-time weather condition queries for any airport. Automatic decoding, critical condition alerts and 48-hour history",
+      "radar": "Real-time weather radar with storm cell movement projection. Essential tool for safe routing"
+    },
+    "training": {
+      "name": "Training & Certification",
+      "description": "Continuous skills development through courses, logbook and simulated practice",
+      "logbook": "Complete record of all your flight hours with categories, automatic statistics briefing and export for certifications",
+      "courses": "Course catalog for pilots on various topics: procedures, ANAC regulations, aerodynamics, meteorology and more",
+      "simulator": "Access to professional simulator for training, emergency procedure practice and skills maintenance"
+    },
+    "community": {
+      "name": "Aviation Community",
+      "description": "Connect with pilots, share knowledge and trade equipment",
+      "forum": "Space for technical discussions, experience sharing and questions with experienced pilots and instructors",
+      "marketplace": "Buy and sell aeronautical equipment such as headsets, charts, manuals, software and pilot accessories"
+    },
+    "career": {
+      "name": "Career Opportunities",
+      "description": "Find job openings, develop your career and connect with aviation mentors",
+      "jobs": "Exclusive access to aviation job opportunities: airline pilots, private, agricultural, instructors and more",
+      "mentoring": "Connect with experienced pilots and aviation professionals for career guidance, interview tips and networking"
+    },
+    "hangarshare": {
+      "name": "HangarShare - Hangar Rental",
+      "description": "Complete platform for renting hangars at Brazilian airfields",
+      "search": "Reserve hangars at Brazilian airdromes with competitive prices. Filter by size, type and location. Instant and secure booking",
+      "advertise": "Monetize your idle space by renting to other pilots. Receive reservations, manage payments and track revenue in real-time",
+      "bookings": "Manage all your active and historical reservations, track invoices and communicate directly with owners"
+    }
+  },
+  "insurance": {
+    "title": "Aviation Insurance",
+    "subtitle": "Instant Quote",
+    "description": "Complete protection for your aircraft",
+    "civilLiability": "Civil Liability",
+    "aircraftDamage": "Aircraft Damage",
+    "internationalCoverage": "International Coverage",
+    "requestQuote": "Request Quote",
+    "compareInsurers": "We compare the best insurance companies in the market"
+  },
+  "deals": {
+    "dealOfTheDay": "Deal of the Day",
+    "discount": "-25%",
+    "headset": "Bose A20 Aviation Headset",
+    "description": "Professional communication with noise cancellation",
+    "validFor": "Offer valid for"
+  }
+}

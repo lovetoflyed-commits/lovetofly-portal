@@ -2,9 +2,33 @@ import { NextResponse } from 'next/server';
 import pool from '@/config/db';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { checkStrictRateLimit, getClientIdentifier } from '@/lib/ratelimit';
+import * as Sentry from '@sentry/nextjs';
 
 export async function POST(request: Request) {
   try {
+    // Rate limiting for login attempts
+    const identifier = getClientIdentifier(request);
+    const rateLimitResult = await checkStrictRateLimit(`login:${identifier}`);
+    
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { 
+          message: 'Too many login attempts. Please try again later.',
+          retryAfter: Math.ceil((rateLimitResult.reset - Date.now()) / 1000)
+        },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': rateLimitResult.reset.toString(),
+            'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString()
+          }
+        }
+      );
+    }
+    
     const body = await request.json();
     const email = body.email || body.identifier;
     const password = body.password;
@@ -44,6 +68,18 @@ export async function POST(request: Request) {
       },
     });
   } catch (error: any) {
+    // Log error to Sentry
+    Sentry.captureException(error, {
+      tags: {
+        endpoint: 'auth/login',
+        method: 'POST'
+      },
+      extra: {
+        errorCode: error?.code,
+        errorDetail: error?.detail
+      }
+    });
+    
     console.error('Login error details:', {
       message: error?.message,
       code: error?.code,

@@ -37,6 +37,9 @@ export async function GET(request: Request) {
         address_country,
         aviation_role,
         aviation_role_other,
+        licencas,
+        habilitacoes,
+        curso_atual,
         avatar_url
       FROM users WHERE id = $1`,
       [userId]
@@ -47,6 +50,22 @@ export async function GET(request: Request) {
     }
 
     const user = result.rows[0];
+
+    // Calcular horas totais do flight_logs (sum all time columns)
+    const hoursResult = await pool.query(
+      `SELECT 
+        ROUND(CAST((
+          COALESCE(SUM(EXTRACT(EPOCH FROM time_diurno)), 0) +
+          COALESCE(SUM(EXTRACT(EPOCH FROM time_noturno)), 0) +
+          COALESCE(SUM(EXTRACT(EPOCH FROM time_ifr_real)), 0) +
+          COALESCE(SUM(EXTRACT(EPOCH FROM time_under_hood)), 0) +
+          COALESCE(SUM(EXTRACT(EPOCH FROM time_simulator)), 0)
+        ) / 3600 AS NUMERIC), 0) as total_hours
+      FROM flight_logs 
+      WHERE user_id = $1 AND deleted_at IS NULL`,
+      [userId]
+    );
+    const totalFlightHours = hoursResult.rows[0]?.total_hours || 0;
 
     // Checar se o usuário é anunciante ativo no HangarShare
     const hangarResult = await pool.query(
@@ -72,10 +91,15 @@ export async function GET(request: Request) {
       addressCountry: user.address_country,
       aviationRole: user.aviation_role,
       aviationRoleOther: user.aviation_role_other,
+      licencas: user.licencas,
+      habilitacoes: user.habilitacoes,
+      curso_atual: user.curso_atual,
+      total_flight_hours: totalFlightHours,
       avatarUrl: user.avatar_url,
       isHangarshareAdvertiser,
     });
   } catch (err) {
+    console.error('Profile GET error:', err);
     return NextResponse.json({ message: 'Server error' }, { status: 500 });
   }
 }
@@ -101,8 +125,19 @@ export async function PATCH(request: Request) {
       firstName,
       lastName,
       mobilePhone,
+      addressStreet,
+      addressNumber,
+      addressComplement,
+      addressNeighborhood,
+      addressCity,
+      addressState,
+      addressZip,
+      addressCountry,
       aviationRole,
       aviationRoleOther,
+      licencas,
+      habilitacoes,
+      curso_atual,
     } = body;
 
     // Build update query dynamically
@@ -125,6 +160,46 @@ export async function PATCH(request: Request) {
       params.push(mobilePhone);
       paramIndex++;
     }
+    if (addressStreet !== undefined) {
+      updates.push(`address_street = $${paramIndex}`);
+      params.push(addressStreet);
+      paramIndex++;
+    }
+    if (addressNumber !== undefined) {
+      updates.push(`address_number = $${paramIndex}`);
+      params.push(addressNumber);
+      paramIndex++;
+    }
+    if (addressComplement !== undefined) {
+      updates.push(`address_complement = $${paramIndex}`);
+      params.push(addressComplement);
+      paramIndex++;
+    }
+    if (addressNeighborhood !== undefined) {
+      updates.push(`address_neighborhood = $${paramIndex}`);
+      params.push(addressNeighborhood);
+      paramIndex++;
+    }
+    if (addressCity !== undefined) {
+      updates.push(`address_city = $${paramIndex}`);
+      params.push(addressCity);
+      paramIndex++;
+    }
+    if (addressState !== undefined) {
+      updates.push(`address_state = $${paramIndex}`);
+      params.push(addressState);
+      paramIndex++;
+    }
+    if (addressZip !== undefined) {
+      updates.push(`address_zip = $${paramIndex}`);
+      params.push(addressZip);
+      paramIndex++;
+    }
+    if (addressCountry !== undefined) {
+      updates.push(`address_country = $${paramIndex}`);
+      params.push(addressCountry);
+      paramIndex++;
+    }
     if (aviationRole !== undefined) {
       updates.push(`aviation_role = $${paramIndex}`);
       params.push(aviationRole);
@@ -133,6 +208,21 @@ export async function PATCH(request: Request) {
     if (aviationRoleOther !== undefined) {
       updates.push(`aviation_role_other = $${paramIndex}`);
       params.push(aviationRoleOther);
+      paramIndex++;
+    }
+    if (licencas !== undefined) {
+      updates.push(`licencas = $${paramIndex}`);
+      params.push(licencas);
+      paramIndex++;
+    }
+    if (habilitacoes !== undefined) {
+      updates.push(`habilitacoes = $${paramIndex}`);
+      params.push(habilitacoes);
+      paramIndex++;
+    }
+    if (curso_atual !== undefined) {
+      updates.push(`curso_atual = $${paramIndex}`);
+      params.push(curso_atual);
       paramIndex++;
     }
 
@@ -164,6 +254,9 @@ export async function PATCH(request: Request) {
         address_country,
         aviation_role,
         aviation_role_other,
+        licencas,
+        habilitacoes,
+        curso_atual,
         avatar_url
     `;
 
@@ -194,6 +287,9 @@ export async function PATCH(request: Request) {
         addressCountry: user.address_country,
         aviationRole: user.aviation_role,
         aviationRoleOther: user.aviation_role_other,
+        licencas: user.licencas,
+        habilitacoes: user.habilitacoes,
+        curso_atual: user.curso_atual,
         avatarUrl: user.avatar_url,
       },
     });

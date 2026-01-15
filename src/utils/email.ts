@@ -738,3 +738,224 @@ function getCancellationHTML({
 </html>
   `;
 }
+
+/**
+ * Send booking status update notification email
+ */
+interface BookingStatusEmailParams {
+  to: string;
+  clientName: string;
+  bookingId: string;
+  hangar: string;
+  checkin: string;
+  checkout: string;
+  newStatus: string;
+  statusLabel: string;
+  refundInfo?: { refundId: string; amount: number; status: string; created: number } | null;
+}
+
+export async function sendBookingStatusEmail({
+  to,
+  clientName,
+  bookingId,
+  hangar,
+  checkin,
+  checkout,
+  newStatus,
+  statusLabel,
+  refundInfo,
+}: BookingStatusEmailParams) {
+  const resend = await getResendClient();
+
+  const statusColors: Record<string, string> = {
+    pending: '#F59E0B',
+    confirmed: '#10B981',
+    cancelled: '#EF4444',
+    completed: '#6366F1',
+  };
+
+  const statusIcons: Record<string, string> = {
+    pending: '⏳',
+    confirmed: '✅',
+    cancelled: '❌',
+    completed: '🎉',
+  };
+
+  const color = statusColors[newStatus] || '#6B7280';
+  const icon = statusIcons[newStatus] || '📝';
+
+  // Format dates
+  const checkinDate = new Date(checkin).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+  const checkoutDate = new Date(checkout).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+
+  const refundHtml = refundInfo
+    ? `
+      <div class="section">
+        <div class="section-title">💰 Informações de Reembolso</div>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 8px 0; color: #64748b; font-size: 14px;">ID do Reembolso:</td>
+            <td style="padding: 8px 0; color: #0f172a; font-size: 14px; text-align: right; font-family: monospace;">${refundInfo.refundId}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Valor:</td>
+            <td style="padding: 8px 0; color: #10B981; font-size: 16px; text-align: right; font-weight: 600;">R$ ${refundInfo.amount.toFixed(2)}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Status:</td>
+            <td style="padding: 8px 0; color: #0f172a; font-size: 14px; text-align: right;">${refundInfo.status === 'succeeded' ? '✅ Processado' : '⏳ Processando'}</td>
+          </tr>
+        </table>
+        <div class="warning" style="margin-top: 15px;">
+          <strong>⏱️ Prazo:</strong> O reembolso será creditado em sua conta dentro de 3-5 dias úteis.
+        </div>
+      </div>
+    `
+    : '';
+
+  const html = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Atualização de Reserva - LoveToFly</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background-color: #f8fafc;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px 20px;
+      text-align: center;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 8px 16px;
+      border-radius: 20px;
+      background-color: rgba(255, 255, 255, 0.2);
+      font-size: 18px;
+      margin-top: 10px;
+    }
+    .content {
+      padding: 30px 20px;
+    }
+    .section {
+      margin: 20px 0;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .section:last-child {
+      border-bottom: none;
+    }
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #0f172a;
+      margin-bottom: 12px;
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      margin: 8px 0;
+      font-size: 14px;
+    }
+    .label {
+      color: #64748b;
+    }
+    .value {
+      color: #0f172a;
+      font-weight: 500;
+    }
+    .warning {
+      background-color: #FEF3C7;
+      border-left: 4px solid #F59E0B;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+      font-size: 14px;
+      color: #92400E;
+    }
+    .button {
+      display: inline-block;
+      padding: 12px 24px;
+      background-color: #667eea;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      margin-top: 15px;
+    }
+    .footer {
+      background-color: #f8fafc;
+      padding: 20px;
+      text-align: center;
+      font-size: 13px;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 style="margin: 0; font-size: 24px;">✈️ Atualização de Reserva</h1>
+      <div class="status-badge">${icon} ${statusLabel}</div>
+    </div>
+    
+    <div class="content">
+      <p style="font-size: 16px; color: #0f172a; margin: 0 0 20px 0;">Olá, ${clientName}!</p>
+      <p style="font-size: 14px; color: #64748b; margin: 0 0 25px 0;">Sua reserva de hangar foi atualizada para: <strong style="color: ${color};">${statusLabel}</strong></p>
+      
+      <div class="section">
+        <div class="section-title">📋 Detalhes da Reserva</div>
+        <div class="info-row">
+          <span class="label">ID da Reserva:</span>
+          <span class="value" style="font-family: monospace;">#${bookingId}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Hangar:</span>
+          <span class="value">${hangar}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Check-in:</span>
+          <span class="value">${checkinDate}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Check-out:</span>
+          <span class="value">${checkoutDate}</span>
+        </div>
+      </div>
+      
+      ${refundHtml}
+      
+      <div class="section" style="margin-top: 25px;">
+        <p style="color: #64748b; font-size: 14px;">Acesse seu painel para ver mais detalhes ou entrar em contato com o proprietário:</p>
+        <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://lovetofly.com.br'}/dashboard" class="button">🔗 Ver Minhas Reservas</a>
+      </div>
+    </div>
+    
+    <div class="footer">
+      <p style="margin: 0; color: #64748b;">LoveToFly - HangarShare™<br>
+      Conectando pilotos e hangares<br>
+      suporte@lovetofly.com.br</p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+
+  await resend.emails.send({
+    from: 'LoveToFly <noreply@lovetofly.com.br>',
+    to,
+    subject: `${icon} Atualização de Reserva: ${statusLabel} - #${bookingId}`,
+    html,
+  });
+}

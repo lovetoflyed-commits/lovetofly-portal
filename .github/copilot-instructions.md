@@ -7,9 +7,11 @@
 
 ### Estrutura Crítica
 - **Client State:** `src/context/AuthContext.tsx` → `useAuth()` hook (user, token via localStorage)
+- **Language State:** `src/context/LanguageContext.tsx` → `useLanguage()` hook (language switching, i18n)
 - **DB Connection:** `src/config/db.ts` → `pg.Pool` singleton; schemas em `src/migrations/` (sequencial: `00X_description.sql`)
-- **UI Components:** `src/components/` compartilhados (Header, Sidebar, AuthGuard, HangarCarousel)
-- **Pages:** `src/app/` com `'use client'` em components interativos; layout.tsx raiz wrappa `<AuthProvider>`
+- **UI Components:** `src/components/` compartilhados (Header, Sidebar, AuthGuard, HangarCarousel, LanguageSelector)
+- **Translations:** `src/translations/` com pt.json, en.json, es.json (300+ keys cada)
+- **Pages:** `src/app/` com `'use client'` em components interativos; layout.tsx raiz wrappa `<LanguageProvider><AuthProvider>`
 
 ---
 
@@ -81,6 +83,40 @@ export async function POST(request: Request) {
 ---
 
 ## Features Principais
+
+### Internacionalização (i18n) - Multilingual Support
+**Versão:** v1.0 - Completa e Production-Ready  
+**Linguagens:** Português (🇧🇷), English (🇺🇸), Spanish (🇪🇸)
+
+**Componentes:**
+- `src/context/LanguageContext.tsx` → `useLanguage()` hook para acesso a idioma e função `t()`
+- `src/components/LanguageSelector.tsx` → UI dropdown com flags para seleção
+- `src/translations/pt.json|en.json|es.json` → Dicionários com 300+ keys cada
+- `src/app/layout.tsx` → Wrapper `<LanguageProvider>` app-wide
+
+**Como Usar:**
+```typescript
+import { useLanguage } from '@/context/LanguageContext';
+
+export function MyComponent() {
+  const { t, language, setLanguage } = useLanguage();
+  return <h1>{t('section.key')}</h1>;
+}
+```
+
+**Recursos:**
+- ✅ Detecção automática de idioma do navegador
+- ✅ Persistência em localStorage
+- ✅ Troca instantânea sem reload
+- ✅ Fallback seguro para SSR
+- ✅ Type-safe com TypeScript
+- ✅ 300+ keys traduzidas para cada idioma
+
+**Adicionando Traduções:**
+1. Add key to all 3 files: `src/translations/pt.json|en.json|es.json`
+2. Use em component: `{t('section.key')}`
+
+**Documentação:** `INTERNATIONALIZATION_COMPLETE.md`, `MULTILINGUAL_QUICK_START.md`, `MULTILINGUAL_VISUAL_GUIDE.md`
 
 ### HangarShare v1.0 (Marketplace de Hangares)
 **Páginas:** `src/app/hangarshare/*`

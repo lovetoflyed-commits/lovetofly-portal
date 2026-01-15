@@ -1,11 +1,27 @@
 "use client";
 // Login form
+
+import { Role } from './admin/accessControl';
+function isStaffRole(role?: string) {
+  return [
+    Role.MASTER,
+    Role.OPERATIONS_LEAD,
+    Role.SUPPORT_LEAD,
+    Role.CONTENT_MANAGER,
+    Role.BUSINESS_MANAGER,
+    Role.FINANCE_MANAGER,
+    Role.MARKETING,
+    Role.COMPLIANCE,
+  ].includes(role as Role);
+}
+
 function LoginForm({ onSuccess }: { onSuccess: () => void }) {
-  const { login, error } = useAuth();
+  const { login, error, user } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const router = typeof window !== 'undefined' ? require('next/navigation').useRouter() : null;
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -14,7 +30,7 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
     setLoading(false);
     if (ok) {
       onSuccess();
-      window.location.reload();
+      // Redirect handled by AuthContext
     }
   };
 
@@ -514,61 +530,67 @@ export default function Home() {
   // Define feature modules with access requirements
   const modules = {
     navigation: {
-      name: 'Navegação',
+      name: 'Navegação Aérea',
       icon: '🧭',
       minPlan: 'free',
+      description: 'Ferramentas essenciais para planejamento e execução de voos com precisão',
       features: [
-        { name: 'E6B Flight Computer', desc: 'Calculadora de navegação aérea', href: '/tools/e6b', minPlan: 'free' },
-        { name: 'Glass Cockpit Simulator', desc: 'Simulador de cabine com aviônicos moderno', href: '/tools/glass-cockpit', minPlan: 'free' },
-        { name: 'Simulador IFR', desc: 'Procedimentos IFR e precisão', href: '/tools/ifr-simulator', minPlan: 'free' },
-        { name: 'Planejamento de Voo', desc: 'Planejar rotas e calcular combustível', href: '/flight-plan', minPlan: 'premium' },
+        { name: 'E6B Flight Computer', desc: 'Calculadora clássica de navegação aérea. Converta entre unidades, calcule tempo de voo, combustível necessário, corriga deriva do vento e resolva problemas de navegação real', href: '/tools/e6b', minPlan: 'free' },
+        { name: 'Glass Cockpit Simulator', desc: 'Simulador avançado de cabine com aviônicos moderno. Pratique procedimentos, operação de sistemas e instrumentação em ambiente realista', href: '/tools/glass-cockpit', minPlan: 'free' },
+        { name: 'Simulador IFR', desc: 'Simulador especializado em voo por instrumentos. Desenvolva habilidades IFR, pratique aproximações por instrumentos e procedimentos de emergência', href: '/tools/ifr-simulator', minPlan: 'free' },
+        { name: 'Planejamento de Voo', desc: 'Planeje rotas completas, calcule combustível necessário, altitudes ótimas, tempo de voo e custos operacionais. Gere briefing automático', href: '/flight-plan', minPlan: 'premium' },
       ]
     },
     weather: {
-      name: 'Meteorologia',
+      name: 'Meteorologia Aeronáutica',
       icon: '☁️',
       minPlan: 'free',
+      description: 'Informações meteorológicas precisas e atualizadas para decisões de voo seguras',
       features: [
-        { name: 'METAR/TAF', desc: 'Consulta de condições meteorológicas', href: '/weather', minPlan: 'free' },
-        { name: 'Radar', desc: 'Radar meteorológico em tempo real', href: '/weather/radar', minPlan: 'premium' },
+        { name: 'METAR/TAF', desc: 'Consulta em tempo real de condições meteorológicas em qualquer aeroporto. Decodificação automática, alertas de condições críticas e histórico de 48 horas', href: '/weather', minPlan: 'free' },
+        { name: 'Radar Meteorológico', desc: 'Radar meteorológico em tempo real com projeção de movimento de células de tempestade. Ferramenta essencial para rota segura', href: '/weather/radar', minPlan: 'premium' },
       ]
     },
     training: {
-      name: 'Treinamento',
+      name: 'Treinamento & Certificação',
       icon: '🎓',
       minPlan: 'free',
+      description: 'Desenvolvimento contínuo de habilidades através de cursos, logbook e prática simulada',
       features: [
-        { name: 'Logbook', desc: 'Registro de horas de voo', href: '/logbook', minPlan: 'free' },
-        { name: 'Cursos', desc: 'Treinamento e certificação online', href: '/courses', minPlan: 'free' },
-        { name: 'Simulador', desc: 'Treinamento em simulador', href: '/simulator', minPlan: 'pro' },
+        { name: 'Logbook Digital', desc: 'Registro completo de todas as suas horas de voo com categorias, briefing automático de estatísticas e exportação para certificações', href: '/logbook', minPlan: 'free' },
+        { name: 'Cursos Online', desc: 'Catálogo de cursos para pilotos em diversos temas: procedimentos, regulamentação ANAC, aerodinâmica, meteorologia e muito mais', href: '/courses', minPlan: 'free' },
+        { name: 'Simulador Avançado', desc: 'Acesso a simulador profissional para treinamento, prática de procedimentos de emergência e manutenção de habilidades', href: '/simulator', minPlan: 'pro' },
       ]
     },
     community: {
-      name: 'Comunidade',
+      name: 'Comunidade Aeronáutica',
       icon: '💬',
       minPlan: 'free',
+      description: 'Conecte-se com pilotos, compartilhe conhecimento e comercialize equipamentos',
       features: [
-        { name: 'Fórum', desc: 'Discussões com pilotos e instrutores', href: '/forum', minPlan: 'free' },
-        { name: 'Pilot Shop', desc: 'Compra e venda de equipamentos', href: '/marketplace', minPlan: 'free' },
+        { name: 'Fórum de Discussão', desc: 'Espaço para discussões técnicas, compartilhamento de experiências e dúvidas com pilotos e instrutores experientes', href: '/forum', minPlan: 'free' },
+        { name: 'Pilot Shop - Marketplace', desc: 'Compra e venda de equipamentos aeronáuticos como headsets, cartas, manuais, software e acessórios para pilotos', href: '/marketplace', minPlan: 'free' },
       ]
     },
     career: {
-      name: 'Carreira',
+      name: 'Oportunidades de Carreira',
       icon: '✈️',
       minPlan: 'premium',
+      description: 'Encontre vagas, desenvolva sua carreira e conecte-se com mentores da aviação',
       features: [
-        { name: 'Vagas', desc: 'Oportunidades de emprego na aviação', href: '/career', minPlan: 'premium' },
-        { name: 'Mentoria', desc: 'Conecte-se com mentores', href: '/mentorship', minPlan: 'pro' },
+        { name: 'Banco de Vagas', desc: 'Acesso exclusivo a oportunidades de trabalho na aviação: pilotos de linha aérea, particular, agrícola, instrutores, e muito mais', href: '/career', minPlan: 'premium' },
+        { name: 'Mentoria Profissional', desc: 'Conecte-se com pilotos experientes e profissionais da aviação para orientação de carreira, dicas de entrevista e networking', href: '/mentorship', minPlan: 'pro' },
       ]
     },
     hangarshare: {
-      name: 'HangarShare',
+      name: 'HangarShare - Aluguel de Hangares',
       icon: '🏢',
       minPlan: 'free',
+      description: 'Plataforma completa para locação e aluguel de hangares em aeródromos brasileiros',
       features: [
-        { name: 'Buscar Hangares', desc: 'Reserve hangares em aeródromos', href: '/hangarshare', minPlan: 'free' },
-        { name: 'Anunciar Hangar', desc: 'Monetize seu espaço', href: '/hangarshare/owner/register', minPlan: 'free' },
-        { name: 'Minhas Reservas', desc: 'Gerencie suas reservas', href: '/hangarshare/bookings', minPlan: 'free' },
+        { name: 'Buscar Hangares', desc: 'Reserve hangares em aeródromos brasileiros com preços competitivos. Filtro por tamanho, tipo e localização. Reserva instantânea e segura', href: '/hangarshare', minPlan: 'free' },
+        { name: 'Anunciar seu Hangar', desc: 'Monetize seu espaço ocioso alugando para outros pilotos. Receba reservas, gerencie pagamentos e acompanhe receitas em tempo real', href: '/hangarshare/owner/register', minPlan: 'free' },
+        { name: 'Minhas Reservas', desc: 'Gerencie todas as suas reservas ativas e históricas, acompanhe faturas e comunique-se diretamente com proprietários', href: '/hangarshare/bookings', minPlan: 'free' },
       ]
     },
   };
@@ -619,9 +641,9 @@ export default function Home() {
       title: '2015 CESSNA 172S SKYHAWK',
       category: 'Monomotor Pistão',
       price: 'USD $285,000',
-      priceNote: 'Payments as low as USD $2,640.00*',
+      priceNote: 'Parcelamento a partir de USD $2.640,00*',
       year: '2015',
-      hours: '2,150 Total Time',
+      hours: '2.150 Horas Totais',
       location: 'São Paulo, Brasil',
       seller: 'LANE AVIATION',
       phone: '+55 (11) 98765-4321',
@@ -633,9 +655,9 @@ export default function Home() {
       title: '2020 EXTRA 330LX',
       category: 'Aerodesportiva',
       price: 'USD $495,000',
-      priceNote: 'Payments as low as USD $4,580.00*',
+      priceNote: 'Parcelamento a partir de USD $4.580,00*',
       year: '2020',
-      hours: '450 Total Time',
+      hours: '450 Horas Totais',
       location: 'Rio de Janeiro, Brasil',
       seller: 'AirplanesUSA',
       phone: '+55 (21) 97654-3210',
@@ -647,9 +669,9 @@ export default function Home() {
       title: '2018 BEECHCRAFT KING AIR 350i',
       category: 'Bimotor Turboélice',
       price: 'USD $6,500,000',
-      priceNote: 'Payments as low as USD $60,200.00*',
+      priceNote: 'Parcelamento a partir de USD $60.200,00*',
       year: '2018',
-      hours: '1,890 Total Time',
+      hours: '1.890 Horas Totais',
       location: 'Belo Horizonte, Brasil',
       seller: 'G2G Aviation',
       phone: '+55 (31) 99876-5432',
@@ -661,9 +683,9 @@ export default function Home() {
       title: '2012 CESSNA CITATION M2',
       category: 'Jato de Pequeno Porte',
       price: 'USD $3,250,000',
-      priceNote: 'Payments as low as USD $30,100.00*',
+      priceNote: 'Parcelamento a partir de USD $30.100,00*',
       year: '2012',
-      hours: '2,400 Total Time',
+      hours: '2.400 Horas Totais',
       location: 'Dallas, Texas, EUA',
       seller: 'Ava Aviation',
       phone: '+1 (214) 73305-4567',
@@ -873,7 +895,15 @@ export default function Home() {
                         <div>👁️ Vis: {weatherData.visibility.repr} KM</div>
                       )}
                       {weatherData.altimeter && (
-                        <div>🎚️ QNH: {weatherData.altimeter.repr} inHg</div>
+                        <div>
+                          🎚️ QNH: {weatherData.altimeter.repr} hPa
+                          {Number.isFinite(weatherData.altimeter.value) && (
+                            <span>
+                              {' '}
+                              • { (weatherData.altimeter.value * 0.02953).toFixed(2) } inHg
+                            </span>
+                          )}
+                        </div>
                       )}
                       {weatherData.clouds && weatherData.clouds.length > 0 && (
                         <div>☁️ Nuvens: {weatherData.clouds.join(', ')} FT</div>
@@ -924,7 +954,7 @@ export default function Home() {
                   <h3 className="text-lg font-black text-blue-900">Aeronaves à Venda</h3>
                 </div>
                 {classifieds[listingIndex].featured && (
-                  <span className="bg-yellow-400 text-blue-900 px-2 py-1 rounded text-xs font-bold">Featured</span>
+                  <span className="bg-yellow-400 text-blue-900 px-2 py-1 rounded text-xs font-bold">⭐ Destaque</span>
                 )}
               </div>
 
@@ -977,7 +1007,7 @@ export default function Home() {
 
                 <div className="flex gap-2">
                   <button className="flex-1 px-3 py-2 bg-blue-900 text-white text-xs font-bold rounded hover:bg-blue-800">
-                    📧 Email Seller
+                    📧 Email Vendedor
                   </button>
                   <button className="flex-1 px-3 py-2 bg-orange-500 text-white text-xs font-bold rounded hover:bg-orange-600">
                     📞 {classifieds[listingIndex].phone}
@@ -985,7 +1015,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-2 border-t border-slate-200">
+                <div className="flex items-center justify-between pt-2 border-t border-slate-200">
                 <button
                   aria-label="Anterior"
                   onClick={() => setListingIndex((listingIndex - 1 + classifieds.length) % classifieds.length)}
@@ -1058,7 +1088,7 @@ export default function Home() {
                       </a>
                     ))
                   ) : (
-                    <div className="text-xs text-slate-500 text-center py-4">Sem notícias disponíveis</div>
+                    <div className="text-xs text-slate-500 text-center py-4">Nenhuma notícia disponível no momento</div>
                   )}
                 </div>
               </div>
@@ -1339,7 +1369,7 @@ export default function Home() {
         <LoginForm onSuccess={() => setLoginOpen(false)} />
       </Modal>
 
-      <Modal open={registerOpen} onClose={() => setRegisterOpen(false)} title="Criar conta">
+      <Modal open={registerOpen} onClose={() => { setRegisterOpen(false); setLoginOpen(true); }} title="Criar conta">
         <RegisterForm onSuccess={() => { setRegisterOpen(false); setLoginOpen(true); }} />
       </Modal>
     </>

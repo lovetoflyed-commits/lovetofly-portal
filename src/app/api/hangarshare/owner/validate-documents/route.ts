@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as fs from 'fs';
 import * as path from 'path';
+import pool from '@/config/db';
+import { uploadFile } from '@/utils/storage';
+import jwt from 'jsonwebtoken';
+
+interface JWTPayload {
+  userId: number;
+  email: string;
+}
 
 type ValidationResult = {
   valid: boolean;
@@ -120,6 +128,21 @@ async function validateFaceMatch(
 
 export async function POST(request: NextRequest) {
   try {
+    // Authenticate user
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+
+    const token = authHeader.substring(7);
+    let decoded: JWTPayload;
+
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET || '') as JWTPayload;
+    } catch (err) {
+      return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
+    }
+
     const formData = await request.formData();
 
     const idFront = formData.get('idFront') as File;
@@ -187,6 +210,91 @@ export async function POST(request: NextRequest) {
     ]);
 
     const isValid = overallScore >= 70 && allIssues.length === 0;
+
+    // Store documents to Vercel Blob if validation passes basic checks
+    let idFrontStorageUrl = '';
+    let idBackStorageUrl = '';
+    let selfieStorageUrl = '';
+
+    if (overallScore >= 60) {
+      try {
+        // Upload to Vercel Blob
+        const idFrontResult = await uploadFile(idFront, 'owner-documents');
+        idFrontStorageUrl = idFrontResult.url;
+
+        if (idBack) {
+          const idBackResult = await uploadFile(idBack, 'owner-documents');
+          idBackStorageUrl = idBackResult.url;
+        }
+
+        const selfieResult = await uploadFile(selfie, 'owner-documents');
+        selfieStorageUrl = selfieResult.url;
+
+        // Get or create hangar owner record
+        const ownerResult = await pool.query(
+          `SELECT id FROM hangar_owners WHERE user_id = $1`,
+          [decoded.userId]
+        );
+
+        const ownerId = ownerResult.rows.length > 0 ? ownerResult.rows[0].id : null;
+
+        // Save to database
+        await pool.query(
+          `INSERT INTO user_documents (user_id, owner_id, document_type, file_url, file_size, mime_type, validation_score, validation_status, validation_issues, validation_suggestions)
+           VALUES 
+             ($1, $2, 'id_front', $3, $4, $5, $6, $7, $8, $9),
+             ($1, $2, 'selfie', $10, $11, $12, $13, $14, $15, $16)`,
+          [
+            decoded.userId,
+            ownerId,
+            idFrontStorageUrl,
+            idFront.size,
+            idFront.type,
+            Math.round((idFrontValidation.score + idFrontAuth.score) / 2),
+            isValid ? 'pending_review' : 'rejected',
+            [...idFrontValidation.issues, ...idFrontAuth.issues],
+            Array.from(new Set([...idFrontValidation.suggestions, ...idFrontAuth.suggestions])),
+            selfieStorageUrl,
+            selfie.size,
+            selfie.type,
+            selfieValidation.score,
+            isValid ? 'pending_review' : 'rejected',
+            selfieValidation.issues,
+            selfieValidation.suggestions,
+          ]
+        );
+
+        // Insert back document if provided
+        if (idBack && idBackStorageUrl) {
+          await pool.query(
+            `INSERT INTO user_documents (user_id, owner_id, document_type, file_url, file_size, mime_type, validation_score, validation_status, validation_issues, validation_suggestions)
+             VALUES ($1, $2, 'id_back', $3, $4, $5, $6, $7, $8, $9)`,
+            [
+              decoded.userId,
+              ownerId,
+              idBackStorageUrl,
+              idBack.size,
+              idBack.type,
+              idBackValidation?.score || 100,
+              isValid ? 'pending_review' : 'rejected',
+              idBackValidation?.issues || [],
+              idBackValidation?.suggestions || [],
+            ]
+          );
+        }
+
+        console.log(`[DOCUMENT UPLOAD] User ${decoded.userId} uploaded ${idBack ? 3 : 2} documents for verification`);
+      } catch (storageError) {
+        console.error('Error storing documents:', storageError);
+        return NextResponse.json(
+          {
+            error: 'Erro ao armazenar documentos',
+            message: storageError instanceof Error ? storageError.message : 'Erro desconhecido',
+          },
+          { status: 500 }
+        );
+      }
+    }
 
     return NextResponse.json({
       valid: isValid,

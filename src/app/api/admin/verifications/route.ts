@@ -15,11 +15,13 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const offset = (page - 1) * limit;
 
+    console.log('[Verifications API] Fetching verifications with status:', status);
+
     // Get pending verifications with user and owner data
     const result = await pool.query(
       `SELECT 
         hov.id,
-        hov.user_id,
+        ho.user_id,
         hov.id_document_type,
         hov.id_document_number,
         hov.id_document_front_url,
@@ -38,24 +40,25 @@ export async function GET(request: NextRequest) {
         u.email,
         u.cpf,
         ho.company_name,
-        ho.cnpj,
-        ho.bank_code,
-        ho.bank_agency,
-        ho.bank_account
+        ho.cnpj
       FROM hangar_owner_verification hov
-      JOIN users u ON hov.user_id = u.id
-      LEFT JOIN hangar_owners ho ON ho.user_id = u.id
+      JOIN hangar_owners ho ON hov.owner_id = ho.id
+      JOIN users u ON ho.user_id = u.id
       WHERE hov.verification_status = $1
       ORDER BY hov.created_at ASC
       LIMIT $2 OFFSET $3`,
       [status, limit, offset]
     );
 
+    console.log('[Verifications API] Found', result.rows.length, 'verifications');
+
     // Get total count
     const countResult = await pool.query(
       'SELECT COUNT(*) FROM hangar_owner_verification WHERE verification_status = $1',
       [status]
     );
+
+    console.log('[Verifications API] Total count:', countResult.rows[0].count);
 
     return NextResponse.json({
       verifications: result.rows,

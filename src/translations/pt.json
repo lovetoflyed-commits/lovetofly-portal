@@ -1,0 +1,123 @@
+{
+  "common": {
+    "welcome": "Bem vindo ao seu cockpit",
+    "accessTools": "Acesse suas ferramentas e acompanhe informações em tempo real",
+    "modules": "Módulos do Portal",
+    "exploreFeatures": "Explore todas as funcionalidades disponíveis para sua conta",
+    "accessModule": "Acessar Módulo",
+    "upgrade": "Fazer Upgrade",
+    "search": "Buscar",
+    "loading": "Carregando...",
+    "noResults": "Nenhum resultado encontrado"
+  },
+  "auth": {
+    "login": "Entrar",
+    "logout": "Sair",
+    "register": "Registrar",
+    "email": "Email",
+    "password": "Senha",
+    "confirmPassword": "Confirmar Senha",
+    "firstName": "Primeiro Nome",
+    "lastName": "Sobrenome",
+    "birthDate": "Data de Nascimento",
+    "cpf": "CPF",
+    "phone": "Telefone",
+    "loginTitle": "Entre na sua conta",
+    "registerTitle": "Crie sua conta",
+    "loginSubtitle": "Bem vindo ao portal Love to Fly",
+    "registerSubtitle": "Junte-se à comunidade aeronáutica",
+    "showPassword": "Mostrar senha",
+    "hidePassword": "Esconder senha",
+    "loggingIn": "Entrando...",
+    "enteringIn": "Entrar",
+    "forgotPassword": "Esqueceu sua senha?",
+    "alreadyHaveAccount": "Já tem uma conta?",
+    "noAccount": "Não tem uma conta?"
+  },
+  "dashboard": {
+    "weather": "Clima Aeroporto",
+    "weatherSearch": "ICAO (ex: SBGR)",
+    "news": "Notícias Aviação",
+    "noNews": "Nenhuma notícia disponível no momento",
+    "temperature": "Temp",
+    "wind": "Vento",
+    "visibility": "Vis",
+    "altimeter": "QNH",
+    "clouds": "Nuvens",
+    "airportNotFound": "Aeroporto não encontrado"
+  },
+  "classifieds": {
+    "premium": "Classificados Premium",
+    "aircraft": "Aeronaves à Venda",
+    "parts": "Peças",
+    "avionics": "Aviônicos",
+    "featured": "⭐ Destaque",
+    "year": "Ano",
+    "hours": "Horas",
+    "location": "Local",
+    "seller": "Vendedor",
+    "emailVendor": "Email Vendedor",
+    "viewListings": "Ver anúncios",
+    "viewParts": "Ver peças",
+    "viewEquipment": "Ver equipamentos"
+  },
+  "modules": {
+    "navigation": {
+      "name": "Navegação Aérea",
+      "description": "Ferramentas essenciais para planejamento e execução de voos com precisão",
+      "e6b": "Calculadora clássica de navegação aérea. Converta entre unidades, calcule tempo de voo, combustível necessário, corriga deriva do vento e resolva problemas de navegação real",
+      "glasscockpit": "Simulador avançado de cabine com aviônicos moderno. Pratique procedimentos, operação de sistemas e instrumentação em ambiente realista",
+      "ifr": "Simulador especializado em voo por instrumentos. Desenvolva habilidades IFR, pratique aproximações por instrumentos e procedimentos de emergência",
+      "flightplan": "Planeje rotas completas, calcule combustível necessário, altitudes ótimas, tempo de voo e custos operacionais. Gere briefing automático"
+    },
+    "weather": {
+      "name": "Meteorologia Aeronáutica",
+      "description": "Informações meteorológicas precisas e atualizadas para decisões de voo seguras",
+      "metar": "Consulta em tempo real de condições meteorológicas em qualquer aeroporto. Decodificação automática, alertas de condições críticas e histórico de 48 horas",
+      "radar": "Radar meteorológico em tempo real com projeção de movimento de células de tempestade. Ferramenta essencial para rota segura"
+    },
+    "training": {
+      "name": "Treinamento & Certificação",
+      "description": "Desenvolvimento contínuo de habilidades através de cursos, logbook e prática simulada",
+      "logbook": "Registro completo de todas as suas horas de voo com categorias, briefing automático de estatísticas e exportação para certificações",
+      "courses": "Catálogo de cursos para pilotos em diversos temas: procedimentos, regulamentação ANAC, aerodinâmica, meteorologia e muito mais",
+      "simulator": "Acesso a simulador profissional para treinamento, prática de procedimentos de emergência e manutenção de habilidades"
+    },
+    "community": {
+      "name": "Comunidade Aeronáutica",
+      "description": "Conecte-se com pilotos, compartilhe conhecimento e comercialize equipamentos",
+      "forum": "Espaço para discussões técnicas, compartilhamento de experiências e dúvidas com pilotos e instrutores experientes",
+      "marketplace": "Compra e venda de equipamentos aeronáuticos como headsets, cartas, manuais, software e acessórios para pilotos"
+    },
+    "career": {
+      "name": "Oportunidades de Carreira",
+      "description": "Encontre vagas, desenvolva sua carreira e conecte-se com mentores da aviação",
+      "jobs": "Acesso exclusivo a oportunidades de trabalho na aviação: pilotos de linha aérea, particular, agrícola, instrutores, e muito mais",
+      "mentoring": "Conecte-se com pilotos experientes e profissionais da aviação para orientação de carreira, dicas de entrevista e networking"
+    },
+    "hangarshare": {
+      "name": "HangarShare - Aluguel de Hangares",
+      "description": "Plataforma completa para locação e aluguel de hangares em aeródromos brasileiros",
+      "search": "Reserve hangares em aeródromos brasileiros com preços competitivos. Filtro por tamanho, tipo e localização. Reserva instantânea e segura",
+      "advertise": "Monetize seu espaço ocioso alugando para outros pilotos. Receba reservas, gerencie pagamentos e acompanhe receitas em tempo real",
+      "bookings": "Gerencie todas as suas reservas ativas e históricas, acompanhe faturas e comunique-se diretamente com proprietários"
+    }
+  },
+  "insurance": {
+    "title": "Seguro Aeronáutico",
+    "subtitle": "Cotação Imediata",
+    "description": "Proteção completa para sua aeronave",
+    "civilLiability": "Responsabilidade Civil",
+    "aircraftDamage": "Danos à Aeronave",
+    "internationalCoverage": "Cobertura Internacional",
+    "requestQuote": "Solicitar Cotação",
+    "compareInsurers": "Comparamos as melhores seguradoras do Brasil"
+  },
+  "deals": {
+    "dealOfTheDay": "Oferta do Dia",
+    "discount": "-25%",
+    "headset": "Headset Bose A20",
+    "description": "Comunicação profissional com cancelamento de ruído",
+    "validFor": "Oferta válida por"
+  }
+}

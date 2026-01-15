@@ -16,7 +16,7 @@ export default function MainHeader() {
   return (
     <header className="bg-blue-900 text-white shadow-md">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-        {/* Primeira coluna: Logo 4cm x 4cm centralizada */}
+        {/* First column: Logo 4cm x 4cm centered */}
         <div
           className="flex items-center justify-center cursor-pointer"
           style={{ height: '3.2cm', minWidth: '8cm', width: '8cm' }}
@@ -28,12 +28,12 @@ export default function MainHeader() {
             style={{ width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'center', display: 'block' }}
           />
         </div>
-        {/* Segunda coluna: Título e Subtítulo */}
+        {/* Second column: Title and Subtitle */}
         <div className="flex-1 flex flex-col items-center justify-center">
           <h1 className="font-black text-3xl md:text-4xl tracking-wide text-white text-center">PORTAL DA AVIAÇÃO CIVIL</h1>
           <p className="text-sm uppercase tracking-[0.2em] text-white font-semibold mt-1">O SEU PORTAL DA AVIAÇÃO CIVIL</p>
         </div>
-        {/* Terceira coluna: Botões */}
+        {/* Third column: Buttons */}
         <div className="flex items-center gap-2">
           {user && (
             <span className="text-xs bg-orange-500 text-white px-3 py-1 rounded-full font-bold uppercase">{userPlan}</span>

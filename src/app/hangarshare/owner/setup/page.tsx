@@ -12,12 +12,16 @@ export default function AdvertiserSetupPage() {
   const [success, setSuccess] = useState(false);
 
   const [formData, setFormData] = useState({
+    ownerType: 'company' as 'company' | 'individual',
     companyName: '',
     companyCnpj: '',
+    cpf: '',
     bankCode: '',
     bankAgency: '',
     bankAccount: '',
     accountHolderName: '',
+    pixKey: '',
+    pixKeyType: '' as '' | 'cpf' | 'cnpj' | 'email' | 'phone' | 'random',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -31,16 +35,31 @@ export default function AdvertiserSetupPage() {
         return;
       }
 
-      if (!formData.companyName || !formData.companyCnpj || !formData.bankCode || 
-          !formData.bankAgency || !formData.bankAccount || !formData.accountHolderName) {
-        setError('Preencha todos os campos obrigatórios.');
-        return;
+      // Validação baseada no tipo de proprietário
+      if (formData.ownerType === 'company') {
+        if (!formData.companyName || !formData.companyCnpj) {
+          setError('Preencha o nome da empresa e CNPJ.');
+          return;
+        }
+        const cnpjClean = formData.companyCnpj.replace(/\D/g, '');
+        if (cnpjClean.length !== 14) {
+          setError('CNPJ inválido. Deve conter 14 dígitos.');
+          return;
+        }
+      } else {
+        if (!formData.companyName || !formData.cpf) {
+          setError('Preencha seu nome completo e CPF.');
+          return;
+        }
+        const cpfClean = formData.cpf.replace(/\D/g, '');
+        if (cpfClean.length !== 11) {
+          setError('CPF inválido. Deve conter 11 dígitos.');
+          return;
+        }
       }
 
-      // Validar CNPJ (básico)
-      const cnpjClean = formData.companyCnpj.replace(/\D/g, '');
-      if (cnpjClean.length !== 14) {
-        setError('CNPJ inválido. Deve conter 14 dígitos.');
+      if (!formData.bankCode || !formData.bankAgency || !formData.bankAccount || !formData.accountHolderName) {
+        setError('Preencha todos os campos bancários obrigatórios.');
         return;
       }
 
@@ -49,12 +68,16 @@ export default function AdvertiserSetupPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: user.id,
+          ownerType: formData.ownerType,
           companyName: formData.companyName,
-          companyCnpj: cnpjClean,
+          companyCnpj: formData.ownerType === 'company' ? formData.companyCnpj.replace(/\D/g, '') : null,
+          cpf: formData.ownerType === 'individual' ? formData.cpf.replace(/\D/g, '') : null,
           bankCode: formData.bankCode,
           bankAgency: formData.bankAgency,
           bankAccount: formData.bankAccount,
           accountHolderName: formData.accountHolderName,
+          pixKey: formData.pixKey || null,
+          pixKeyType: formData.pixKeyType || null,
         }),
       });
 
@@ -110,7 +133,7 @@ export default function AdvertiserSetupPage() {
           {/* User Info */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
             <h3 className="font-bold text-blue-900 mb-3">ℹ️ Informações do Usuário</h3>
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="text-slate-600 font-semibold">Nome</p>
                 <p className="text-slate-900">{user?.name || 'Não informado'}</p>
@@ -123,13 +146,60 @@ export default function AdvertiserSetupPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Owner Type Selection */}
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+              <label className="block text-sm font-bold text-slate-700 mb-3">
+                Tipo de Proprietário *
+              </label>
+              <div className="flex gap-4">
+                <label className={`flex-1 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  formData.ownerType === 'company' 
+                    ? 'border-blue-500 bg-blue-50' 
+                    : 'border-slate-200 hover:border-slate-300'
+                }`}>
+                  <input
+                    type="radio"
+                    name="ownerType"
+                    value="company"
+                    checked={formData.ownerType === 'company'}
+                    onChange={() => setFormData({ ...formData, ownerType: 'company', cpf: '' })}
+                    className="sr-only"
+                  />
+                  <div className="text-center">
+                    <span className="text-2xl">🏢</span>
+                    <p className="font-bold text-slate-800 mt-1">Pessoa Jurídica</p>
+                    <p className="text-xs text-slate-500">Empresa com CNPJ</p>
+                  </div>
+                </label>
+                <label className={`flex-1 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  formData.ownerType === 'individual' 
+                    ? 'border-blue-500 bg-blue-50' 
+                    : 'border-slate-200 hover:border-slate-300'
+                }`}>
+                  <input
+                    type="radio"
+                    name="ownerType"
+                    value="individual"
+                    checked={formData.ownerType === 'individual'}
+                    onChange={() => setFormData({ ...formData, ownerType: 'individual', companyCnpj: '' })}
+                    className="sr-only"
+                  />
+                  <div className="text-center">
+                    <span className="text-2xl">👤</span>
+                    <p className="font-bold text-slate-800 mt-1">Pessoa Física</p>
+                    <p className="text-xs text-slate-500">Hangar particular com CPF</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2">
-                Razão Social da Empresa *
+                {formData.ownerType === 'company' ? 'Razão Social da Empresa *' : 'Nome Completo *'}
               </label>
               <input
                 type="text"
-                placeholder="Ex: Hangares Premium LTDA"
+                placeholder={formData.ownerType === 'company' ? 'Ex: Hangares Premium LTDA' : 'Ex: João Silva Santos'}
                 value={formData.companyName}
                 onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
                 className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
@@ -137,28 +207,96 @@ export default function AdvertiserSetupPage() {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">
-                CNPJ (14 dígitos) *
-              </label>
-              <input
-                type="text"
-                placeholder="00.000.000/0000-00"
-                value={formData.companyCnpj}
-                onChange={(e) => {
-                  // Auto-formata CNPJ
-                  let value = e.target.value.replace(/\D/g, '');
-                  if (value.length <= 14) {
-                    value = value.replace(/(\d{2})(\d)/, '$1.$2');
-                    value = value.replace(/(\d{3})(\d)/, '$1.$2');
-                    value = value.replace(/(\d{3})(\d)/, '$1/$2');
-                    value = value.replace(/(\d{4})(\d)/, '$1-$2');
-                    setFormData({ ...formData, companyCnpj: value });
-                  }
-                }}
-                className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none font-mono"
-                required
-              />
+            {formData.ownerType === 'company' ? (
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">
+                  CNPJ (14 dígitos) *
+                </label>
+                <input
+                  type="text"
+                  placeholder="00.000.000/0000-00"
+                  value={formData.companyCnpj}
+                  onChange={(e) => {
+                    let value = e.target.value.replace(/\D/g, '');
+                    if (value.length <= 14) {
+                      value = value.replace(/(\d{2})(\d)/, '$1.$2');
+                      value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                      value = value.replace(/(\d{3})(\d)/, '$1/$2');
+                      value = value.replace(/(\d{4})(\d)/, '$1-$2');
+                      setFormData({ ...formData, companyCnpj: value });
+                    }
+                  }}
+                  className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none font-mono"
+                  required
+                />
+              </div>
+            ) : (
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">
+                  CPF (11 dígitos) *
+                </label>
+                <input
+                  type="text"
+                  placeholder="000.000.000-00"
+                  value={formData.cpf}
+                  onChange={(e) => {
+                    let value = e.target.value.replace(/\D/g, '');
+                    if (value.length <= 11) {
+                      value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                      value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                      value = value.replace(/(\d{3})(\d)/, '$1-$2');
+                      setFormData({ ...formData, cpf: value });
+                    }
+                  }}
+                  className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none font-mono"
+                  required
+                />
+              </div>
+            )}
+
+            {/* PIX Key Section */}
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <h3 className="font-bold text-green-900 mb-4">📱 Chave PIX (opcional)</h3>
+              <p className="text-sm text-green-700 mb-4">
+                Informe sua chave PIX para receber pagamentos instantâneos das reservas.
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                    Tipo de Chave
+                  </label>
+                  <select
+                    value={formData.pixKeyType}
+                    onChange={(e) => setFormData({ ...formData, pixKeyType: e.target.value as any })}
+                    className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-green-500 outline-none"
+                  >
+                    <option value="">Selecione...</option>
+                    <option value="cpf">CPF</option>
+                    <option value="cnpj">CNPJ</option>
+                    <option value="email">E-mail</option>
+                    <option value="phone">Telefone</option>
+                    <option value="random">Chave Aleatória</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                    Chave PIX
+                  </label>
+                  <input
+                    type="text"
+                    placeholder={
+                      formData.pixKeyType === 'email' ? 'seu@email.com' :
+                      formData.pixKeyType === 'phone' ? '+55 11 99999-9999' :
+                      formData.pixKeyType === 'random' ? 'xxxxxxxx-xxxx-xxxx-xxxx' :
+                      'Informe sua chave'
+                    }
+                    value={formData.pixKey}
+                    onChange={(e) => setFormData({ ...formData, pixKey: e.target.value })}
+                    className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-green-500 outline-none"
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">

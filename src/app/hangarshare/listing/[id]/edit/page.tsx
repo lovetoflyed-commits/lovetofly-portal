@@ -77,9 +77,12 @@ export default function EditHangarListingPage() {
     isAvailable: true,
   });
 
+  const [photos, setPhotos] = useState<Array<{ id: number; photoUrl: string; displayOrder: number }>>([]);
   const [newPhotos, setNewPhotos] = useState<File[]>([]);
   const [newPhotoPreviews, setNewPhotoPreviews] = useState<string[]>([]);
   const [photosToDelete, setPhotosToDelete] = useState<number[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // Fetch listing on mount
   useEffect(() => {
@@ -114,6 +117,15 @@ export default function EditHangarListingPage() {
           specialNotes: listing.specialNotes || '',
           isAvailable: listing.isAvailable ?? true,
         });
+
+        // Load photos
+        if (listing.photos && listing.photos.length > 0) {
+          setPhotos(listing.photos.map(p => ({
+            id: p.id,
+            photoUrl: p.url,
+            displayOrder: p.displayOrder
+          })));
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Erro ao carregar hangar');
       } finally {
@@ -129,14 +141,42 @@ export default function EditHangarListingPage() {
     fetchListing();
   }, [listingId, user, router]);
 
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    setNewPhotos(files);
+    setNewPhotoPreviews(files.map(file => URL.createObjectURL(file)));
+  };
+
   const handleNewPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
     setNewPhotos(files);
     setNewPhotoPreviews(files.map(file => URL.createObjectURL(file)));
   };
 
-  const handleDeletePhoto = (photoId: number) => {
-    setPhotosToDelete([...photosToDelete, photoId]);
+  const handleDeletePhoto = async (photoId: number) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/hangarshare/listings/${listingId}/delete-photo?photoId=${photoId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        setPhotos(photos.filter(p => p.id !== photoId));
+      } else {
+        const err = await res.json();
+        alert(`Erro ao deletar foto: ${err.message}`);
+      }
+    } catch (err) {
+      alert(`Erro ao deletar foto: ${err instanceof Error ? err.message : 'Tente novamente'}`);
+    }
   };
 
   const handleSave = async () => {
@@ -151,7 +191,7 @@ export default function EditHangarListingPage() {
       }
 
       // Update listing
-      const updateRes = await fetch(`/api/hangarshare/listing/${listingId}`, {
+      const updateRes = await fetch(`/api/hangarshare/listings/${listingId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -185,31 +225,44 @@ export default function EditHangarListingPage() {
         throw new Error(err.message || 'Erro ao atualizar hangar');
       }
 
-      // Delete photos if needed
-      for (const photoId of photosToDelete) {
-        await fetch(`/api/hangarshare/listing/${listingId}/photos/${photoId}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        }).catch(err => console.error('Erro ao deletar foto:', err));
-      }
-
       // Upload new photos if any
       if (newPhotos.length > 0) {
-        const formDataPhotos = new FormData();
-        newPhotos.forEach((file, idx) => {
-          formDataPhotos.append('photos', file);
-          if (idx === 0) formDataPhotos.append('isPrimary', 'true');
-        });
+        setUploading(true);
+        for (let i = 0; i < newPhotos.length; i++) {
+          const file = newPhotos[i];
+          const photoFormData = new FormData();
+          photoFormData.append('file', file);
 
-        await fetch(`/api/hangarshare/listing/${listingId}/photos`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-          body: formDataPhotos,
-        }).catch(err => console.error('Erro ao enviar fotos:', err));
+          try {
+            const photoRes = await fetch(`/api/hangarshare/listings/${listingId}/upload-photo`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+              },
+              body: photoFormData,
+            });
+
+            if (photoRes.ok) {
+              const photoData = await photoRes.json();
+              setPhotos([...photos, {
+                id: photoData.photo.id,
+                photoUrl: photoData.photo.photoUrl,
+                displayOrder: photoData.photo.displayOrder
+              }]);
+            } else {
+              const err = await photoRes.json();
+              console.error('Erro ao enviar foto:', err.message);
+            }
+          } catch (err) {
+            console.error('Erro ao enviar foto:', err);
+          }
+
+          setUploadProgress(i + 1);
+        }
+        setUploading(false);
+        setNewPhotos([]);
+        setNewPhotoPreviews([]);
+        setUploadProgress(0);
       }
 
       alert('✓ Hangar atualizado com sucesso!');
@@ -322,7 +375,7 @@ export default function EditHangarListingPage() {
           {/* Location Info - Read Only */}
           <div className="bg-slate-50 border border-slate-200 rounded-lg p-6 mb-8">
             <h2 className="text-xl font-bold text-blue-900 mb-4">Localização (Não Editável)</h2>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <p className="text-sm font-semibold text-slate-600">Aeródromo</p>
                 <p className="text-slate-900 font-mono text-lg">{hangar.icaoCode}</p>
@@ -403,7 +456,7 @@ export default function EditHangarListingPage() {
               </div>
 
               {/* Hangar Details */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">
                     Número do Hangar
@@ -488,7 +541,7 @@ export default function EditHangarListingPage() {
               {/* Prices */}
               <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
                 <h3 className="font-bold text-slate-900 mb-4">Tabela de Preços</h3>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-2">R$ por Hora</label>
                     <input
@@ -535,7 +588,7 @@ export default function EditHangarListingPage() {
               {/* Availability */}
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <h3 className="font-bold text-blue-900 mb-4">Disponibilidade</h3>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-2">Disponível desde</label>
                     <input
@@ -603,6 +656,89 @@ export default function EditHangarListingPage() {
                   <span className="text-sm text-slate-700 font-semibold">Hangar disponível para reservas</span>
                 </label>
               </div>
+            </div>
+          </div>
+
+          {/* Photo Management */}
+          <div className="mb-8">
+            <h2 className="text-xl font-bold text-blue-900 mb-4">Fotos do Hangar</h2>
+            
+            {/* Existing Photos */}
+            {photos.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-sm font-bold text-slate-700 mb-3">Fotos Atuais ({photos.length})</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {photos.map((photo) => (
+                    <div key={photo.id} className="relative group">
+                      <img 
+                        src={photo.photoUrl} 
+                        alt={`Foto ${photo.displayOrder}`}
+                        className="w-full h-48 object-cover rounded-lg border border-slate-300"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleDeletePhoto(photo.id)}
+                        className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Upload New Photos */}
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-3">
+                Adicionar Novas Fotos
+              </label>
+              <label className="block w-full px-6 py-8 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition">
+                <div className="text-center">
+                  <div className="text-3xl mb-2">📷</div>
+                  <p className="text-sm font-semibold text-slate-700">Clique ou arraste fotos aqui</p>
+                  <p className="text-xs text-slate-500 mt-1">Mín. 400x300px, máx. 5MB (JPEG, PNG, WebP)</p>
+                </div>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handlePhotoSelect}
+                  disabled={uploading}
+                  className="hidden"
+                />
+              </label>
+              
+              {/* Upload Progress */}
+              {uploading && (
+                <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-sm font-semibold text-blue-900 mb-2">
+                    Enviando fotos ({uploadProgress}/{newPhotos.length})...
+                  </p>
+                  <div className="w-full bg-blue-200 rounded-full h-2">
+                    <div 
+                      className="bg-blue-600 h-2 rounded-full transition-all"
+                      style={{ width: `${(uploadProgress / newPhotos.length) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Pending Photos Preview */}
+              {newPhotos.length > 0 && (
+                <div className="mt-4 p-4 bg-amber-50 rounded-lg border border-amber-200">
+                  <p className="text-sm font-semibold text-amber-900 mb-3">
+                    {uploadProgress === newPhotos.length ? 'Fotos enviadas com sucesso!' : `${newPhotos.length} foto(s) pendente(s) de envio`}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {newPhotos.map((photo, idx) => (
+                      <div key={idx} className="text-xs bg-white px-3 py-2 rounded border border-amber-300">
+                        {photo.name} ({(photo.size / 1024 / 1024).toFixed(2)}MB)
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

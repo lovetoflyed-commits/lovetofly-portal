@@ -18,7 +18,7 @@ export default function AvatarUploader({ initialAvatarUrl, onPhotoSelected }: Pr
     setPreview(initialAvatarUrl || null);
   }, [initialAvatarUrl]);
 
-  // Cleanup: stop camera when component unmounts
+  // Cleanup: stop camera when component unmounts or when streaming ends
   useEffect(() => {
     return () => {
       console.log('🧹 Component unmounting - cleaning up camera...');
@@ -33,11 +33,31 @@ export default function AvatarUploader({ initialAvatarUrl, onPhotoSelected }: Pr
       if (videoRef.current) {
         videoRef.current.pause();
         videoRef.current.srcObject = null;
+        videoRef.current.src = '';
         videoRef.current.load();
       }
       console.log('✅ Cleanup complete');
     };
   }, []);
+
+  // Additional cleanup when streaming state changes
+  useEffect(() => {
+    return () => {
+      if (!streaming) {
+        console.log('🧹 Streaming ended - ensuring camera is fully stopped...');
+        const stream = videoRef.current?.srcObject as MediaStream | undefined;
+        if (stream) {
+          const tracks = stream.getTracks();
+          tracks.forEach((track) => {
+            if (track.readyState === 'live') {
+              console.log(`Force stopping ${track.kind} track`);
+              track.stop();
+            }
+          });
+        }
+      }
+    };
+  }, [streaming]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -81,51 +101,65 @@ export default function AvatarUploader({ initialAvatarUrl, onPhotoSelected }: Pr
   const stopCamera = () => {
     console.log('🔴 Stopping camera...');
     
-    // Get all tracks from the stream
-    const stream = videoRef.current?.srcObject as MediaStream | undefined;
-    if (stream) {
-      const tracks = stream.getTracks();
-      console.log('Found tracks:', tracks.length);
-      tracks.forEach((track) => {
-        console.log(`Stopping ${track.kind} track, state: ${track.readyState}`);
-        track.stop();
-        console.log(`After stop, state: ${track.readyState}`);
-      });
+    try {
+      // Get all tracks from the stream
+      const stream = videoRef.current?.srcObject as MediaStream | undefined;
+      if (stream) {
+        const tracks = stream.getTracks();
+        console.log('Found tracks:', tracks.length);
+        tracks.forEach((track) => {
+          console.log(`Stopping ${track.kind} track, state: ${track.readyState}`);
+          track.stop();
+          console.log(`After stop, state: ${track.readyState}`);
+        });
+      }
+      
+      // Clear video element aggressively
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.srcObject = null;
+        videoRef.current.src = ''; // Clear src as well
+        videoRef.current.load(); // Force reload to release all resources
+      }
+      
+      setStreaming(false);
+      console.log('✅ Camera stopped, streaming=false');
+    } catch (error) {
+      console.error('Error stopping camera:', error);
+      // Even if there's an error, set streaming to false
+      setStreaming(false);
     }
-    
-    // Clear video element aggressively
-    if (videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.srcObject = null;
-      videoRef.current.src = ''; // Clear src as well
-      videoRef.current.load(); // Force reload to release all resources
-    }
-    
-    setStreaming(false);
-    console.log('✅ Camera stopped, streaming=false');
   };
 
   const capturePhoto = async () => {
     if (!videoRef.current || !canvasRef.current) return;
     
     console.log('📸 Capturing photo...');
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 640;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-    setPreview(dataUrl);
-    
-    // Stop camera after capturing
-    console.log('Stopping camera after capture...');
-    stopCamera();
-    
-    // Notify parent component about the new photo
-    onPhotoSelected?.(dataUrl);
+    try {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 640;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+      setPreview(dataUrl);
+      
+      // Notify parent component about the new photo
+      onPhotoSelected?.(dataUrl);
+      
+      // Stop camera after capturing - do this after state updates
+      setTimeout(() => {
+        console.log('Stopping camera after capture...');
+        stopCamera();
+      }, 100);
+    } catch (error) {
+      console.error('Error capturing photo:', error);
+      setError('Erro ao capturar foto');
+      stopCamera();
+    }
   };
 
 

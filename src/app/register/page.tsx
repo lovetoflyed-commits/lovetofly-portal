@@ -43,6 +43,9 @@ export default function RegisterPage() {
     addressZip: '',
     addressCountry: 'Brasil',
     aviationRole: '',
+    licencas: '',
+    habilitacoes: '',
+    curso_atual: '',
     terms: false,
   });
   const [loading, setLoading] = useState(false);
@@ -217,6 +220,45 @@ export default function RegisterPage() {
               <option value="other">Outro</option>
             </select>
           </div>
+          
+          {/* Qualificações ANAC/RBAC 61 */}
+          <div className="border-t pt-4 mt-4">
+            <h3 className="text-sm font-bold mb-3 text-gray-700">Qualificações de Aviação (Opcional)</h3>
+            <div>
+              <label className="block text-xs font-bold mb-1">Licenças</label>
+              <input 
+                name="licencas" 
+                value={form.licencas} 
+                onChange={handleChange} 
+                placeholder="Ex: PP, PC, ATP" 
+                className="w-full px-3 py-2 border rounded"
+              />
+              <p className="text-xs text-gray-500 mt-1">Digite suas licenças ANAC (PP, PC, ATP, PLA, etc.)</p>
+            </div>
+            <div className="mt-3">
+              <label className="block text-xs font-bold mb-1">Habilitações</label>
+              <input 
+                name="habilitacoes" 
+                value={form.habilitacoes} 
+                onChange={handleChange} 
+                placeholder="Ex: MLTE, IFR, B737" 
+                className="w-full px-3 py-2 border rounded"
+              />
+              <p className="text-xs text-gray-500 mt-1">Digite suas habilitações (MLTE, IFR, habilitações de tipo, etc.)</p>
+            </div>
+            <div className="mt-3">
+              <label className="block text-xs font-bold mb-1">Curso Atual</label>
+              <input 
+                name="curso_atual" 
+                value={form.curso_atual} 
+                onChange={handleChange} 
+                placeholder="Ex: Habilitação de Tipo A320" 
+                className="w-full px-3 py-2 border rounded"
+              />
+              <p className="text-xs text-gray-500 mt-1">Curso de aviação que está realizando atualmente (opcional)</p>
+            </div>
+          </div>
+
           <label className="flex items-center gap-2 text-xs">
             <input name="terms" type="checkbox" checked={form.terms} onChange={handleChange} /> Aceito os termos de uso
           </label>

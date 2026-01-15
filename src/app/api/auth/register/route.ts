@@ -1,9 +1,33 @@
 import { NextResponse } from 'next/server';
 import pool from '@/config/db';
 import bcrypt from 'bcryptjs';
+import { checkCriticalRateLimit, getClientIdentifier } from '@/lib/ratelimit';
+import * as Sentry from '@sentry/nextjs';
 
 export async function POST(request: Request) {
   try {
+    // Critical rate limiting for registration (3 attempts per hour)
+    const identifier = getClientIdentifier(request);
+    const rateLimitResult = await checkCriticalRateLimit(`register:${identifier}`);
+    
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { 
+          error: 'Too many registration attempts. Please try again later.',
+          retryAfter: Math.ceil((rateLimitResult.reset - Date.now()) / 1000)
+        },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': rateLimitResult.reset.toString(),
+            'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString()
+          }
+        }
+      );
+    }
+    
     const body = await request.json();
     const {
       firstName,
@@ -23,6 +47,9 @@ export async function POST(request: Request) {
       addressCountry,
       aviationRole,
       aviationRoleOther,
+      licencas,
+      habilitacoes,
+      curso_atual,
       newsletter,
       terms,
     } = body;
@@ -62,9 +89,10 @@ export async function POST(request: Request) {
         first_name, last_name, email, password_hash, cpf, birth_date, mobile_phone,
         address_street, address_number, address_complement, address_neighborhood,
         address_city, address_state, address_zip, address_country,
-        aviation_role, aviation_role_other, newsletter_opt_in, terms_agreed, plan
+        aviation_role, aviation_role_other, licencas, habilitacoes, curso_atual,
+        newsletter_opt_in, terms_agreed, plan
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23
       ) RETURNING id, first_name, last_name, email, plan`,
       [
         firstName,
@@ -84,6 +112,9 @@ export async function POST(request: Request) {
         addressCountry,
         aviationRole,
         aviationRoleOther || null,
+        licencas || null,
+        habilitacoes || null,
+        curso_atual || null,
         newsletter || false,
         terms || false,
         'free'
@@ -102,6 +133,18 @@ export async function POST(request: Request) {
     }, { status: 201 });
 
   } catch (error: any) {
+    // Log error to Sentry
+    Sentry.captureException(error, {
+      tags: {
+        endpoint: 'auth/register',
+        method: 'POST'
+      },
+      extra: {
+        errorCode: error?.code,
+        errorDetail: error?.detail
+      }
+    });
+    
     console.error('Register error details:', {
       message: error?.message,
       code: error?.code,
