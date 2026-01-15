@@ -5,9 +5,17 @@ import Stripe from 'stripe';
 import { checkStrictRateLimit, getClientIdentifier } from '@/lib/ratelimit';
 import * as Sentry from '@sentry/nextjs';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-12-18.acacia' })
+  : null;
 
 export async function POST(request: Request) {
+  if (!stripe) {
+    return NextResponse.json(
+      { message: 'Payment system not configured' },
+      { status: 503 }
+    );
+  }
   try {
     // Rate limiting for payment intent creation
     const identifier = getClientIdentifier(request);

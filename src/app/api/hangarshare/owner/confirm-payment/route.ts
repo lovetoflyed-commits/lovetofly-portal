@@ -2,9 +2,18 @@ import { NextResponse } from 'next/server';
 import pool from '@/config/db';
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
+const stripe = process.env.STRIPE_SECRET_KEY 
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-12-18.acacia' })
+  : null;
 
 export async function POST(request: Request) {
+  if (!stripe) {
+    return NextResponse.json(
+      { message: 'Payment system not configured' },
+      { status: 503 }
+    );
+  }
+
   try {
     const body = await request.json();
     const { payment_intent_id } = body;
