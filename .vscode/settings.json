@@ -7,12 +7,73 @@
         "cursor-workspace": true
     },
     "markdown.validate.enabled": false,
-    "markdown.validate.fileLinks.enabled": false,
-    "markdown.validate.fragmentLinks.enabled": false,
-    "markdown.validate.referenceLinks.enabled": false,
-    "github.copilot.chat.codeGeneration.instructions": [
-        {
-            "file": ".github/copilot-instructions.md"
-        }
-    ]
+    "markdown.validate.fileLinks.enabled": "ignore",
+    "markdown.validate.fragmentLinks.enabled": "ignore",
+    "markdown.validate.referenceLinks.enabled": "ignore",
+    
+    "// MEMORY OPTIMIZATION": "=== Prevent JS heap out of memory ===",
+    "[typescript]": {
+        "editor.defaultFormatter": "vscode.typescript-language-features",
+        "editor.formatOnSave": false
+    },
+    "[javascript]": {
+        "editor.formatOnSave": false
+    },
+    "typescript.tsserver.maxTsServerMemory": 2048,
+    "typescript.enablePromptUseWorkspaceTsdk": true,
+    "typescript.check.tscVersion": false,
+    
+    "// FILE WATCHING": "=== Reduce file watcher overhead ===",
+    "files.watcherExclude": {
+        "**/node_modules": true,
+        "**/.next": true,
+        "**/dist": true,
+        "**/build": true,
+        "**/coverage": true,
+        "**/playwright-report": true,
+        "**/.git": true,
+        "**/.*": true
+    },
+    "files.exclude": {
+        "**/.next": true,
+        "**/node_modules": true,
+        "**/coverage": true,
+        "**/dist": true
+    },
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/.next": true,
+        "**/dist": true,
+        "**/build": true,
+        "**/coverage": true
+    },
+    
+    "// EDITOR PERFORMANCE": "=== Reduce editor overhead ===",
+    "editor.codeActionsOnSave": {},
+    "editor.formatOnPaste": false,
+    "editor.formatOnSave": false,
+    "editor.formatOnType": false,
+    "editor.defaultFormatter": null,
+    
+    "// EXTENSION SETTINGS": "=== Optimize extension behavior ===",
+    "eslint.run": "onSave",
+    "eslint.format.enable": false,
+    "[json]": {
+        "editor.formatOnSave": false
+    },
+    "[jsonc]": {
+        "editor.formatOnSave": false
+    },
+    "tailwindCSS.experimental.classRegex": [
+        ["clsx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
+    ],
+    "extensions.recommendations": [],
+    
+    "// MISC": "=== Other optimizations ===",
+    "telemetry.telemetryLevel": "off",
+    "github.copilot.enable": {
+        "*": true,
+        "plaintext": false,
+        "markdown": false
+    }
 }

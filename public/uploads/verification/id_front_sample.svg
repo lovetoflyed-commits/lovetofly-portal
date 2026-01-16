@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500">
+  <rect width="100%" height="100%" fill="#eef2ff"/>
+  <rect x="40" y="40" width="720" height="420" rx="12" fill="#c7d2fe" stroke="#64748b" stroke-width="2"/>
+  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" fill="#1e293b">ID Front Placeholder</text>
+  <text x="50%" y="85%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#334155">Upload not available</text>
+</svg>

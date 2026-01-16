@@ -1,0 +1,12 @@
+node_modules
+.next
+dist
+build
+coverage
+.git
+*.lock
+*.tsbuildinfo
+.neon
+.netlify
+playwrightreport
+test-results

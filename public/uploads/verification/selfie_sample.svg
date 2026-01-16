@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500">
+  <rect width="100%" height="100%" fill="#ecfeff"/>
+  <circle cx="400" cy="220" r="120" fill="#bae6fd" stroke="#64748b" stroke-width="2"/>
+  <rect x="280" y="360" width="240" height="60" rx="30" fill="#93c5fd"/>
+  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" fill="#1e293b">Selfie Placeholder</text>
+  <text x="50%" y="85%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#334155">Upload not available</text>
+</svg>

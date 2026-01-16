@@ -22,7 +22,7 @@ export async function GET(
         t.is_locked,
         t.created_at,
         t.updated_at,
-        u.name as author_name,
+        CONCAT(u.first_name, ' ', u.last_name) as author_name,
         u.avatar_url as author_avatar
       FROM forum_topics t
       LEFT JOIN users u ON t.user_id = u.id
@@ -52,7 +52,7 @@ export async function GET(
         r.content,
         r.created_at,
         r.updated_at,
-        u.name as author_name,
+        CONCAT(u.first_name, ' ', u.last_name) as author_name,
         u.avatar_url as author_avatar
       FROM forum_replies r
       LEFT JOIN users u ON r.user_id = u.id

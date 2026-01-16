@@ -24,7 +24,7 @@ export async function GET(request: Request) {
         t.is_locked,
         t.created_at,
         t.updated_at,
-        u.name as author_name
+        CONCAT(u.first_name, ' ', u.last_name) as author_name
       FROM forum_topics t
       LEFT JOIN users u ON t.user_id = u.id
       WHERE t.is_deleted = FALSE
