@@ -9,13 +9,13 @@ export async function GET() {
 
     const [verifications, listings, hangars, bookings, totalUsers, newUsersToday, revenue, totalVisits, visitsToday] = await Promise.all([
       pool.query('SELECT COUNT(*) FROM hangar_owner_verification WHERE verification_status = $1', ['pending']).catch(() => ({ rows: [{ count: 0 }] })),
-      pool.query('SELECT COUNT(*) FROM hangar_listings WHERE status = $1', ['pending']),
-      pool.query('SELECT COUNT(*) FROM hangar_listings WHERE status = $1', ['active']),
-      pool.query('SELECT COUNT(*) FROM hangar_bookings WHERE status = $1', ['confirmed']),
-      pool.query('SELECT COUNT(*) FROM users'),
-      pool.query('SELECT COUNT(*) FROM users WHERE created_at >= $1', [today]),
+      pool.query('SELECT COUNT(*) FROM hangar_listings WHERE status = $1', ['pending']).catch(() => ({ rows: [{ count: 0 }] })),
+      pool.query('SELECT COUNT(*) FROM hangar_listings WHERE status = $1', ['active']).catch(() => ({ rows: [{ count: 0 }] })),
+      pool.query('SELECT COUNT(*) FROM hangar_bookings WHERE status = $1', ['confirmed']).catch(() => ({ rows: [{ count: 0 }] })),
+      pool.query('SELECT COUNT(*) FROM users').catch(() => ({ rows: [{ count: 0 }] })),
+      pool.query('SELECT COUNT(*) FROM users WHERE created_at >= $1', [today]).catch(() => ({ rows: [{ count: 0 }] })),
       // Total revenue from completed bookings
-      pool.query('SELECT COALESCE(SUM(total_price), 0) as total FROM hangar_bookings WHERE status = $1', ['completed']),
+      pool.query('SELECT COALESCE(SUM(total_price), 0) as total FROM hangar_bookings WHERE status = $1', ['completed']).catch(() => ({ rows: [{ total: 0 }] })),
       // Portal traffic (will create table if not exists)
       pool.query(`
         SELECT COALESCE(SUM(visit_count), 0) as total
