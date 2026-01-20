@@ -18,7 +18,7 @@ export async function GET() {
       pool.query('SELECT COUNT(*) FROM hangar_bookings WHERE status = $1', ['completed']),
       pool.query('SELECT COUNT(*) FROM hangar_photos'),
       pool.query('SELECT COUNT(*) FROM hangar_favorites'),
-      pool.query('SELECT COUNT(*) FROM reviews'),
+      pool.query('SELECT COUNT(*) FROM public.reviews').catch(() => ({ rows: [{ count: 0 }] })),
       pool.query('SELECT COALESCE(SUM(total_price), 0) as total FROM hangar_bookings WHERE status = $1', ['completed']),
     ]);
 
