@@ -27,8 +27,9 @@ interface HangarOwner {
   company_name: string;
   cnpj: string;
   owner_type: string;
-  verified: boolean;
-  is_active: boolean;
+  is_verified: boolean;
+  verification_status: string;
+  cpf?: string;
   first_name: string;
   last_name: string;
   email: string;
@@ -212,7 +213,7 @@ export default function HangarShareAdminPage() {
               <h3 className="font-bold text-blue-900 mb-4">Ações Rápidas</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <Link
-                  href="/admin/hangarshare/users/approve"
+                  href="/admin/verifications?status=pending"
                   className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition font-semibold"
                 >
                   ✓ Verificações Pendentes
@@ -247,7 +248,7 @@ export default function HangarShareAdminPage() {
               <h2 className="font-bold text-blue-900">Proprietários Aguardando Verificação</h2>
               <p className="text-sm text-blue-700 mt-1">Aprove ou rejeite novos anunciantes</p>
             </div>
-            {owners.filter(o => !o.verified).length === 0 ? (
+            {owners.filter(o => !o.is_verified).length === 0 ? (
               <div className="p-8 text-center text-slate-500">
                 <p className="font-semibold text-green-700">✓ Nenhuma verificação pendente</p>
                 <p className="text-sm mt-1">Todos os proprietários foram verificados</p>
@@ -266,7 +267,7 @@ export default function HangarShareAdminPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
-                    {owners.filter(o => !o.verified).map((owner) => (
+                    {owners.filter(o => !o.is_verified).map((owner) => (
                       <tr key={owner.id} className="hover:bg-slate-50 transition">
                         <td className="px-6 py-4 text-sm font-medium">{owner.company_name}</td>
                         <td className="px-6 py-4 text-sm text-slate-600">{owner.first_name} {owner.last_name}</td>
@@ -312,10 +313,10 @@ export default function HangarShareAdminPage() {
                       <td className="px-6 py-4 text-sm font-mono text-slate-600">{owner.cnpj || '—'}</td>
                       <td className="px-6 py-4 text-sm">
                         <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                          owner.verified ? 'bg-green-100 text-green-700' :
+                          owner.is_verified ? 'bg-green-100 text-green-700' :
                           'bg-yellow-100 text-yellow-700'
                         }`}>
-                          {owner.verified ? 'Verificado' : 'Pendente'}
+                          {owner.is_verified ? 'Verificado' : 'Pendente'}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm">

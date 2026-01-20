@@ -14,12 +14,12 @@ export async function GET(request: Request) {
     const result = await pool.query(`
       SELECT
         (SELECT COUNT(*) FROM hangar_owners) as total_owners,
-        (SELECT COUNT(*) FROM hangar_owners WHERE verified = true) as verified_owners,
+        (SELECT COUNT(*) FROM hangar_owners WHERE is_verified = true) as verified_owners,
         (SELECT COUNT(*) FROM hangar_listings) as total_listings,
         (SELECT COUNT(*) FROM hangar_listings WHERE status = 'active') as active_listings,
         (SELECT COUNT(*) FROM bookings WHERE created_at >= $1) as total_bookings,
-        (SELECT COUNT(*) FROM bookings WHERE booking_status = 'completed' AND created_at >= $1) as completed_bookings,
-        (SELECT COALESCE(SUM(total_price), 0) FROM bookings WHERE booking_status = 'completed' AND created_at >= $1) as revenue,
+        (SELECT COUNT(*) FROM bookings WHERE status = 'completed' AND created_at >= $1) as completed_bookings,
+        (SELECT COALESCE(SUM(total_price), 0) FROM bookings WHERE status = 'completed' AND created_at >= $1) as revenue,
         ROUND(
           COALESCE(
             (SELECT AVG(available_spaces::float / NULLIF(total_spaces, 0) * 100)
@@ -28,7 +28,7 @@ export async function GET(request: Request) {
             0
           )
         ) as average_occupancy,
-        (SELECT COUNT(*) FROM hangar_owners WHERE verified = false) as pending_approvals,
+        (SELECT COUNT(*) FROM hangar_owners WHERE is_verified = false) as pending_approvals,
         0 as booking_conflicts
     `, [startDate]);
 
