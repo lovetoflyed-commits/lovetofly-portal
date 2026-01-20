@@ -32,6 +32,7 @@
     "seed:images": "node scripts/seeds/generate-images.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.971.0",
     "@sentry/nextjs": "^10.35.0",
     "@stripe/react-stripe-js": "^5.4.1",
     "@stripe/stripe-js": "^8.6.0",
@@ -42,6 +43,7 @@
     "@vercel/blob": "^0.23.4",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.9.0",
     "cookie": "^1.1.1",
     "framer-motion": "^12.23.26",
     "jsonwebtoken": "^9.0.3",

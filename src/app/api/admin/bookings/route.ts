@@ -5,9 +5,18 @@ import pool from '@/config/db';
 export async function GET() {
   try {
     const result = await pool.query(
-      `SELECT id, user_id, hangar_id, status, start_date, end_date, total_price AS amount, payment_status, created_at
-       FROM bookings
-       ORDER BY created_at DESC
+      `SELECT 
+         id,
+         user_id,
+         (SELECT id FROM hangar_listings WHERE id = hb.hangar_id LIMIT 1) AS hangar_id,
+         hb.status,
+         hb.check_in AS start_date,
+         hb.check_out AS end_date,
+         hb.total_price AS amount,
+         hb.status AS payment_status,
+         hb.created_at
+       FROM hangar_bookings hb
+       ORDER BY hb.created_at DESC
        LIMIT 200`
     );
 
