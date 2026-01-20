@@ -72,40 +72,41 @@ export default function RegisterPage() {
     setCepLoading(true);
     setError('');
     try {
-      const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`, {
+      // Call our internal API endpoint (better than direct external call)
+      const res = await fetch(`/api/address/cep?code=${cep}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
         },
       });
       
-      if (!res.ok) {
-        throw new Error(`API returned ${res.status}`);
-      }
-      
       const data = await res.json();
-      
-      if (data.erro) {
-        setError('CEP não encontrado. Verifique e tente novamente.');
+
+      if (!res.ok) {
+        if (res.status === 404 && data.notFound) {
+          setError('CEP não encontrado. Verifique e tente novamente.');
+        } else {
+          setError('Não foi possível buscar o endereço. Tente novamente.');
+        }
         setCepLoading(false);
         return;
       }
       
-      if (data.logradouro) {
+      if (data.success && data.street) {
         setForm((prev) => ({
           ...prev,
-          addressStreet: data.logradouro || '',
-          addressNeighborhood: data.bairro || '',
-          addressCity: data.localidade || '',
-          addressState: data.uf || '',
+          addressStreet: data.street,
+          addressNeighborhood: data.neighborhood,
+          addressCity: data.city,
+          addressState: data.state,
         }));
         setError(''); // Clear any previous errors
       } else {
-        setError('Endereço incompleto retornado. Preencha manualmente.');
+        setError('Endereço incompleto. Preencha manualmente.');
       }
     } catch (err) {
       console.error('Erro ao buscar CEP:', err);
-      setError('Não foi possível buscar o endereço. Verifique sua conexão.');
+      setError('Erro de conexão. Verifique sua internet.');
     }
     setCepLoading(false);
   };
