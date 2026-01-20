@@ -65,12 +65,33 @@ export default function RegisterPage() {
   // Busca automática de endereço pelo CEP
   const handleCepBlur = async () => {
     const cep = form.addressZip.replace(/\D/g, '');
-    if (cep.length !== 8) return;
+    if (cep.length !== 8) {
+      setError('');
+      return;
+    }
     setCepLoading(true);
+    setError('');
     try {
-      const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+      
+      if (!res.ok) {
+        throw new Error(`API returned ${res.status}`);
+      }
+      
       const data = await res.json();
-      if (!data.erro) {
+      
+      if (data.erro) {
+        setError('CEP não encontrado. Verifique e tente novamente.');
+        setCepLoading(false);
+        return;
+      }
+      
+      if (data.logradouro) {
         setForm((prev) => ({
           ...prev,
           addressStreet: data.logradouro || '',
@@ -78,8 +99,14 @@ export default function RegisterPage() {
           addressCity: data.localidade || '',
           addressState: data.uf || '',
         }));
+        setError(''); // Clear any previous errors
+      } else {
+        setError('Endereço incompleto retornado. Preencha manualmente.');
       }
-    } catch {}
+    } catch (err) {
+      console.error('Erro ao buscar CEP:', err);
+      setError('Não foi possível buscar o endereço. Verifique sua conexão.');
+    }
     setCepLoading(false);
   };
 
