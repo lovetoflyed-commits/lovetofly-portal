@@ -4,6 +4,8 @@ import pool from '@/config/db';
 import jwt from 'jsonwebtoken';
 import { checkStrictRateLimit, getClientIdentifier } from '@/lib/ratelimit';
 import * as Sentry from '@sentry/nextjs';
+import { createHangarListingSchema, validateRequest, formatValidationErrors } from '@/utils/validation';
+import { z } from 'zod';
 
 interface JWTPayload {
   userId: string;
@@ -56,8 +58,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2. Get request body
+    // 2. Get request body and validate
     const body = await request.json();
+    
+    // Prepare data for validation
+    const validationData = {
+      title: body.hangarNumber || `Hangar ${body.hangarNumber}`,
+      description: body.description || body.specialNotes || '',
+      city: body.aerodromeData?.city || '',
+      icao_code: body.icaoCode || '',
+      size_sqm: Number(body.hangarSizeSqm) || 0,
+      max_length: Number(body.maxLengthMeters) || 0,
+      max_wingspan: Number(body.maxWingspanMeters) || 0,
+      max_height: Number(body.maxHeightMeters) || 0,
+      daily_rate: Number(body.dailyRate) || 1,
+      monthly_rate: Number(body.monthlyRate) || 1,
+      available_spaces: Number(body.availableSpaces) || 1,
+      amenities: body.amenities || [],
+    };
+    
+    // Validate with Zod
+    const validation = validateRequest(createHangarListingSchema, validationData);
+    if (!validation.success) {
+      return NextResponse.json(
+        { 
+          message: 'Validation error',
+          errors: formatValidationErrors(validation.errors)
+        },
+        { status: 400 }
+      );
+    }
+    
+    // Continue with original destructuring for backward compatibility
     const {
       icaoCode,
       aerodromeData, // { airport_name, city, state, country }
