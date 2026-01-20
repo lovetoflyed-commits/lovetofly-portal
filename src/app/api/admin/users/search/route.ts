@@ -10,7 +10,21 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const offset = (page - 1) * limit;
 
-    let sqlQuery = `
+    // Build WHERE clause once
+    let whereClause = '1=1';
+    const params: any[] = [];
+
+    if (query.trim()) {
+      whereClause += ` AND (
+        LOWER(u.email) ILIKE $${params.length + 1} 
+        OR LOWER(u.first_name) ILIKE $${params.length + 1}
+        OR LOWER(u.last_name) ILIKE $${params.length + 1}
+      )`;
+      params.push(`%${query}%`);
+    }
+
+    // Combined query with window function for total count - eliminates separate count query
+    const sqlQuery = `
       SELECT 
         u.id, 
         CONCAT(u.first_name, ' ', u.last_name) as name,
@@ -25,45 +39,19 @@ export async function GET(request: NextRequest) {
         ums.active_strikes,
         ums.is_banned,
         ula.last_activity_at,
-        ula.days_inactive
+        ula.days_inactive,
+        COUNT(*) OVER () as total_count
       FROM users u
       LEFT JOIN user_access_status uas ON u.id = uas.user_id
       LEFT JOIN user_moderation_status ums ON u.id = ums.id
       LEFT JOIN user_last_activity ula ON u.id = ula.id
-      WHERE 1=1
-    `;
+      WHERE ${whereClause}
+      ORDER BY u.created_at DESC
+      LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
 
-    const params: any[] = [];
-
-    if (query.trim()) {
-      sqlQuery += ` AND (
-        LOWER(u.email) ILIKE $${params.length + 1} 
-        OR LOWER(u.first_name) ILIKE $${params.length + 1}
-        OR LOWER(u.last_name) ILIKE $${params.length + 1}
-      )`;
-      params.push(`%${query}%`);
-    }
-
-    // Get total count
-    const countQuery = `
-      SELECT COUNT(*) as total FROM users u
-      WHERE 1=1
-      ${query.trim() ? `AND (
-        LOWER(u.email) ILIKE $1 
-        OR LOWER(u.first_name) ILIKE $1
-        OR LOWER(u.last_name) ILIKE $1
-      )` : ''}
-    `;
-    const countResult = await pool.query(
-      countQuery, 
-      query.trim() ? [`%${query}%`] : []
-    );
-    const total = parseInt(countResult.rows[0].total);
-
-    sqlQuery += ` ORDER BY u.created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
     params.push(limit, offset);
-
     const result = await pool.query(sqlQuery, params);
+    const total = result.rows.length > 0 ? parseInt(result.rows[0].total_count) : 0;
 
     return NextResponse.json({
       users: result.rows,

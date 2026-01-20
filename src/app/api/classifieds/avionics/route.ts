@@ -128,22 +128,16 @@ export async function GET(request: Request) {
 
     const whereClause = queryConditions.length > 0 ? `WHERE ${queryConditions.join(' AND ')}` : '';
 
-    // Get total count
-    const countResult = await pool.query(
-      `SELECT COUNT(*) FROM avionics_listings ${whereClause}`,
-      queryParams
-    );
-    const total = parseInt(countResult.rows[0].count);
-
-    // Get listings with user info
+    // Get listings with user info and total count in one query
     queryParams.push(limit, offset);
     const result = await pool.query(
       `SELECT 
         a.*,
-          CONCAT(u.first_name, ' ', u.last_name) as seller_name,
+        CONCAT(u.first_name, ' ', u.last_name) as seller_name,
         u.email as seller_email,
         (SELECT COUNT(*) FROM listing_photos WHERE listing_type = 'avionics' AND listing_id = a.id) as photo_count,
-        (SELECT url FROM listing_photos WHERE listing_type = 'avionics' AND listing_id = a.id AND is_primary = true LIMIT 1) as primary_photo
+        (SELECT url FROM listing_photos WHERE listing_type = 'avionics' AND listing_id = a.id AND is_primary = true LIMIT 1) as primary_photo,
+        COUNT(*) OVER () as total_count
       FROM avionics_listings a
       LEFT JOIN users u ON a.user_id = u.id
       ${whereClause}
@@ -151,6 +145,8 @@ export async function GET(request: Request) {
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
       queryParams
     );
+
+    const total = result.rows.length > 0 ? parseInt(result.rows[0].total_count) : 0;
 
     return NextResponse.json({
       data: result.rows,

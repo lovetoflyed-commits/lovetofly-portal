@@ -11,7 +11,16 @@ export async function GET(request: Request) {
 
     const offset = (page - 1) * limit;
 
-    let query = `
+    const params: any[] = [];
+    let whereClause = 't.is_deleted = FALSE';
+
+    if (category) {
+      whereClause += ` AND t.category = $${params.length + 1}`;
+      params.push(category);
+    }
+
+    // Combined query with window function for total count
+    const query = `
       SELECT 
         t.id,
         t.user_id,
@@ -24,40 +33,25 @@ export async function GET(request: Request) {
         t.is_locked,
         t.created_at,
         t.updated_at,
-        CONCAT(u.first_name, ' ', u.last_name) as author_name
+        CONCAT(u.first_name, ' ', u.last_name) as author_name,
+        COUNT(*) OVER () as total_count
       FROM forum_topics t
       LEFT JOIN users u ON t.user_id = u.id
-      WHERE t.is_deleted = FALSE
-    `;
+      WHERE ${whereClause}
+      ORDER BY t.is_pinned DESC, t.created_at DESC
+      LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
 
-    const params: any[] = [];
-
-    if (category) {
-      query += ` AND t.category = $${params.length + 1}`;
-      params.push(category);
-    }
-
-    query += ` ORDER BY t.is_pinned DESC, t.created_at DESC LIMIT ${limit} OFFSET ${offset}`;
-
+    params.push(limit, offset);
     const result = await pool.query(query, params);
-
-    // Get total count
-    let countQuery = `SELECT COUNT(*) as count FROM forum_topics WHERE is_deleted = FALSE`;
-    if (category) {
-      countQuery += ` AND category = $1`;
-    }
-    const countResult = await pool.query(
-      countQuery,
-      category ? [category] : []
-    );
+    const totalCount = result.rows.length > 0 ? parseInt(result.rows[0].total_count) : 0;
 
     return NextResponse.json({
       topics: result.rows,
       pagination: {
         page,
         limit,
-        total: parseInt(countResult.rows[0].count),
-        totalPages: Math.ceil(parseInt(countResult.rows[0].count) / limit),
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit),
       },
     });
   } catch (error) {
