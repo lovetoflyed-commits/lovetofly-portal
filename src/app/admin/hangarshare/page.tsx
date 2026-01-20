@@ -128,9 +128,17 @@ export default function HangarShareAdminPage() {
     <div className="min-h-screen bg-slate-50 py-8">
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-black text-blue-900 mb-2">HangarShare - Painel Completo</h1>
-          <p className="text-slate-600">Gerenciamento integral de anúncios, usuários, proprietários e reservas.</p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-black text-blue-900 mb-2">HangarShare - Painel Completo</h1>
+            <p className="text-slate-600">Gerenciamento integral de hangares, usuários, proprietários e reservas.</p>
+          </div>
+          <Link
+            href="/admin"
+            className="px-4 py-2 bg-slate-600 text-white rounded hover:bg-slate-700 transition-colors font-semibold text-sm"
+          >
+            ← Voltar ao Painel
+          </Link>
         </div>
 
         {/* Navigation Tabs */}
@@ -149,7 +157,7 @@ export default function HangarShareAdminPage() {
                 {tab === 'overview' && '📊 Visão Geral'}
                 {tab === 'users' && `👥 Usuários (${stats?.totalUsers || 0})`}
                 {tab === 'owners' && `🏢 Proprietários (${stats?.totalOwners || 0})`}
-                {tab === 'listings' && `🏠 Anúncios (${stats?.totalListings || 0})`}
+                {tab === 'listings' && `🏠 Hangares (${stats?.totalListings || 0})`}
                 {tab === 'bookings' && `📅 Reservas (${stats?.totalBookings || 0})`}
               </button>
             ))}

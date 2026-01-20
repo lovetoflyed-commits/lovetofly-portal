@@ -70,7 +70,7 @@ export default function AdminDashboardPage() {
       priority: 'high',
       metrics: [
         { label: 'Solicitações Pendentes', value: stats.pendingVerifications },
-        { label: 'Anúncios Pendentes', value: stats.pendingListings }
+        { label: 'Hangares Pendentes', value: stats.pendingListings }
       ],
       alert: stats.pendingVerifications > 0 ? 'Novos documentos aguardam revisão.' : 'Nenhuma solicitação pendente.',
       note: 'Mantenha aprovações em dia para ativar anúncios.'
