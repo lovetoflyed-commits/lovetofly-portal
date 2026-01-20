@@ -21,26 +21,18 @@ interface HangarShareStats {
   occupancyRate: string;
 }
 
-interface User {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  plan: string;
-  aviation_role: string;
-  created_at: string;
-}
-
 interface HangarOwner {
   id: string;
   user_id: string;
   company_name: string;
   cnpj: string;
-  tax_classification: string;
-  verification_status: string;
+  owner_type: string;
+  verified: boolean;
+  is_active: boolean;
   first_name: string;
   last_name: string;
   email: string;
+  listings_count: number;
 }
 
 interface HangarListing {
@@ -74,7 +66,6 @@ export default function HangarShareAdminPage() {
   const router = useRouter();
   const { user, token } = useAuth();
   const [stats, setStats] = useState<HangarShareStats | null>(null);
-  const [users, setUsers] = useState<User[]>([]);
   const [owners, setOwners] = useState<HangarOwner[]>([]);
   const [listings, setListings] = useState<HangarListing[]>([]);
   const [bookings, setBookings] = useState<HangarBooking[]>([]);
@@ -90,16 +81,14 @@ export default function HangarShareAdminPage() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [statsRes, usersRes, ownersRes, listingsRes, bookingsRes] = await Promise.all([
+        const [statsRes, ownersRes, listingsRes, bookingsRes] = await Promise.all([
           fetch('/api/admin/hangarshare/stats'),
-          fetch('/api/admin/hangarshare/users'),
           fetch('/api/admin/hangarshare/owners'),
           fetch('/api/admin/hangarshare/listings'),
           fetch('/api/admin/hangarshare/bookings')
         ]);
 
         if (statsRes.ok) setStats(await statsRes.json());
-        if (usersRes.ok) setUsers(await usersRes.json());
         if (ownersRes.ok) setOwners(await ownersRes.json());
         if (listingsRes.ok) setListings(await listingsRes.json());
         if (bookingsRes.ok) setBookings(await bookingsRes.json());
@@ -155,7 +144,7 @@ export default function HangarShareAdminPage() {
                 }`}
               >
                 {tab === 'overview' && '📊 Visão Geral'}
-                {tab === 'users' && `👥 Usuários (${stats?.totalUsers || 0})`}
+                {tab === 'users' && `✓ Verificações Pendentes`}
                 {tab === 'owners' && `🏢 Proprietários (${stats?.totalOwners || 0})`}
                 {tab === 'listings' && `🏠 Hangares (${stats?.totalListings || 0})`}
                 {tab === 'bookings' && `📅 Reservas (${stats?.totalBookings || 0})`}
@@ -251,45 +240,52 @@ export default function HangarShareAdminPage() {
           </div>
         )}
 
-        {/* Users Tab */}
+        {/* Pending Verifications Tab */}
         {activeTab === 'users' && (
           <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-slate-50 border-b border-slate-200">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase">Nome</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase">Email</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase">Plano</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase">Função</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase">Data de Registro</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {users.map((u) => (
-                    <tr key={u.id} className="hover:bg-slate-50 transition">
-                      <td className="px-6 py-4 text-sm font-medium">{u.first_name} {u.last_name}</td>
-                      <td className="px-6 py-4 text-sm text-slate-600">{u.email}</td>
-                      <td className="px-6 py-4 text-sm">
-                        <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                          u.plan === 'pro' ? 'bg-gold-100 text-gold-700' :
-                          u.plan === 'premium' ? 'bg-purple-100 text-purple-700' :
-                          'bg-slate-100 text-slate-700'
-                        }`}>
-                          {u.plan}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-600">{u.aviation_role || '—'}</td>
-                      <td className="px-6 py-4 text-sm text-slate-500">
-                        {new Date(u.created_at).toLocaleDateString('pt-BR')}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="px-6 py-4 bg-blue-50 border-b border-blue-200">
+              <h2 className="font-bold text-blue-900">Proprietários Aguardando Verificação</h2>
+              <p className="text-sm text-blue-700 mt-1">Aprove ou rejeite novos anunciantes</p>
             </div>
-            {users.length === 0 && (
-              <div className="p-8 text-center text-slate-500">Nenhum usuário encontrado</div>
+            {owners.filter(o => !o.verified).length === 0 ? (
+              <div className="p-8 text-center text-slate-500">
+                <p className="font-semibold text-green-700">✓ Nenhuma verificação pendente</p>
+                <p className="text-sm mt-1">Todos os proprietários foram verificados</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-slate-50 border-b border-slate-200">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase">Empresa</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase">Responsável</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase">CNPJ</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase">Email</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase">Anúncios</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase">Ação</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {owners.filter(o => !o.verified).map((owner) => (
+                      <tr key={owner.id} className="hover:bg-slate-50 transition">
+                        <td className="px-6 py-4 text-sm font-medium">{owner.company_name}</td>
+                        <td className="px-6 py-4 text-sm text-slate-600">{owner.first_name} {owner.last_name}</td>
+                        <td className="px-6 py-4 text-sm font-mono text-slate-600">{owner.cnpj || '—'}</td>
+                        <td className="px-6 py-4 text-sm text-slate-600">{owner.email}</td>
+                        <td className="px-6 py-4 text-sm">{owner.listings_count || 0}</td>
+                        <td className="px-6 py-4 text-sm">
+                          <Link
+                            href={`/admin/hangarshare/users/approve?id=${owner.id}`}
+                            className="text-blue-600 hover:text-blue-800 font-semibold"
+                          >
+                            Verificar →
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         )}
@@ -316,11 +312,10 @@ export default function HangarShareAdminPage() {
                       <td className="px-6 py-4 text-sm font-mono text-slate-600">{owner.cnpj || '—'}</td>
                       <td className="px-6 py-4 text-sm">
                         <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                          owner.verification_status === 'verified' ? 'bg-green-100 text-green-700' :
-                          owner.verification_status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-red-100 text-red-700'
+                          owner.verified ? 'bg-green-100 text-green-700' :
+                          'bg-yellow-100 text-yellow-700'
                         }`}>
-                          {owner.verification_status}
+                          {owner.verified ? 'Verificado' : 'Pendente'}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm">
