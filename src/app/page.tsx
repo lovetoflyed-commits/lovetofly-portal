@@ -115,11 +115,12 @@ function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
     setZipStatus('Buscando CEP...');
 
     try {
-      const response = await fetch(`https://viacep.com.br/ws/${cleaned}/json/`);
+      // Use internal API endpoint instead of direct external call
+      const response = await fetch(`/api/address/cep?code=${cleaned}`);
       if (!response.ok) throw new Error('CEP lookup failed');
 
       const data = await response.json();
-      if (data.erro) {
+      if (data.error || !data.success) {
         setZipStatus('CEP não encontrado.');
         return;
       }
@@ -127,10 +128,10 @@ function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
       setFormData((prev) => ({
         ...prev,
         addressZip: maskCEP(cleaned),
-        addressStreet: data.logradouro || prev.addressStreet,
-        addressNeighborhood: data.bairro || prev.addressNeighborhood,
-        addressCity: data.localidade || prev.addressCity,
-        addressState: data.uf || prev.addressState,
+        addressStreet: data.street || prev.addressStreet,
+        addressNeighborhood: data.neighborhood || prev.addressNeighborhood,
+        addressCity: data.city || prev.addressCity,
+        addressState: data.state || prev.addressState,
       }));
 
       setZipStatus('Endereço preenchido automaticamente.');
