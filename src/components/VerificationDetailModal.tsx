@@ -8,9 +8,11 @@ interface OwnerDetail {
   id: number;
   company_name: string;
   cnpj: string;
+  cpf?: string;
   email: string;
   phone: string;
   address: string;
+  website?: string;
   owner_type: string;
   verification_status: string;
   is_verified: boolean;

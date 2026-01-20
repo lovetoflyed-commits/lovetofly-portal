@@ -106,10 +106,10 @@ export async function PATCH(
 // DELETE /api/admin/users/[userId] - Delete user (soft delete recommended)
 export async function DELETE(
   request: Request,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
-    const { userId } = params;
+    const { userId } = await params;
     
     // Soft delete by setting a deleted_at timestamp (if column exists)
     // Or hard delete if that's preferred

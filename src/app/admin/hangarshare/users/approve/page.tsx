@@ -7,8 +7,8 @@ export default function ApproveUsersPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Redirect to the main admin verifications page
-    router.replace('/admin/verifications?status=pending');
+    // Redirect to the HangarShare admin page with tab parameter for verifications
+    router.replace('/admin/hangarshare?tab=users');
   }, [router]);
 
   return (

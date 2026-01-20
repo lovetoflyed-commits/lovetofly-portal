@@ -14,9 +14,10 @@ interface JWTPayload {
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { documentId: string } }
+  { params }: { params: Promise<{ documentId: string }> }
 ) {
   try {
+    const { documentId } = await params;
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
@@ -39,7 +40,6 @@ export async function POST(
       );
     }
 
-    const { documentId } = params;
     const body = await request.json();
     const { notes } = body;
 

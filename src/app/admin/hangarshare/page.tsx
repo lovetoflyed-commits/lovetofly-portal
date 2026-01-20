@@ -73,6 +73,15 @@ export default function HangarShareAdminPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'owners' | 'listings' | 'bookings'>('overview');
   const [loading, setLoading] = useState(true);
 
+  // Handle URL tab parameter on client side only
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const tabParam = url.searchParams.get('tab');
+    if (tabParam === 'users' || tabParam === 'owners' || tabParam === 'listings' || tabParam === 'bookings') {
+      setActiveTab(tabParam);
+    }
+  }, []);
+
   useEffect(() => {
     if (!user || (user.role !== 'master' && user.role !== 'admin' && user.email !== 'lovetofly.ed@gmail.com')) {
       router.push('/');
@@ -442,3 +451,5 @@ export default function HangarShareAdminPage() {
     </div>
   );
 }
+
+export const dynamic = 'force-dynamic';
