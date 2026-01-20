@@ -26,14 +26,14 @@ export async function GET(request: NextRequest) {
       FROM hangar_listings hl
       JOIN hangar_owners ho ON hl.owner_id = ho.id
       JOIN users u ON ho.user_id = u.id
-      WHERE hl.approval_status = $1
+      WHERE hl.status = $1
       ORDER BY hl.created_at ASC
       LIMIT $2 OFFSET $3`,
       [status, limit, offset]
     );
 
     const countResult = await pool.query(
-      'SELECT COUNT(*) FROM hangar_listings WHERE approval_status = $1',
+      'SELECT COUNT(*) FROM hangar_listings WHERE status = $1',
       [status]
     );
 
