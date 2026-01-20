@@ -3,29 +3,24 @@ import pool from '@/config/db';
 
 export async function GET() {
   try {
-    const [stats, owners, listings, bookings, photos, reviews] = await Promise.all([
-      // Core stats
-      Promise.all([
-        pool.query('SELECT COUNT(*) FROM users'),
-        pool.query('SELECT COUNT(*) FROM hangar_owners'),
-        pool.query('SELECT COUNT(*) FROM hangar_listings'),
-        pool.query('SELECT COUNT(*) FROM hangar_listings WHERE status = $1', ['active']),
-        pool.query('SELECT COUNT(*) FROM hangar_listings WHERE status = $1', ['pending']),
-        pool.query('SELECT COUNT(*) FROM hangar_bookings'),
-        pool.query('SELECT COUNT(*) FROM hangar_bookings WHERE status = $1', ['confirmed']),
-        pool.query('SELECT COUNT(*) FROM hangar_bookings WHERE status = $1', ['completed']),
-        pool.query('SELECT COUNT(*) FROM hangar_photos'),
-        pool.query('SELECT COUNT(*) FROM hangar_favorites'),
-        pool.query('SELECT COUNT(*) FROM reviews'),
-        pool.query('SELECT COALESCE(SUM(total_price), 0) as total FROM hangar_bookings WHERE status = $1', ['completed']),
-      ]),
-    ]);
-
     const [
       totalUsers, totalOwners, totalListings, activeListings, pendingListings,
       totalBookings, confirmedBookings, completedBookings, totalPhotos, totalFavorites,
       totalReviews, revenue
-    ] = stats;
+    ] = await Promise.all([
+      pool.query('SELECT COUNT(*) FROM users'),
+      pool.query('SELECT COUNT(*) FROM hangar_owners'),
+      pool.query('SELECT COUNT(*) FROM hangar_listings'),
+      pool.query('SELECT COUNT(*) FROM hangar_listings WHERE status = $1', ['active']),
+      pool.query('SELECT COUNT(*) FROM hangar_listings WHERE status = $1', ['pending']),
+      pool.query('SELECT COUNT(*) FROM hangar_bookings'),
+      pool.query('SELECT COUNT(*) FROM hangar_bookings WHERE status = $1', ['confirmed']),
+      pool.query('SELECT COUNT(*) FROM hangar_bookings WHERE status = $1', ['completed']),
+      pool.query('SELECT COUNT(*) FROM hangar_photos'),
+      pool.query('SELECT COUNT(*) FROM hangar_favorites'),
+      pool.query('SELECT COUNT(*) FROM reviews'),
+      pool.query('SELECT COALESCE(SUM(total_price), 0) as total FROM hangar_bookings WHERE status = $1', ['completed']),
+    ]);
 
     // Calculate occupancy rate
     const occupancyRate = totalListings.rows[0]?.count > 0 

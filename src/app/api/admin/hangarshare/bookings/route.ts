@@ -13,7 +13,7 @@ export async function GET() {
         hb.check_in,
         hb.check_out,
         CONCAT(u.first_name, ' ', u.last_name) as user_name,
-        hl.title as hangar_title
+        CONCAT(hl.hangar_number, ' - ', hl.aerodrome_name) as hangar_title
       FROM hangar_bookings hb
       JOIN users u ON hb.user_id = u.id
       JOIN hangar_listings hl ON hb.hangar_id = hl.id
