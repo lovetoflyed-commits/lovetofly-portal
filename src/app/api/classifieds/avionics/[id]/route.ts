@@ -41,25 +41,29 @@ export async function GET(
       return NextResponse.json({ data: mockAvionics[id] }, { status: 200 });
     }
 
-    // Increment view count
+    // Increment view count (convert id to integer)
+    const avionicsId = parseInt(id);
+    if (isNaN(avionicsId)) {
+      return NextResponse.json({ message: 'ID inválido' }, { status: 400 });
+    }
+
     await pool.query(
       'UPDATE avionics_listings SET views = views + 1 WHERE id = $1',
-      [id]
+      [avionicsId]
     );
 
     // Get listing with seller info and photos
     const result = await pool.query(
       `SELECT 
         a.*,
-        u.name as seller_name,
+        CONCAT(u.first_name, ' ', u.last_name) as seller_name,
         u.email as seller_email,
-        u.phone as seller_phone,
+        u.mobile_phone as seller_phone,
         COALESCE(
           json_agg(
             json_build_object(
               'id', ph.id,
-              'url', ph.url,
-              'thumbnail_url', ph.thumbnail_url,
+              'url', ph.photo_url,
               'display_order', ph.display_order,
               'is_primary', ph.is_primary
             ) ORDER BY ph.display_order, ph.is_primary DESC
@@ -68,10 +72,10 @@ export async function GET(
         ) as photos
       FROM avionics_listings a
       LEFT JOIN users u ON a.user_id = u.id
-      LEFT JOIN listing_photos ph ON ph.listing_type = 'avionics' AND ph.listing_id = a.id
+      LEFT JOIN classified_photos ph ON ph.listing_type = 'avionics' AND ph.listing_id = a.id
       WHERE a.id = $1
-      GROUP BY a.id, u.name, u.email, u.phone`,
-      [id]
+      GROUP BY a.id, u.first_name, u.last_name, u.email, u.mobile_phone`,
+      [avionicsId]
     );
 
     if (result.rows.length === 0) {

@@ -8,9 +8,14 @@ import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
 
 interface Photo {
-  id: number;
-  photo_url: string;
+  id: string;
+  file_name: string;
+  file_size: number;
+  mime_type: string;
+  display_order: number;
   is_primary: boolean;
+  caption?: string;
+  created_at: string;
 }
 
 interface Part {
@@ -30,7 +35,6 @@ interface Part {
   has_logbook: boolean;
   shipping_available: boolean;
   return_policy?: string;
-  photos: Photo[];
   seller_name: string;
   views: number;
   created_at: string;
@@ -58,6 +62,7 @@ export default function PartDetail() {
   const id = params.id as string;
 
   const [part, setPart] = useState<Part | null>(null);
+  const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
   const [inquiryForm, setInquiryForm] = useState<InquiryRequest>({
@@ -71,6 +76,7 @@ export default function PartDetail() {
 
   useEffect(() => {
     fetchPartDetail();
+    fetchPhotos();
   }, [id]);
 
   const fetchPartDetail = async () => {
@@ -88,6 +94,19 @@ export default function PartDetail() {
       console.error('Erro ao buscar peça:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPhotos = async () => {
+    try {
+      const response = await fetch(`/api/classifieds/parts/${id}/upload-photo`);
+      const result = await response.json();
+
+      if (response.ok && result.photos) {
+        setPhotos(result.photos);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar fotos:', error);
     }
   };
 
@@ -172,8 +191,6 @@ export default function PartDetail() {
     );
   }
 
-  const primaryPhoto = part.photos.find(p => p.is_primary)?.photo_url || part.photos[0]?.photo_url;
-
   return (
     <AuthGuard>
       <div className="flex h-screen bg-gray-50">
@@ -194,9 +211,9 @@ export default function PartDetail() {
                 {/* Photo Gallery */}
                 <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                   <div className="bg-gray-200 h-96 flex items-center justify-center">
-                    {primaryPhoto ? (
+                    {photos.length > 0 ? (
                       <img
-                        src={primaryPhoto}
+                        src={`/api/classifieds/parts/${id}/upload-photo?photoId=${photos[selectedPhotoIndex]?.id}`}
                         alt={part.title}
                         className="w-full h-full object-cover"
                       />
@@ -210,9 +227,9 @@ export default function PartDetail() {
                   </div>
 
                   {/* Thumbnails */}
-                  {part.photos.length > 0 && (
+                  {photos.length > 0 && (
                     <div className="p-4 flex gap-2 overflow-x-auto bg-white">
-                      {part.photos.map((photo, idx) => (
+                      {photos.map((photo, idx) => (
                         <button
                           key={photo.id || idx}
                           onClick={() => setSelectedPhotoIndex(idx)}
@@ -223,7 +240,7 @@ export default function PartDetail() {
                           }`}
                         >
                           <img
-                            src={photo.photo_url}
+                            src={`/api/classifieds/parts/${id}/upload-photo?photoId=${photo.id}`}
                             alt={`Foto ${idx + 1}`}
                             className="w-full h-full object-cover"
                           />

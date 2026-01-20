@@ -53,14 +53,38 @@ export default function UserManagementPanel({ currentRole }: { currentRole: Role
   }
 
   async function handleSave(userId: number) {
-    // TODO: Integrate with backend API to persist role change
-    setUsers(users.map(u =>
-      u.id === userId
-        ? { ...u, role: selectedRole === null ? u.role : selectedRole }
-        : u
-    ) as User[]);
-    setEditingId(null);
-    setSelectedRole(null);
+    if (!selectedRole) {
+      setEditingId(null);
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ id: userId, role: selectedRole })
+      });
+
+      if (!res.ok) {
+        throw new Error('Falha ao atualizar usuário');
+      }
+
+      const data = await res.json();
+      const updated = data.user as User;
+
+      setUsers(users.map(u =>
+        u.id === userId
+          ? { ...u, role: updated.role }
+          : u
+      ) as User[]);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setEditingId(null);
+      setSelectedRole(null);
+    }
   }
 
   return (

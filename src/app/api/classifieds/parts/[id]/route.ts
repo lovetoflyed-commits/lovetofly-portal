@@ -40,25 +40,29 @@ export async function GET(
       return NextResponse.json({ data: mockParts[id] }, { status: 200 });
     }
 
-    // Increment view count
+    // Increment view count (convert id to integer)
+    const partId = parseInt(id);
+    if (isNaN(partId)) {
+      return NextResponse.json({ message: 'ID inválido' }, { status: 400 });
+    }
+
     await pool.query(
       'UPDATE parts_listings SET views = views + 1 WHERE id = $1',
-      [id]
+      [partId]
     );
 
     // Get listing with seller info and photos
     const result = await pool.query(
       `SELECT 
         p.*,
-        u.name as seller_name,
+        CONCAT(u.first_name, ' ', u.last_name) as seller_name,
         u.email as seller_email,
-        u.phone as seller_phone,
+        u.mobile_phone as seller_phone,
         COALESCE(
           json_agg(
             json_build_object(
               'id', ph.id,
-              'url', ph.url,
-              'thumbnail_url', ph.thumbnail_url,
+              'url', ph.photo_url,
               'display_order', ph.display_order,
               'is_primary', ph.is_primary
             ) ORDER BY ph.display_order, ph.is_primary DESC
@@ -67,10 +71,10 @@ export async function GET(
         ) as photos
       FROM parts_listings p
       LEFT JOIN users u ON p.user_id = u.id
-      LEFT JOIN listing_photos ph ON ph.listing_type = 'parts' AND ph.listing_id = p.id
+      LEFT JOIN classified_photos ph ON ph.listing_type = 'parts' AND ph.listing_id = p.id
       WHERE p.id = $1
-      GROUP BY p.id, u.name, u.email, u.phone`,
-      [id]
+      GROUP BY p.id, u.first_name, u.last_name, u.email, u.mobile_phone`,
+      [partId]
     );
 
     if (result.rows.length === 0) {

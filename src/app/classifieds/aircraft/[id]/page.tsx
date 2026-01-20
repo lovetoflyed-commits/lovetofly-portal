@@ -34,7 +34,17 @@ interface Aircraft {
   views: number;
   inquiries_count: number;
   created_at: string;
-  photos: { id: number; photo_url: string; is_primary: boolean }[];
+}
+
+interface Photo {
+  id: string;
+  file_name: string;
+  file_size: number;
+  mime_type: string;
+  display_order: number;
+  is_primary: boolean;
+  caption?: string;
+  created_at: string;
 }
 
 export default function AircraftDetail() {
@@ -42,6 +52,7 @@ export default function AircraftDetail() {
   const router = useRouter();
   const { user } = useAuth();
   const [aircraft, setAircraft] = useState<Aircraft | null>(null);
+  const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
   const [showInquiryForm, setShowInquiryForm] = useState(false);
@@ -55,6 +66,7 @@ export default function AircraftDetail() {
 
   useEffect(() => {
     fetchAircraft();
+    fetchPhotos();
   }, [params.id]);
 
   const fetchAircraft = async () => {
@@ -72,6 +84,19 @@ export default function AircraftDetail() {
       console.error('Erro ao carregar anúncio:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPhotos = async () => {
+    try {
+      const response = await fetch(`/api/classifieds/aircraft/${params.id}/upload-photo`);
+      const result = await response.json();
+
+      if (response.ok && result.photos) {
+        setPhotos(result.photos);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar fotos:', error);
     }
   };
 
@@ -128,8 +153,6 @@ export default function AircraftDetail() {
 
   if (!aircraft) return null;
 
-  const photos = aircraft.photos.length > 0 ? aircraft.photos : [];
-
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
@@ -155,7 +178,7 @@ export default function AircraftDetail() {
                     <div className="relative h-96 bg-gray-200">
                       {photos.length > 0 ? (
                         <img
-                          src={photos[selectedPhotoIndex]?.photo_url}
+                          src={`/api/classifieds/aircraft/${params.id}/upload-photo?photoId=${photos[selectedPhotoIndex]?.id}`}
                           alt={aircraft.title}
                           className="w-full h-full object-contain"
                         />
@@ -177,7 +200,11 @@ export default function AircraftDetail() {
                               index === selectedPhotoIndex ? 'border-blue-600' : 'border-gray-200'
                             }`}
                           >
-                            <img src={photo.photo_url} alt="" className="w-full h-full object-cover" />
+                            <img 
+                              src={`/api/classifieds/aircraft/${params.id}/upload-photo?photoId=${photo.id}`} 
+                              alt="" 
+                              className="w-full h-full object-cover" 
+                            />
                           </button>
                         ))}
                       </div>

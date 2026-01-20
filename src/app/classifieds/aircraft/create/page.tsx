@@ -12,6 +12,12 @@ export default function CreateAircraftListing() {
   const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
+  const [createdListingId, setCreatedListingId] = useState<number | null>(null);
+  const [photos, setPhotos] = useState<File[]>([]);
+  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+  const [photoError, setPhotoError] = useState('');
+  const [compressing, setCompressing] = useState(false);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     manufacturer: '',
@@ -56,6 +62,103 @@ export default function CreateAircraftListing() {
     'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
   ];
 
+  // Image compression
+  const compressImage = async (file: File, maxSizeKB: number = 200): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (e) => {
+        const img = new Image();
+        img.src = e.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let { width, height } = img;
+          
+          const maxWidth = 1200;
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          let quality = 0.85;
+          const tryCompress = () => {
+            canvas.toBlob(
+              (blob) => {
+                if (!blob) {
+                  reject(new Error('Failed to compress image'));
+                  return;
+                }
+                
+                const sizeKB = blob.size / 1024;
+                
+                if (sizeKB <= maxSizeKB || quality <= 0.3) {
+                  const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {
+                    type: 'image/jpeg',
+                    lastModified: Date.now(),
+                  });
+                  resolve(compressedFile);
+                } else {
+                  quality -= 0.1;
+                  tryCompress();
+                }
+              },
+              'image/jpeg',
+              quality
+            );
+          };
+          
+          tryCompress();
+        };
+        img.onerror = () => reject(new Error('Failed to load image'));
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+    });
+  };
+
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    
+    if (files.length === 0) return;
+    
+    if (photos.length + files.length > 10) {
+      setPhotoError('Máximo de 10 fotos permitidas.');
+      return;
+    }
+    
+    setCompressing(true);
+    setPhotoError('');
+    
+    try {
+      const compressedFiles = await Promise.all(
+        files.map(async (file) => {
+          if (file.size > 200 * 1024) {
+            return await compressImage(file, 200);
+          }
+          return file;
+        })
+      );
+      
+      setPhotos([...photos, ...compressedFiles]);
+      setPhotoPreviews([...photoPreviews, ...compressedFiles.map(file => URL.createObjectURL(file))]);
+    } catch (error) {
+      console.error('Error compressing images:', error);
+      setPhotoError('Erro ao processar imagens. Tente novamente.');
+    } finally {
+      setCompressing(false);
+    }
+  };
+
+  const removePhoto = (index: number) => {
+    setPhotos(photos.filter((_, i) => i !== index));
+    setPhotoPreviews(photoPreviews.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
@@ -84,8 +187,8 @@ export default function CreateAircraftListing() {
       const result = await response.json();
 
       if (response.ok) {
-        alert(result.message);
-        router.push(`/classifieds/aircraft/${result.data.id}`);
+        setCreatedListingId(result.data.id);
+        setStep(5); // Go to photo upload step
       } else {
         alert(result.message);
       }
@@ -94,6 +197,40 @@ export default function CreateAircraftListing() {
       alert('Erro ao criar anúncio');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handlePhotoUpload = async () => {
+    if (!createdListingId || photos.length === 0) {
+      router.push(`/classifieds/aircraft/${createdListingId}`);
+      return;
+    }
+
+    try {
+      setUploadingPhotos(true);
+
+      for (const photo of photos) {
+        const formData = new FormData();
+        formData.append('file', photo);
+
+        const response = await fetch(`/api/classifieds/aircraft/${createdListingId}/upload-photo`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message);
+        }
+      }
+
+      alert('Fotos enviadas com sucesso!');
+      router.push(`/classifieds/aircraft/${createdListingId}`);
+    } catch (error: any) {
+      console.error('Erro ao enviar fotos:', error);
+      alert('Erro ao enviar fotos: ' + error.message);
+    } finally {
+      setUploadingPhotos(false);
     }
   };
 
@@ -121,7 +258,7 @@ export default function CreateAircraftListing() {
 
               {/* Progress Steps */}
               <div className="mb-8 flex justify-between items-center">
-                {[1, 2, 3, 4].map((s) => (
+                {[1, 2, 3, 4, 5].map((s) => (
                   <div key={s} className="flex items-center">
                     <div
                       className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
@@ -130,8 +267,8 @@ export default function CreateAircraftListing() {
                     >
                       {s}
                     </div>
-                    {s < 4 && (
-                      <div className={`w-20 h-1 ${step > s ? 'bg-blue-600' : 'bg-gray-300'}`} />
+                    {s < 5 && (
+                      <div className={`w-16 h-1 ${step > s ? 'bg-blue-600' : 'bg-gray-300'}`} />
                     )}
                   </div>
                 ))}
@@ -489,16 +626,94 @@ export default function CreateAircraftListing() {
                   </div>
                 )}
 
+                {/* Step 5: Photo Upload */}
+                {step === 5 && (
+                  <div className="space-y-4">
+                    <h2 className="text-xl font-bold mb-4">5. Adicionar Fotos (Opcional)</h2>
+                    
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                      <p className="text-green-800">
+                        ✓ Anúncio criado com sucesso! Agora adicione fotos para aumentar suas chances de venda.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Fotos da Aeronave (máx. 10 fotos, 200KB cada)
+                      </label>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        multiple
+                        onChange={handlePhotoChange}
+                        disabled={compressing || photos.length >= 10}
+                        className="mb-2 w-full"
+                      />
+                      <p className="text-xs text-gray-500 mb-2">
+                        As imagens serão automaticamente otimizadas para o tamanho ideal.
+                      </p>
+                      {compressing && (
+                        <p className="text-blue-600 text-sm mt-1">⏳ Otimizando imagens...</p>
+                      )}
+                      {photoError && <p className="text-red-600 text-sm mt-1">⚠️ {photoError}</p>}
+                      
+                      {/* Photo previews */}
+                      <div className="grid grid-cols-5 gap-2 mt-4">
+                        {photoPreviews.map((src, idx) => (
+                          <div key={idx} className="relative">
+                            <img 
+                              src={src} 
+                              alt={`Foto ${idx+1}`} 
+                              className="w-full h-24 object-cover rounded border" 
+                            />
+                            {photos[idx] && (
+                              <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs text-center py-0.5">
+                                {Math.round(photos[idx].size / 1024)}KB
+                              </span>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => removePhoto(idx)}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      {photos.length === 0 && (
+                        <p className="text-gray-500 text-sm mt-2">
+                          Nenhuma foto adicionada. Você pode pular esta etapa e adicionar fotos depois.
+                        </p>
+                      )}
+                      {photos.length > 0 && (
+                        <p className="text-green-600 text-sm mt-2">
+                          {photos.length} foto{photos.length > 1 ? 's' : ''} pronta{photos.length > 1 ? 's' : ''} para envio
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">
+                      <p className="text-yellow-800 text-sm">
+                        💡 <strong>Dica:</strong> Anúncios com fotos recebem até 5x mais visualizações!
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Navigation Buttons */}
                 <div className="flex justify-between mt-8 pt-6 border-t">
-                  <button
-                    type="button"
-                    onClick={prevStep}
-                    disabled={step === 1}
-                    className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Voltar
-                  </button>
+                  {step < 5 && (
+                    <button
+                      type="button"
+                      onClick={prevStep}
+                      disabled={step === 1}
+                      className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Voltar
+                    </button>
+                  )}
 
                   {step < 4 ? (
                     <button
@@ -508,7 +723,7 @@ export default function CreateAircraftListing() {
                     >
                       Próximo
                     </button>
-                  ) : (
+                  ) : step === 4 ? (
                     <button
                       type="submit"
                       disabled={submitting}
@@ -516,6 +731,24 @@ export default function CreateAircraftListing() {
                     >
                       {submitting ? 'Criando...' : 'Criar Anúncio'}
                     </button>
+                  ) : (
+                    <div className="flex gap-4 w-full">
+                      <button
+                        type="button"
+                        onClick={() => router.push(`/classifieds/aircraft/${createdListingId}`)}
+                        className="flex-1 px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                      >
+                        Pular e Ver Anúncio
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handlePhotoUpload}
+                        disabled={uploadingPhotos || photos.length === 0}
+                        className="flex-1 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        {uploadingPhotos ? 'Enviando...' : `Enviar ${photos.length} Foto${photos.length !== 1 ? 's' : ''}`}
+                      </button>
+                    </div>
                   )}
                 </div>
               </form>

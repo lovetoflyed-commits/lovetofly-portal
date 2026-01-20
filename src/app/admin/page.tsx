@@ -87,11 +87,9 @@ export default function AdminDashboardPage() {
       ],
       alert: 'Atenção a conflitos ou SLAs nas reservas ativas.',
       note: 'Mantenha a agenda atualizada.',
-      items: [
-        { label: 'Visão Geral', href: '/admin/bookings' },
-        { label: 'Calendário', href: '/admin/bookings/calendar' },
-        { label: 'Conflitos', href: '/admin/bookings/conflicts' }
-      ]
+        items: [
+          { label: 'Visão Geral', href: '/admin/bookings' }
+        ]
     },
     {
       key: 'listings',
@@ -123,29 +121,9 @@ export default function AdminDashboardPage() {
       ],
       alert: stats.newUsersToday > 0 ? `${stats.newUsersToday} novos usuários hoje!` : 'Monitore crescimento de usuários.',
       note: 'Dados atualizados em tempo real.',
-      items: [
-        { label: 'Diretório', href: '/admin/users' },
-        { label: 'Acessos & Papéis', href: '/admin/users/access' },
-        { label: 'Atividade', href: '/admin/users/activity' }
-      ]
-    },
-    {
-      key: 'traffic',
-      title: 'Tráfego do Portal',
-      icon: '📊',
-      href: '/admin/analytics',
-      priority: 'normal',
-      metrics: [
-        { label: 'Visitas Hoje', value: stats.visitsToday },
-        { label: 'Total de Visitas', value: stats.totalVisits }
-      ],
-      alert: stats.visitsToday > 0 ? `Portal ativo com ${stats.visitsToday} visitas hoje.` : 'Aguardando tráfego de visitantes.',
-      note: 'Contador iniciado no deploy. Atualização automática.',
-      items: [
-        { label: 'Visão Geral', href: '/admin/analytics' },
-        { label: 'Páginas Populares', href: '/admin/analytics/pages' },
-        { label: 'Histórico', href: '/admin/analytics/history' }
-      ]
+        items: [
+          { label: 'Diretório', href: '/admin/users' }
+        ]
     },
     {
       key: 'moderation',
@@ -159,11 +137,9 @@ export default function AdminDashboardPage() {
       ],
       alert: 'Revise novos relatórios com agilidade.',
       note: 'Mantenha o tratamento de violações consistente.',
-      items: [
-        { label: 'Fila', href: '/admin/moderation' },
-        { label: 'Escalações', href: '/admin/moderation/escalations' },
-        { label: 'Políticas', href: '/admin/moderation/policies' }
-      ]
+        items: [
+          { label: 'Fila', href: '/admin/moderation' }
+        ]
     },
     {
       key: 'finance',
@@ -178,9 +154,7 @@ export default function AdminDashboardPage() {
       alert: stats.totalRevenue > 0 ? `Receita acumulada: R$ ${stats.totalRevenue.toLocaleString('pt-BR')}` : 'Revise o cronograma de pagamentos.',
       note: 'Garanta conciliação sempre atualizada.',
       items: [
-        { label: 'Pagamentos', href: '/admin/finance/payouts' },
-        { label: 'Disputas', href: '/admin/finance/disputes' },
-        { label: 'Conciliação', href: '/admin/finance/reconciliation' }
+        { label: 'Visão Geral', href: '/admin/finance' }
       ]
     },
     {
@@ -196,9 +170,7 @@ export default function AdminDashboardPage() {
       alert: 'Acompanhe documentos com vencimento próximo.',
       note: 'Mantenha registros auditáveis.',
       items: [
-        { label: 'KYC/KYB', href: '/admin/compliance' },
-        { label: 'Auditorias', href: '/admin/compliance/audits' },
-        { label: 'Políticas', href: '/admin/compliance/policies' }
+        { label: 'KYC/KYB', href: '/admin/compliance' }
       ]
     },
     {
@@ -214,45 +186,7 @@ export default function AdminDashboardPage() {
       alert: 'Destaque o desempenho das campanhas ativas.',
       note: 'Alinhe promoções com capacidade.',
       items: [
-        { label: 'Campanhas', href: '/admin/marketing' },
-        { label: 'Leads', href: '/admin/marketing/leads' },
-        { label: 'Materiais', href: '/admin/marketing/assets' }
-      ]
-    },
-    {
-      key: 'reports',
-      title: 'Relatórios',
-      icon: '📊',
-      href: '/admin/reports',
-      priority: 'low',
-      metrics: [
-        { label: 'KPIs', value: '—' },
-        { label: 'Exportações', value: '—' }
-      ],
-      alert: 'Compartilhe os KPIs mais recentes.',
-      note: 'Padronize a cadência de exportações.',
-      items: [
-        { label: 'Painéis', href: '/admin/reports' },
-        { label: 'Exportações', href: '/admin/reports/exports' },
-        { label: 'Agendamentos', href: '/admin/reports/scheduling' }
-      ]
-    },
-    {
-      key: 'system',
-      title: 'Saúde do Sistema',
-      icon: '🖥️',
-      href: '/admin/system',
-      priority: 'low',
-      metrics: [
-        { label: 'Disponibilidade', value: '—' },
-        { label: 'Erros', value: '—' }
-      ],
-      alert: 'Acompanhe erros e latência.',
-      note: 'Evidencie incidentes rapidamente.',
-      items: [
-        { label: 'Status', href: '/admin/system' },
-        { label: 'Erros', href: '/admin/system/errors' },
-        { label: 'Latência', href: '/admin/system/latency' }
+        { label: 'Campanhas', href: '/admin/marketing' }
       ]
     }
   ];
