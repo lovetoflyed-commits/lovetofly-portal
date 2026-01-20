@@ -30,32 +30,52 @@ export async function GET(request: NextRequest) {
     // Get query parameters
     const { searchParams } = new URL(request.url);
     const unreadOnly = searchParams.get('unreadOnly') === 'true';
-    const limit = parseInt(searchParams.get('limit') || '50');
+    const limitParam = parseInt(searchParams.get('limit') || '50');
+    const limit = Number.isNaN(limitParam)
+      ? 50
+      : Math.min(Math.max(limitParam, 1), 100);
 
-    // Fetch notifications
-    let query = `
-      SELECT id, title, message, type, is_read, action_url, action_label, created_at
-      FROM user_notifications
-      WHERE user_id = $1
-    `;
-    
-    if (unreadOnly) {
-      query += ' AND is_read = FALSE';
-    }
-    
-    query += ' ORDER BY created_at DESC LIMIT $2';
+    // Fetch notifications and unread count in a single roundtrip
+    // CTE fetches the page, scalar subquery returns unread_count for all notifications
+    const baseQuery = `
+      WITH stats AS (
+        SELECT COUNT(*)::int AS unread_count
+        FROM user_notifications
+        WHERE user_id = $1 AND is_read = FALSE
+      ),
+      paged AS (
+        SELECT id, title, message, type, is_read, action_url, action_label, created_at
+        FROM user_notifications
+        WHERE user_id = $1
+        ${unreadOnly ? 'AND is_read = FALSE' : ''}
+        ORDER BY created_at DESC
+        LIMIT $2
+      )
+      SELECT p.*, s.unread_count
+      FROM stats s
+      LEFT JOIN paged p ON TRUE
+      ORDER BY p.created_at DESC NULLS LAST`;
 
-    const result = await pool.query(query, [userId, limit]);
+    const result = await pool.query(baseQuery, [userId, limit]);
 
-    // Get unread count
-    const unreadResult = await pool.query(
-      'SELECT COUNT(*) as count FROM user_notifications WHERE user_id = $1 AND is_read = FALSE',
-      [userId]
-    );
+    const unreadCount = result.rows.length > 0
+      ? result.rows[0].unread_count
+      : 0;
 
     return NextResponse.json({
-      notifications: result.rows,
-      unreadCount: parseInt(unreadResult.rows[0].count),
+      notifications: result.rows
+        .filter(row => row.id)
+        .map(row => ({
+          id: row.id,
+          title: row.title,
+          message: row.message,
+          type: row.type,
+          is_read: row.is_read,
+          action_url: row.action_url,
+          action_label: row.action_label,
+          created_at: row.created_at,
+        })),
+      unreadCount,
     });
   } catch (error: any) {
     console.error('Fetch notifications error:', error);
