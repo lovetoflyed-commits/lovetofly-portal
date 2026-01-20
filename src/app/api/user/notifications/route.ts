@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
     const token = authHeader.split(' ')[1];
     const secret = process.env.JWT_SECRET || '';
-    let userId: number;
+    let userId: string;
 
     try {
       const decoded = jwt.verify(token, secret) as any;
@@ -34,13 +34,13 @@ export async function GET(request: NextRequest) {
 
     // Fetch notifications
     let query = `
-      SELECT id, title, message, type, read, link, created_at
-      FROM notifications
+      SELECT id, title, message, type, is_read, action_url, action_label, created_at
+      FROM user_notifications
       WHERE user_id = $1
     `;
     
     if (unreadOnly) {
-      query += ' AND read = FALSE';
+      query += ' AND is_read = FALSE';
     }
     
     query += ' ORDER BY created_at DESC LIMIT $2';
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
 
     // Get unread count
     const unreadResult = await pool.query(
-      'SELECT COUNT(*) as count FROM notifications WHERE user_id = $1 AND read = FALSE',
+      'SELECT COUNT(*) as count FROM user_notifications WHERE user_id = $1 AND is_read = FALSE',
       [userId]
     );
 
@@ -79,7 +79,7 @@ export async function PATCH(request: NextRequest) {
 
     const token = authHeader.split(' ')[1];
     const secret = process.env.JWT_SECRET || '';
-    let userId: number;
+    let userId: string;
 
     try {
       const decoded = jwt.verify(token, secret) as any;
@@ -97,7 +97,7 @@ export async function PATCH(request: NextRequest) {
     if (markAllAsRead) {
       // Mark all notifications as read for this user
       await pool.query(
-        'UPDATE notifications SET read = TRUE WHERE user_id = $1 AND read = FALSE',
+        'UPDATE user_notifications SET is_read = TRUE, read_at = CURRENT_TIMESTAMP WHERE user_id = $1 AND is_read = FALSE',
         [userId]
       );
 
@@ -107,7 +107,7 @@ export async function PATCH(request: NextRequest) {
     } else if (notificationId) {
       // Mark specific notification as read
       const result = await pool.query(
-        'UPDATE notifications SET read = TRUE WHERE id = $1 AND user_id = $2 RETURNING *',
+        'UPDATE user_notifications SET is_read = TRUE, read_at = CURRENT_TIMESTAMP WHERE id = $1 AND user_id = $2 RETURNING *',
         [notificationId, userId]
       );
 
