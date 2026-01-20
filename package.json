@@ -32,7 +32,7 @@
     "seed:images": "node scripts/seeds/generate-images.js"
   },
   "dependencies": {
-    "@sentry/nextjs": "^10.33.0",
+    "@sentry/nextjs": "^10.35.0",
     "@stripe/react-stripe-js": "^5.4.1",
     "@stripe/stripe-js": "^8.6.0",
     "@types/bcrypt": "^6.0.0",

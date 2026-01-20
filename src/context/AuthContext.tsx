@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import { initSentry, setUser as setSentryUser } from '@/config/sentry';
 
 interface User {
   id: number;
@@ -28,6 +29,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Initialize Sentry on mount (client-side only)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      initSentry();
+    }
+  }, []);
+
   useEffect(() => {
     const storedToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     const storedUser = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
@@ -35,6 +43,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setToken(storedToken);
       const parsedUser = JSON.parse(storedUser);
       setUser(parsedUser);
+      
+      // Set user in Sentry
+      setSentryUser({
+        id: parsedUser.id?.toString(),
+        email: parsedUser.email,
+        username: parsedUser.name,
+      });
+      
       console.log('[AuthContext] Loaded user from localStorage:', parsedUser);
     }
   }, []);
@@ -55,6 +71,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(data.user);
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
+        
+        // Set user in Sentry for error tracking
+        setSentryUser({
+          id: data.user.id?.toString(),
+          email: data.user.email,
+          username: data.user.name,
+        });
+        
         console.log('[AuthContext] Login response user:', data.user);
 
         // After login, check membership and downgrade if expired, then sync plan and send notifications
@@ -104,6 +128,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setUser(null);
     setToken(null);
+    
+    // Clear user from Sentry
+    setSentryUser(null);
+    
     if (typeof window !== 'undefined') {
       localStorage.removeItem('token');
       localStorage.removeItem('user');

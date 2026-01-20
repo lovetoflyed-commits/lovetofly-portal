@@ -3,6 +3,7 @@ import MainHeader from '@/components/MainHeader';
 import { SessionTimeoutWrapper } from '@/components/SessionTimeoutWrapper';
 import { AuthProvider } from '@/context/AuthContext';
 import { LanguageProvider } from '@/context/LanguageContext';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -21,14 +22,16 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body>
-        <LanguageProvider>
-          <AuthProvider>
-            <SessionTimeoutWrapper>
-              <MainHeader />
-              {children}
-            </SessionTimeoutWrapper>
-          </AuthProvider>
-        </LanguageProvider>
+        <ErrorBoundary>
+          <LanguageProvider>
+            <AuthProvider>
+              <SessionTimeoutWrapper>
+                <MainHeader />
+                {children}
+              </SessionTimeoutWrapper>
+            </AuthProvider>
+          </LanguageProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );
