@@ -9,13 +9,17 @@ export async function GET() {
         ho.user_id,
         ho.company_name,
         ho.cnpj,
-        ho.tax_classification,
-        ho.verification_status,
+        ho.owner_type,
+        ho.verified,
+        ho.is_active,
         u.first_name,
         u.last_name,
-        u.email
+        u.email,
+        COUNT(hl.id) as listings_count
       FROM hangar_owners ho
       JOIN users u ON ho.user_id = u.id
+      LEFT JOIN hangar_listings hl ON hl.owner_id = ho.id
+      GROUP BY ho.id, ho.user_id, ho.company_name, ho.cnpj, ho.owner_type, ho.verified, ho.is_active, u.first_name, u.last_name, u.email
       ORDER BY ho.created_at DESC
       LIMIT 500
     `);

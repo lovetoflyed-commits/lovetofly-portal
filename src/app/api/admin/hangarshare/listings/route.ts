@@ -14,9 +14,7 @@ export async function GET() {
         hl.daily_rate as price,
         hl.monthly_rate,
         hl.created_at,
-        ho.company_name,
-        (SELECT COUNT(*) FROM hangar_photos WHERE hangar_id = hl.id) as photos_count,
-        (SELECT COUNT(*) FROM hangar_bookings WHERE hangar_id = hl.id) as bookings_count
+        ho.company_name
       FROM hangar_listings hl
       JOIN hangar_owners ho ON hl.owner_id = ho.id
       ORDER BY hl.created_at DESC
