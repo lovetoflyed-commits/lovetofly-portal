@@ -66,7 +66,7 @@ export default function AdminDashboardPage() {
       key: 'hangarshare',
       title: 'HangarShare',
       icon: '🛫',
-      href: '/admin/verifications',
+      href: '/admin/hangarshare',
       priority: 'high',
       metrics: [
         { label: 'Solicitações Pendentes', value: stats.pendingVerifications },
