@@ -16,12 +16,6 @@ export function initSentry() {
     return;
   }
 
-  // Check if already initialized
-  if (Sentry.getCurrentHub().getClient()) {
-    console.log('✅ Sentry already initialized');
-    return;
-  }
-
   try {
     Sentry.init({
       dsn,
@@ -34,14 +28,6 @@ export function initSentry() {
       
       // Performance monitoring
       tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-      
-      // Enable session replay for error analysis
-      integrations: [
-        new Sentry.Replay({
-          maskAllText: true, // Privacy: mask all text
-          blockAllMedia: true, // Privacy: block images/videos
-        }),
-      ],
       
       // Session replay sample rates
       replaysSessionSampleRate: 0.1, // 10% of sessions

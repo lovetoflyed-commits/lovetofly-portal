@@ -176,7 +176,7 @@ export function validateRequest<T>(
  * Format Zod errors for API response
  */
 export function formatValidationErrors(error: z.ZodError): Array<{ field: string; message: string }> {
-  return error.errors.map(err => ({
+  return error.issues.map((err: z.ZodIssue) => ({
     field: err.path.join('.'),
     message: err.message,
   }));
