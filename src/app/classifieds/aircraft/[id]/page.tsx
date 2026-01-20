@@ -5,9 +5,11 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
+import PhotoUploadComponent from '@/components/PhotoUploadComponent';
 
 interface Aircraft {
   id: number;
+  user_id?: string;
   title: string;
   manufacturer: string;
   model: string;
@@ -312,6 +314,27 @@ export default function AircraftDetail() {
                       📍 {aircraft.location_city}/{aircraft.location_state}
                     </p>
 
+                    {/* Owner Actions */}
+                    {user?.id === aircraft.user_id && (
+                      <div className="mb-4 space-y-2 pb-4 border-b">
+                        <button
+                          onClick={() => router.push(`/classifieds/aircraft/${params.id}/edit`)}
+                          className="w-full px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-medium text-sm"
+                        >
+                          ✏️ Editar Anúncio
+                        </button>
+                        <button
+                          onClick={() => {
+                            // Scroll to photo upload section
+                            document.querySelector('[data-upload-section]')?.scrollIntoView({ behavior: 'smooth' });
+                          }}
+                          className="w-full px-4 py-2 bg-purple-200 text-purple-800 rounded-lg hover:bg-purple-300 transition-colors font-medium text-sm"
+                        >
+                          📸 Adicionar Fotos
+                        </button>
+                      </div>
+                    )}
+
                     <button
                       onClick={() => setShowInquiryForm(!showInquiryForm)}
                       className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium mb-3"
@@ -375,6 +398,19 @@ export default function AircraftDetail() {
                   </div>
                 </div>
               </div>
+
+              {/* Photo Upload Section - Only for owner */}
+              {user?.id === aircraft.user_id && (
+                <div className="mt-12 pt-8 border-t" data-upload-section>
+                  <PhotoUploadComponent
+                    listingId={parseInt(params.id as string)}
+                    listingType="aircraft"
+                    onUploadSuccess={() => {
+                      fetchPhotos();
+                    }}
+                  />
+                </div>
+              )}
             </div>
           </main>
         </div>
