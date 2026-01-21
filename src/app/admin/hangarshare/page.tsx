@@ -71,14 +71,21 @@ export default function HangarShareAdminPage() {
   const [listings, setListings] = useState<HangarListing[]>([]);
   const [bookings, setBookings] = useState<HangarBooking[]>([]);
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'owners' | 'listings' | 'bookings'>('overview');
+  const [selectedOwnerId, setSelectedOwnerId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Handle URL tab parameter on client side only
+  // Handle URL tab and owner ID parameters on client side only
   useEffect(() => {
     const url = new URL(window.location.href);
     const tabParam = url.searchParams.get('tab');
+    const ownerIdParam = url.searchParams.get('ownerId');
+    
     if (tabParam === 'users' || tabParam === 'owners' || tabParam === 'listings' || tabParam === 'bookings') {
       setActiveTab(tabParam);
+    }
+    
+    if (ownerIdParam) {
+      setSelectedOwnerId(ownerIdParam);
     }
   }, []);
 
@@ -277,8 +284,18 @@ export default function HangarShareAdminPage() {
                   </thead>
                   <tbody className="divide-y divide-slate-200">
                     {owners.filter(o => !o.is_verified).map((owner) => (
-                      <tr key={owner.id} className="hover:bg-slate-50 transition">
-                        <td className="px-6 py-4 text-sm font-medium">{owner.company_name}</td>
+                      <tr 
+                        key={owner.id} 
+                        className={`transition ${
+                          selectedOwnerId === owner.id 
+                            ? 'bg-blue-50 border-l-4 border-l-blue-600' 
+                            : 'hover:bg-slate-50'
+                        }`}
+                      >
+                        <td className="px-6 py-4 text-sm font-medium">
+                          {selectedOwnerId === owner.id && <span className="mr-2">👉</span>}
+                          {owner.company_name}
+                        </td>
                         <td className="px-6 py-4 text-sm text-slate-600">{owner.first_name} {owner.last_name}</td>
                         <td className="px-6 py-4 text-sm font-mono text-slate-600">{owner.cnpj || '—'}</td>
                         <td className="px-6 py-4 text-sm text-slate-600">{owner.email}</td>

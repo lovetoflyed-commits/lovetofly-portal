@@ -7,8 +7,17 @@ export default function ApproveUsersPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Redirect to the HangarShare admin page with tab parameter for verifications
-    router.replace('/admin/hangarshare?tab=users');
+    // Get owner ID from URL if present
+    const url = new URL(window.location.href);
+    const ownerId = url.searchParams.get('id');
+    
+    if (ownerId) {
+      // Redirect to the HangarShare admin page with tab and owner ID
+      router.replace(`/admin/hangarshare?tab=users&ownerId=${ownerId}`);
+    } else {
+      // No owner ID, just show the verifications tab
+      router.replace('/admin/hangarshare?tab=users');
+    }
   }, [router]);
 
   return (
