@@ -3,9 +3,7 @@
 // Purpose: Comprehensive dashboard statistics aggregation
 
 import { NextResponse } from 'next/server';
-import { createPool } from '@/config/db';
-
-const pool = createPool();
+import pool from '@/config/db';
 
 interface HeroMetric {
   title: string;

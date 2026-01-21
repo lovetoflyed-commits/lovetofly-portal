@@ -3,9 +3,7 @@
 // Purpose: Query feature_flags table to determine if a feature is enabled
 
 import { NextResponse } from 'next/server';
-import { createPool } from '@/config/db';
-
-const pool = createPool();
+import pool from '@/config/db';
 
 export async function GET(request: Request) {
   try {
