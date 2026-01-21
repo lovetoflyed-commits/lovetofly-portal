@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import pool from '@/config/db';
-import { getUserFromRequest } from '@/utils/auth';
 
 // Redeem coupon (apply to payment)
 export async function POST(request: Request) {

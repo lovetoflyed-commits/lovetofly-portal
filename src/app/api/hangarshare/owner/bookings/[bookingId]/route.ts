@@ -48,7 +48,7 @@ const STATUS_LABELS: Record<string, string> = {
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { bookingId: string } }
+  { params }: { params: Promise<{ bookingId: string }> }
 ) {
   try {
     const authHeader = request.headers.get('authorization');
@@ -65,7 +65,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
     }
 
-    const { bookingId } = params;
+    const { bookingId } = await params;
     const body = await request.json();
     const { booking_status } = body;
 
@@ -258,7 +258,7 @@ export async function PATCH(
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { bookingId: string } }
+  { params }: { params: Promise<{ bookingId: string }> }
 ) {
   try {
     const authHeader = request.headers.get('authorization');
@@ -275,7 +275,7 @@ export async function GET(
       return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
     }
 
-    const { bookingId } = params;
+    const { bookingId } = await params;
 
     const result = await pool.query(
       `SELECT 

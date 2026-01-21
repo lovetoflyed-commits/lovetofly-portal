@@ -58,8 +58,8 @@ export async function POST(request: NextRequest) {
     // Smart pricing algorithm - choose the best rate for the customer
     let breakdown: BreakdownItem[] = [];
     let subtotal = 0;
-    let comparedTo = '';
-    let comparedPrice = 0;
+    const comparedTo = '';
+    const comparedPrice = 0;
 
     // Calculate different scenarios
     const scenarios: { name: string; price: number; breakdown: BreakdownItem[] }[] = [];

@@ -11,10 +11,10 @@ import {
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const listingId = params.id;
+    const { id: listingId } = await params;
     const token = req.headers.get('authorization')?.replace('Bearer ', '');
 
     // Verify authentication

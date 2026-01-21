@@ -16,7 +16,7 @@ export async function GET(request: Request) {
 
     const chartsDir = join(process.cwd(), 'public', 'charts', icaoRaw);
     const cdnBase = (process.env.CHARTS_CDN_URL || '').replace(/\/$/, '');
-    let charts: ChartEntry[] = [];
+    const charts: ChartEntry[] = [];
 
     // If a CDN base is provided, try to use a prebuilt manifest from the CDN.
     if (cdnBase) {

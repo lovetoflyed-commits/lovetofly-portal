@@ -3,10 +3,10 @@ import pool from '@/config/db';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const listingId = params.id;
+    const { id: listingId } = await params;
 
     const result = await pool.query(
       `SELECT 

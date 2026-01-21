@@ -205,7 +205,7 @@ export const holding = {
   // Determinar tipo de entrada no holding
   entryType: (inboundCourse: number, aircraftHeading: number) => {
     // Normalizar ângulos
-    let relativeAngle = ((aircraftHeading - inboundCourse) + 360) % 360;
+    const relativeAngle = ((aircraftHeading - inboundCourse) + 360) % 360;
     
     if (relativeAngle >= 70 && relativeAngle <= 110) {
       return 'DIRECT';

@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/utils/auth';
 import pool from '@/config/db';
 
@@ -6,7 +6,7 @@ import pool from '@/config/db';
  * GET /api/hangarshare/favorites/check?listing_id=xxx
  * Check if a listing is in the user's favorites
  */
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     // Verify authentication
     const authHeader = request.headers.get('Authorization');

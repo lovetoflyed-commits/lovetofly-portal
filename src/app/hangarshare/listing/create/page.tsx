@@ -503,7 +503,7 @@ export default function HangarListingPage() {
 
             {!verificationStatus.hasProfile && verificationStatus.setupUrl && (
               <button
-                onClick={() => router.push(verificationStatus.setupUrl)}
+                onClick={() => router.push(verificationStatus.setupUrl ?? '/hangarshare/owner/setup')}
                 className="w-full px-6 py-3 bg-blue-900 text-white font-bold rounded-lg hover:bg-blue-800"
               >
                 Completar Cadastro →

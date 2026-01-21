@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import E6BComputer from '@/components/tools/E6BComputer';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 export default function E6BDigitalPage() {
   const { user } = useAuth();
@@ -37,7 +38,7 @@ export default function E6BDigitalPage() {
                   <a key={i} href={a.link} className="block border border-slate-200 rounded-lg p-4 hover:shadow-md transition">
                     <div className="flex items-center gap-2 mb-2">
                       {a.badge && (
-                        <img src={a.badge} alt="Badge" className="w-20 h-20 object-contain" />
+                        <Image src={a.badge} alt="Badge" width={80} height={80} className="w-20 h-20 object-contain" />
                       )}
                       <div className="font-bold text-slate-800">{a.name}</div>
                     </div>

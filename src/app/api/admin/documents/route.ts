@@ -45,8 +45,8 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit;
 
     // Build WHERE clause
-    let whereConditions = ['ud.validation_status = $1'];
-    let queryParams: any[] = [status];
+    const whereConditions = ['ud.validation_status = $1'];
+    const queryParams: any[] = [status];
     let paramCount = 1;
 
     if (documentType) {

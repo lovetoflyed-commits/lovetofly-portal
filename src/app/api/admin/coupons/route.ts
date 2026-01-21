@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/config/db';
 import { requireAdmin } from '@/utils/adminAuth';
 
 // List all coupons (admin)
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const auth = await requireAdmin(request);
   if (auth) return auth;
   try {
@@ -16,7 +16,7 @@ export async function GET(request: Request) {
 }
 
 // Create a new coupon (admin)
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   const auth = await requireAdmin(request);
   if (auth) return auth;
   try {

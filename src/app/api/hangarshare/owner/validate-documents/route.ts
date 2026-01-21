@@ -104,7 +104,7 @@ async function validateFaceMatch(
 ): Promise<ValidationResult> {
   const issues: string[] = [];
   const suggestions: string[] = [];
-  let score = 75; // Score padrão sem análise de IA
+  const score = 75; // Score padrão sem análise de IA
 
   // Esta é uma análise básica sem IA
   // Para implementação real, use:

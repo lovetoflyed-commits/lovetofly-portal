@@ -4,7 +4,8 @@ import { hasPermission, Role } from '../accessControl';
 
 export default function CommercialPanel() {
   const { user } = useAuth();
-  if (!user || !(user.role === Role.MASTER || hasPermission(user.role, 'manage_business'))) {
+  const role = user?.role as Role | undefined;
+  if (!role || !(role === Role.MASTER || hasPermission(role, 'manage_business'))) {
     return (
       <div className="text-red-600 p-8">
         <b>Acesso negado &mdash; Área Comercial</b>

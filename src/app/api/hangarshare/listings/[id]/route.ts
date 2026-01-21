@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/config/db';
 import { verifyToken } from '@/utils/auth';
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const id = params.id;
+    const { id } = await params;
     
     const result = await pool.query(
       `SELECT id, owner_id, title, price, description, status, icao_code, 
@@ -32,9 +35,12 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const id = params.id;
+    const { id } = await params;
     const body = await req.json();
     const token = req.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {

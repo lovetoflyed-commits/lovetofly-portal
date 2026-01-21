@@ -2,6 +2,7 @@
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import Link from 'next/link';
 
 export default function StaffDashboard() {
   const { user } = useAuth();
@@ -20,19 +21,19 @@ export default function StaffDashboard() {
       <div className="w-full max-w-2xl bg-white rounded-xl shadow-lg p-8">
         <ul className="space-y-4">
           <li>
-            <a href="/staff/verifications" className="block p-4 bg-blue-100 rounded hover:bg-blue-200 transition font-semibold text-blue-900">
+            <Link href="/staff/verifications" className="block p-4 bg-blue-100 rounded hover:bg-blue-200 transition font-semibold text-blue-900">
               Aprovar verificações de usuários
-            </a>
+            </Link>
           </li>
           <li>
-            <a href="/staff/reservations" className="block p-4 bg-blue-100 rounded hover:bg-blue-200 transition font-semibold text-blue-900">
+            <Link href="/staff/reservations" className="block p-4 bg-blue-100 rounded hover:bg-blue-200 transition font-semibold text-blue-900">
               Gerenciar reservas e listagens
-            </a>
+            </Link>
           </li>
           <li>
-            <a href="/staff/reports" className="block p-4 bg-blue-100 rounded hover:bg-blue-200 transition font-semibold text-blue-900">
+            <Link href="/staff/reports" className="block p-4 bg-blue-100 rounded hover:bg-blue-200 transition font-semibold text-blue-900">
               Acessar relatórios e estatísticas
-            </a>
+            </Link>
           </li>
         </ul>
       </div>

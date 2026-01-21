@@ -81,8 +81,8 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const offset = (page - 1) * limit;
 
-    let queryConditions = ['status = $1'];
-    let queryParams: any[] = [status];
+    const queryConditions = ['status = $1'];
+    const queryParams: any[] = [status];
     let paramIndex = 2;
 
     if (category) {

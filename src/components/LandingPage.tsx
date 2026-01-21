@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import HangarCarousel from './HangarCarousel';
 import LanguageSelector from './LanguageSelector';
+import Link from 'next/link';
 
 interface LandingPageProps {
   onOpenLogin: () => void;
@@ -528,8 +529,8 @@ export default function LandingPage({ onOpenLogin, onOpenRegister }: LandingPage
             <div>
               <h4 className="font-bold text-sm mb-4">Legal</h4>
               <ul className="space-y-2 text-sm text-slate-400">
-                <li><a href="/privacy" className="hover:text-white">Privacidade</a></li>
-                <li><a href="/terms" className="hover:text-white">Termos</a></li>
+                <li><Link href="/privacy" className="hover:text-white">Privacidade</Link></li>
+                <li><Link href="/terms" className="hover:text-white">Termos</Link></li>
                 <li><a href="#" className="hover:text-white">Cookies</a></li>
                 <li><a href="#" className="hover:text-white">LGPD</a></li>
               </ul>

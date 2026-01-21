@@ -7,6 +7,10 @@ import esTranslations from '@/translations/es.json';
 
 type Language = 'pt' | 'en' | 'es';
 
+interface Translation {
+  [key: string]: string | Translation;
+}
+
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
@@ -15,7 +19,7 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-const translations: Record<Language, any> = {
+const translations: Record<Language, Translation> = {
   pt: ptTranslations,
   en: enTranslations,
   es: esTranslations,
@@ -28,22 +32,28 @@ const createDefaultContext = (): LanguageContextType => ({
   t: (key: string, defaultValue?: string) => defaultValue || key,
 });
 
+// Helper to initialize language from localStorage or browser
+const initializeLanguage = (): Language => {
+  if (typeof window === 'undefined') return 'pt';
+  
+  const savedLanguage = localStorage.getItem('preferredLanguage') as Language | null;
+  if (savedLanguage && ['pt', 'en', 'es'].includes(savedLanguage)) {
+    return savedLanguage;
+  }
+  
+  // Try to detect browser language
+  const browserLang = navigator.language.split('-')[0];
+  if (browserLang === 'en') return 'en';
+  if (browserLang === 'es') return 'es';
+  return 'pt';
+};
+
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<Language>('pt');
+  const [language, setLanguageState] = useState<Language>(() => initializeLanguage());
   const [mounted, setMounted] = useState(false);
 
-  // Load language preference from localStorage on mount
+  // Set mounted flag after first render
   useEffect(() => {
-    const savedLanguage = localStorage.getItem('preferredLanguage') as Language | null;
-    if (savedLanguage && ['pt', 'en', 'es'].includes(savedLanguage)) {
-      setLanguageState(savedLanguage);
-    } else {
-      // Try to detect browser language
-      const browserLang = navigator.language.split('-')[0];
-      if (browserLang === 'en') setLanguageState('en');
-      else if (browserLang === 'es') setLanguageState('es');
-      else setLanguageState('pt');
-    }
     setMounted(true);
   }, []);
 

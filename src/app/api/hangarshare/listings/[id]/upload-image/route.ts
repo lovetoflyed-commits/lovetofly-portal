@@ -5,10 +5,11 @@ import { randomBytes } from 'crypto';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const listingId = parseInt(params.id, 10);
+    const { id } = await params;
+    const listingId = parseInt(id, 10);
 
     // Verify listing exists
     const listingResult = await pool.query(
@@ -111,10 +112,11 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const listingId = parseInt(params.id, 10);
+    const { id } = await params;
+    const listingId = parseInt(id, 10);
 
     const result = await pool.query(
       'SELECT id, image_url FROM hangar_listings WHERE id = $1',

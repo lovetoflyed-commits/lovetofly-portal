@@ -6,10 +6,10 @@ import pool from '@/config/db';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { photoId: string } }
+  { params }: { params: Promise<{ photoId: string }> }
 ) {
   try {
-    const { photoId } = params;
+    const { photoId } = await params;
 
     const result = await pool.query(
       'SELECT photo_data, mime_type, file_name FROM hangar_photos WHERE id = $1',

@@ -93,7 +93,7 @@ function SearchResultsContent() {
           });
           if (favResponse.ok) {
             const favData = await favResponse.json();
-            const favIds = new Set(favData.favorites.map((f: any) => f.listing_id));
+            const favIds = new Set<number>(favData.favorites.map((f: any) => Number(f.listing_id)));
             setFavorites(favIds);
           }
         }

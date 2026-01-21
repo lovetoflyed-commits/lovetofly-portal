@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import E6BAnalogImage from '@/components/tools/E6BAnalogImage';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 export default function E6BAnalogPage() {
   const { user } = useAuth();
@@ -15,7 +16,7 @@ export default function E6BAnalogPage() {
       <header className="bg-blue-900 text-white shadow-md">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3 h-12">
-            <img src="/logo-pac.png" alt="Love to Fly" className="h-full w-auto object-contain" />
+            <Image src="/logo-pac.png" alt="Love to Fly" width={120} height={48} className="h-full w-auto object-contain" />
             <span className="font-black tracking-wide text-lg hidden md:inline">PORTAL LOVE TO FLY</span>
           </div>
           <div className="flex gap-2">
@@ -59,7 +60,7 @@ export default function E6BAnalogPage() {
                   <a key={i} href={a.link} className="block border border-slate-200 rounded-lg p-4 hover:shadow-md transition">
                     <div className="flex items-center gap-2 mb-2">
                       {a.badge && (
-                        <img src={a.badge} alt="Badge" className="w-20 h-20 object-contain" />
+                        <Image src={a.badge} alt="Badge" width={80} height={80} className="w-20 h-20 object-contain" />
                       )}
                       <div className="font-bold text-slate-800">{a.name}</div>
                     </div>

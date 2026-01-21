@@ -42,6 +42,7 @@ export default function UserManagementPanel() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [editData, setEditData] = useState({ role: '', plan: '' });
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const actionType = moderationData.actionType as string;
 
   useEffect(() => {
     fetchUsers();
@@ -432,16 +433,16 @@ export default function UserManagementPanel() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
             <h3 className="text-xl font-bold mb-4 text-orange-900">
-              {moderationData.actionType === 'restore' ? 'Restore Access' : 'Moderate User'}: {selectedUser.name}
+              {actionType === 'restore' ? 'Restore Access' : 'Moderate User'}: {selectedUser.name}
             </h3>
             
             <div className="space-y-4">
-              {moderationData.actionType !== 'restore' && (
+              {actionType !== 'restore' && (
                 <>
                   <div>
                     <label className="block text-sm font-medium mb-1">Action Type</label>
                     <select
-                      value={moderationData.actionType}
+                      value={actionType}
                       onChange={e => setModerationData({...moderationData, actionType: e.target.value as any})}
                       className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-orange-500"
                     >
@@ -455,7 +456,7 @@ export default function UserManagementPanel() {
                     </select>
                   </div>
 
-                  {moderationData.actionType !== 'restore' && (
+                  {actionType !== 'restore' && (
                     <>
                       <div>
                         <label className="block text-sm font-medium mb-1">Severity</label>
@@ -471,7 +472,7 @@ export default function UserManagementPanel() {
                         </select>
                       </div>
 
-                      {moderationData.actionType === 'suspend' && (
+                      {actionType === 'suspend' && (
                         <div>
                           <label className="block text-sm font-medium mb-1">Suspension Duration (days)</label>
                           <input
@@ -488,7 +489,7 @@ export default function UserManagementPanel() {
                 </>
               )}
 
-              {moderationData.actionType === 'restore' && (
+              {actionType === 'restore' && (
                 <div className="p-3 bg-green-50 border border-green-200 rounded">
                   <p className="text-sm text-green-800 font-medium mb-2">
                     ✓ Restoring access will:
@@ -504,12 +505,12 @@ export default function UserManagementPanel() {
 
               <div>
                 <label className="block text-sm font-medium mb-1">
-                  {moderationData.actionType === 'restore' ? 'Notes (optional)' : 'Reason *'}
+                  {actionType === 'restore' ? 'Notes (optional)' : 'Reason *'}
                 </label>
                 <textarea
                   value={moderationData.reason}
                   onChange={e => setModerationData({...moderationData, reason: e.target.value})}
-                  placeholder={moderationData.actionType === 'restore' ? 'Explain why access is being restored...' : 'Explain why this action is necessary...'}
+                  placeholder={actionType === 'restore' ? 'Explain why access is being restored...' : 'Explain why this action is necessary...'}
                   className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
                   rows={3}
                 />
@@ -519,14 +520,14 @@ export default function UserManagementPanel() {
             <div className="mt-6 flex gap-2">
               <button
                 onClick={handleModeration}
-                disabled={actionLoading || (moderationData.actionType !== 'restore' && !moderationData.reason.trim())}
+                disabled={actionLoading || (actionType !== 'restore' && !moderationData.reason.trim())}
                 className={`flex-1 px-4 py-2 ${
-                  moderationData.actionType === 'restore' 
+                  actionType === 'restore' 
                     ? 'bg-green-600 hover:bg-green-700' 
                     : 'bg-orange-600 hover:bg-orange-700'
                 } text-white rounded font-bold transition disabled:opacity-50`}
               >
-                {actionLoading ? 'Processing...' : moderationData.actionType === 'restore' ? 'Restore Access' : 'Apply Action'}
+                {actionLoading ? 'Processing...' : actionType === 'restore' ? 'Restore Access' : 'Apply Action'}
               </button>
               <button
                 onClick={() => {

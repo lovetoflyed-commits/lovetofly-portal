@@ -236,8 +236,8 @@ const MovingMap = ({ flightState, trackHistory }: MovingMapProps) => {
       }
 
       // Find min/max altitude in track history
-      let minAlt = Math.min(...trackHistory.map(p => p.alt));
-      let maxAlt = Math.max(...trackHistory.map(p => p.alt));
+      const minAlt = Math.min(...trackHistory.map(p => p.alt));
+      const maxAlt = Math.max(...trackHistory.map(p => p.alt));
       const altRange = Math.max(maxAlt - minAlt, 1000); // Minimum 1000 ft range
 
       // Draw altitude profile line

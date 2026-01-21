@@ -9,8 +9,7 @@ import {
   closeWebSocket,
   RealTimeMetrics,
   BookingNotification,
-  OccupancyChange,
-  WebSocketEventType
+  OccupancyChange
 } from '@/utils/websocket';
 
 export interface UseRealtimeStatsOptions {
@@ -93,9 +92,17 @@ export function useRealtimeStats({
 
   // Auto-connect on mount
   useEffect(() => {
-    if (autoConnect && ownerId && token) {
-      connect();
+    if (!autoConnect || !ownerId || !token) {
+      return;
     }
+    
+    const performConnect = async () => {
+      await connect();
+    };
+    
+    performConnect().catch((error) => {
+      console.error('Auto-connect failed:', error);
+    });
 
     return () => {
       disconnect();

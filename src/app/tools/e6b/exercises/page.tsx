@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import E6BDrills from '@/components/tools/E6BDrills';
+import Image from 'next/image';
 
 export default function E6BExercisesPage() {
   const router = useRouter();
@@ -12,7 +13,7 @@ export default function E6BExercisesPage() {
       <header className="bg-blue-900 text-white shadow-md">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3 h-12">
-            <img src="/logo-pac.png" alt="Love to Fly" className="h-full w-auto object-contain" />
+            <Image src="/logo-pac.png" alt="Love to Fly" width={120} height={48} className="h-full w-auto object-contain" />
             <span className="font-black tracking-wide text-lg hidden md:inline">PORTAL LOVE TO FLY</span>
           </div>
           <div className="flex gap-2">

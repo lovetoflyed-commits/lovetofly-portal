@@ -145,33 +145,35 @@ export default function Sidebar({ onFeatureClick, disabled }: SidebarProps) {
                 </button>
                 {isExpanded && (
                   <div className="mt-1 space-y-1 pl-4 border-l border-blue-900">
-                    {section.items.map((item) => (
-                      disabled ? (
-                        <button
-                          key={item.href}
-                          className={`flex items-center space-x-3 px-3 py-2 rounded-md transition-colors text-sm cursor-not-allowed opacity-60 w-full text-left`}
-                          onClick={onFeatureClick}
-                          disabled
-                          tabIndex={-1}
-                        >
-                          <span className="text-lg">{item.icon}</span>
-                          <span>{item.label}</span>
-                        </button>
-                      ) : (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          className={`flex items-center space-x-3 px-3 py-2 rounded-md transition-colors text-sm
-                            ${pathname === item.href
-                              ? 'bg-blue-500 text-white font-semibold'
-                              : 'text-blue-100 hover:bg-blue-600 hover:text-white'}
-                          `}
-                        >
-                          <span className="text-lg">{item.icon}</span>
-                          <span>{item.label}</span>
-                        </Link>
-                      )
-                    ))}
+                    {section.items
+                      .filter((item): item is NonNullable<typeof item> => Boolean(item))
+                      .map((item) => (
+                        disabled ? (
+                          <button
+                            key={item.href}
+                            className={`flex items-center space-x-3 px-3 py-2 rounded-md transition-colors text-sm cursor-not-allowed opacity-60 w-full text-left`}
+                            onClick={onFeatureClick}
+                            disabled
+                            tabIndex={-1}
+                          >
+                            <span className="text-lg">{item.icon}</span>
+                            <span>{item.label}</span>
+                          </button>
+                        ) : (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            className={`flex items-center space-x-3 px-3 py-2 rounded-md transition-colors text-sm
+                              ${pathname === item.href
+                                ? 'bg-blue-500 text-white font-semibold'
+                                : 'text-blue-100 hover:bg-blue-600 hover:text-white'}
+                            `}
+                          >
+                            <span className="text-lg">{item.icon}</span>
+                            <span>{item.label}</span>
+                          </Link>
+                        )
+                      ))}
                   </div>
                 )}
               </div>

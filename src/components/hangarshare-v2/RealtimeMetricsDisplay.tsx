@@ -203,7 +203,9 @@ export function RealtimeMetricsDisplay({
                   {change.isNowOccupied ? 'Ocupado' : 'Liberado'}
                 </p>
                 <p className="text-xs text-green-600 mt-1">
-                  {new Date(change.timestamp).toLocaleTimeString('pt-BR')}
+                  {change.timestamp
+                    ? new Date(change.timestamp).toLocaleTimeString('pt-BR')
+                    : '–'}
                 </p>
               </div>
             ))}

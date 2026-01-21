@@ -16,10 +16,11 @@ interface OwnerPaymentRecord {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { ownerId: string } }
+  { params }: { params: Promise<{ ownerId: string }> }
 ) {
   try {
-    const ownerId = parseInt(params.ownerId, 10);
+    const { ownerId } = await params;
+    const ownerIdNumber = parseInt(ownerId, 10);
 
     // Fetch owner payment records
     const paymentsResult = await pool.query(
@@ -39,7 +40,7 @@ export async function GET(
       WHERE hl.owner_id = $1
       ORDER BY hl.paid_at DESC NULLS LAST, hl.created_at DESC
       `,
-      [ownerId]
+      [ownerIdNumber]
     );
 
     // Calculate summary
@@ -64,7 +65,7 @@ export async function GET(
       LEFT JOIN membership_plans up ON um.plan_id = up.id
       WHERE u.id = $1
       `,
-      [ownerId]
+      [ownerIdNumber]
     );
 
     if (ownerResult.rows.length === 0) {
@@ -95,7 +96,7 @@ export async function GET(
       ORDER BY created_at DESC
       LIMIT 50
       `,
-      [ownerId]
+      [ownerIdNumber]
     );
 
     return NextResponse.json(

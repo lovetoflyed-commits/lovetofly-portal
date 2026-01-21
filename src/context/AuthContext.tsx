@@ -25,33 +25,29 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  
+  // Initialize user and token from localStorage
+  const [user, setUser] = useState<User | null>(() => {
+    if (typeof window !== 'undefined') {
+      const storedUser = localStorage.getItem('user');
+      return storedUser ? JSON.parse(storedUser) : null;
+    }
+    return null;
+  });
+  
+  const [token, setToken] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('token');
+    }
+    return null;
+  });
+  
   const [error, setError] = useState<string | null>(null);
 
   // Initialize Sentry on mount (client-side only)
   useEffect(() => {
     if (typeof window !== 'undefined') {
       initSentry();
-    }
-  }, []);
-
-  useEffect(() => {
-    const storedToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    const storedUser = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      const parsedUser = JSON.parse(storedUser);
-      setUser(parsedUser);
-      
-      // Set user in Sentry
-      setSentryUser({
-        id: parsedUser.id?.toString(),
-        email: parsedUser.email,
-        username: parsedUser.name,
-      });
-      
-      console.log('[AuthContext] Loaded user from localStorage:', parsedUser);
     }
   }, []);
 

@@ -23,7 +23,11 @@ const JET_AIRCRAFT: Aircraft = {
 
 export default function GlassCockpit() {
   const [engineType, setEngineType] = useState<EngineType>('piston');
-  const [flightState, setFlightState] = useState<FlightState | null>(null);
+  const [flightState, setFlightState] = useState<FlightState | null>(() => {
+    const aircraft = PISTON_AIRCRAFT;
+    const sim = new FlightSimulator(aircraft);
+    return sim.getState();
+  });
   const [isFlying, setIsFlying] = useState(false);
   const [navFreq, setNavFreq] = useState('113.90');
   const [navCourse, setNavCourse] = useState(90);
@@ -42,7 +46,6 @@ export default function GlassCockpit() {
     const aircraft = engineType === 'piston' ? PISTON_AIRCRAFT : JET_AIRCRAFT;
     const sim = new FlightSimulator(aircraft);
     simRef.current = sim;
-    setFlightState(sim.getState());
 
     // Keyboard controls
     const handleKeyDown = (e: KeyboardEvent) => {

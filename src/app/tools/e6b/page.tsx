@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 export default function E6BPage() {
   const router = useRouter();
@@ -26,19 +27,19 @@ export default function E6BPage() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Link href="/tools/e6b/digital" className="block bg-white rounded-xl shadow-md border border-slate-200 p-6 hover:shadow-lg transition">
-            <img src="/thumbnails/e6b-digital.svg" alt="E6B Digital" className="w-full h-40 object-cover rounded-lg border border-slate-200" />
+            <Image src="/thumbnails/e6b-digital.svg" alt="E6B Digital" width={400} height={160} className="w-full h-40 object-cover rounded-lg border border-slate-200" />
             <h2 className="text-xl font-bold text-slate-900 mt-2">E6B Digital</h2>
             <p className="text-slate-600 mt-1">Calculadora eletrônica centrada, ideal para provas e planejamento.</p>
             <div className="mt-4 text-blue-700 text-sm font-bold">Abrir →</div>
           </Link>
           <Link href="/tools/e6b/analog" className="block bg-white rounded-xl shadow-md border border-slate-200 p-6 hover:shadow-lg transition">
-            <img src="/thumbnails/e6b-analog.svg" alt="E6B Analógico" className="w-full h-40 object-cover rounded-lg border border-slate-200" />
+            <Image src="/thumbnails/e6b-analog.svg" alt="E6B Analógico" width={400} height={160} className="w-full h-40 object-cover rounded-lg border border-slate-200" />
             <h2 className="text-xl font-bold text-slate-900 mt-2">E6B Analógico</h2>
             <p className="text-slate-600 mt-1">Disco e régua com imagens, modo vento e conversor.</p>
             <div className="mt-4 text-blue-700 text-sm font-bold">Abrir →</div>
           </Link>
           <Link href="/tools/e6b/exercises" className="block bg-white rounded-xl shadow-md border border-slate-200 p-6 hover:shadow-lg transition">
-            <img src="/thumbnails/e6b-exercises.svg" alt="Exercícios E6B" className="w-full h-40 object-cover rounded-lg border border-slate-200" />
+            <Image src="/thumbnails/e6b-exercises.svg" alt="Exercícios E6B" width={400} height={160} className="w-full h-40 object-cover rounded-lg border border-slate-200" />
             <h2 className="text-xl font-bold text-slate-900 mt-2">Exercícios (Fixação)</h2>
             <p className="text-slate-600 mt-1">Treinos passo a passo para consolidar uso do E6B.</p>
             <div className="mt-4 text-blue-700 text-sm font-bold">Abrir →</div>

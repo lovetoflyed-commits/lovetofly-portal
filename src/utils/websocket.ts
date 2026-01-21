@@ -20,10 +20,18 @@ export interface WebSocketMessage {
 }
 
 export interface RealTimeMetrics {
-  activeBookings: number;
-  todayRevenue: number;
-  occupancyRate: number;
-  lastUpdate: number;
+  // Core metrics
+  revenueToday?: number;
+  bookingsToday?: number;
+  occupancyRate?: number;
+  growthPercentage?: number;
+
+  // Legacy/alternate fields for compatibility
+  todayRevenue?: number;
+  activeBookings?: number;
+
+  // Metadata
+  lastUpdate?: number;
 }
 
 export interface BookingNotification {
@@ -33,6 +41,7 @@ export interface BookingNotification {
   checkIn: string;
   checkOut: string;
   amount: number;
+  duration?: number;
 }
 
 export interface OccupancyChange {
@@ -41,6 +50,8 @@ export interface OccupancyChange {
   occupancyRate: number;
   totalSpots: number;
   occupiedSpots: number;
+  isNowOccupied?: boolean;
+  timestamp?: number;
 }
 
 class WebSocketManager {

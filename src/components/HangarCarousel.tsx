@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import Image from 'next/image';
+import Link from 'next/link';
 
 interface Hangar {
   id: number;
@@ -134,8 +135,8 @@ export default function HangarCarousel() {
         <div className="mt-6 p-4 bg-yellow-100 border border-yellow-300 rounded-lg text-yellow-800 text-center">
           Faça login ou cadastre-se para acessar detalhes e reservar um hangar.
           <div className="mt-2 flex gap-2 justify-center">
-            <a href="/login" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-bold">Login</a>
-            <a href="/register" className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-bold">Cadastrar</a>
+            <Link href="/login" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-bold">Login</Link>
+            <Link href="/register" className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-bold">Cadastrar</Link>
             <button onClick={() => setShowLoginAlert(false)} className="ml-2 text-slate-500 underline">Fechar</button>
           </div>
         </div>
