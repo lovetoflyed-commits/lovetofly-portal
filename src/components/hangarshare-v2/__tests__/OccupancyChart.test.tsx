@@ -1,15 +1,16 @@
 // Tests: OccupancyChart Component
 // File: src/components/hangarshare-v2/__tests__/OccupancyChart.test.tsx
 
+import '@testing-library/jest-dom';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { OccupancyChart } from '../OccupancyChart';
 
 describe('OccupancyChart Component', () => {
   const mockData = [
-    { month: 'Jan', occupancy: 65, capacity: 100, bookings: 25 },
-    { month: 'Feb', occupancy: 72, capacity: 100, bookings: 28 },
-    { month: 'Mar', occupancy: 80, capacity: 100, bookings: 32 },
+    { date: '2024-01', occupancy: 65, capacity: 100 },
+    { date: '2024-02', occupancy: 72, capacity: 100 },
+    { date: '2024-03', occupancy: 80, capacity: 100 },
   ];
 
   describe('Rendering', () => {
@@ -105,9 +106,9 @@ describe('OccupancyChart Component', () => {
   describe('Occupancy Percentage Handling', () => {
     it('should handle occupancy between 0-100%', () => {
       const percentageData = [
-        { month: 'Jan', occupancy: 0, capacity: 100, bookings: 0 },
-        { month: 'Feb', occupancy: 50, capacity: 100, bookings: 10 },
-        { month: 'Mar', occupancy: 100, capacity: 100, bookings: 20 },
+        { date: '2024-01', occupancy: 0, capacity: 100 },
+        { date: '2024-02', occupancy: 50, capacity: 100 },
+        { date: '2024-03', occupancy: 100, capacity: 100 },
       ];
       render(<OccupancyChart data={percentageData} />);
       const chart = document.querySelector('.recharts-surface');
@@ -116,8 +117,8 @@ describe('OccupancyChart Component', () => {
 
     it('should handle fractional occupancy values', () => {
       const fractionalData = [
-        { month: 'Jan', occupancy: 65.5, capacity: 100, bookings: 13 },
-        { month: 'Feb', occupancy: 72.3, capacity: 100, bookings: 14 },
+        { date: '2024-01', occupancy: 65.5, capacity: 100 },
+        { date: '2024-02', occupancy: 72.3, capacity: 100 },
       ];
       render(<OccupancyChart data={fractionalData} />);
       const chart = document.querySelector('.recharts-surface');
@@ -153,7 +154,7 @@ describe('OccupancyChart Component', () => {
 
   describe('Data Edge Cases', () => {
     it('should handle single data point', () => {
-      const singleData = [{ month: 'Jan', occupancy: 75, capacity: 100, bookings: 15 }];
+      const singleData = [{ date: '2024-01', occupancy: 75, capacity: 100 }];
       render(<OccupancyChart data={singleData} />);
       const chart = document.querySelector('.recharts-surface');
       expect(chart).toBeInTheDocument();
@@ -161,10 +162,9 @@ describe('OccupancyChart Component', () => {
 
     it('should handle large datasets', () => {
       const largeData = Array.from({ length: 50 }, (_, i) => ({
-        month: `M${i + 1}`,
+        date: `2024-${String(i + 1).padStart(2, '0')}`,
         occupancy: 50 + Math.random() * 30,
         capacity: 100,
-        bookings: Math.floor(Math.random() * 30),
       }));
       render(<OccupancyChart data={largeData} />);
       const chart = document.querySelector('.recharts-surface');

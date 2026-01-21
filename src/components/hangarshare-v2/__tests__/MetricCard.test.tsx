@@ -2,6 +2,7 @@
 // File: src/components/hangarshare-v2/__tests__/MetricCard.test.tsx
 // Purpose: Test MetricCard component rendering and interactions
 
+import '@testing-library/jest-dom';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { MetricCard } from '../MetricCard';

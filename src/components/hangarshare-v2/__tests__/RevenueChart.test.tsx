@@ -1,6 +1,7 @@
 // Tests: RevenueChart Component
 // File: src/components/hangarshare-v2/__tests__/RevenueChart.test.tsx
 
+import '@testing-library/jest-dom';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { RevenueChart } from '../RevenueChart';
