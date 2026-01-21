@@ -11,7 +11,7 @@ interface MetricCardProps {
   value: number | string;
   icon?: string;
   change?: number;
-  status?: 'healthy' | 'warning' | 'critical';
+  status?: 'healthy' | 'warning' | 'critical' | 'default';
   unit?: string;
   onClick?: () => void;
 }
@@ -41,7 +41,7 @@ export function MetricCard({
   value,
   icon = 'chart',
   change,
-  status = 'default',
+  status = 'default' as const,
   unit = '',
   onClick,
 }: MetricCardProps) {

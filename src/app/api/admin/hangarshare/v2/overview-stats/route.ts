@@ -5,6 +5,8 @@
 import { NextResponse } from 'next/server';
 import pool from '@/config/db';
 
+type AlertSeverity = 'low' | 'medium' | 'high';
+
 interface HeroMetric {
   title: string;
   value: number | string;
@@ -202,13 +204,19 @@ export async function GET(request: Request): Promise<NextResponse<OverviewStats>
       },
     ];
 
-    const alertItems = [];
+    const alertItems: Array<{
+      id: string;
+      type: string;
+      message: string;
+      severity: AlertSeverity;
+      createdAt: string;
+    }> = [];
     if (pendingApprovals > 0) {
       alertItems.push({
         id: 'pending-approvals',
         type: 'verification',
         message: `${pendingApprovals} owners waiting for approval`,
-        severity: pendingApprovals > 5 ? 'high' : 'medium',
+        severity: (pendingApprovals > 5 ? 'high' : 'medium') as AlertSeverity,
         createdAt: new Date().toISOString(),
       });
     }
