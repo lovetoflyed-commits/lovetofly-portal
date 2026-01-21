@@ -65,7 +65,7 @@ export function RevenueChart({
               tickFormatter={formatCurrency}
             />
             <Tooltip
-              formatter={(value: number) => formatCurrency(value)}
+              formatter={(value: number | undefined) => value !== undefined ? formatCurrency(value) : 'N/A'}
               contentStyle={{
                 backgroundColor: '#fff',
                 border: '1px solid #e5e7eb',

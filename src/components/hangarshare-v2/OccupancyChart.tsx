@@ -61,7 +61,7 @@ export function OccupancyChart({
               label={{ value: '%', angle: -90, position: 'insideLeft' }}
             />
             <Tooltip
-              formatter={(value: number) => `${value.toFixed(1)}%`}
+              formatter={(value: number | undefined) => value !== undefined ? `${value.toFixed(1)}%` : 'N/A'}
               contentStyle={{
                 backgroundColor: '#fff',
                 border: '1px solid #e5e7eb',
