@@ -95,15 +95,20 @@ app.prepare().then(() => {
     const parsedUrl = parse(req.url, true);
 
     if (parsedUrl.pathname === '/api/ws') {
-      // Extract token from Authorization header
+      // Extract token from Authorization header OR query parameter (for browser testing)
       const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      const queryToken = parsedUrl.query.token;
+      
+      let token;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.slice(7); // Remove "Bearer " prefix
+      } else if (queryToken) {
+        token = queryToken; // Support ?token=xxx for browser testing
+      } else {
         socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
         socket.destroy();
         return;
       }
-
-      const token = authHeader.slice(7); // Remove "Bearer " prefix
 
       // Verify token
       try {
