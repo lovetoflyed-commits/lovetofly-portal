@@ -22,7 +22,7 @@ export function TimeRangeSelector({
   onCustomDateChange,
   showCustom = true,
 }: TimeRangeSelectorProps) {
-  const [showCustom, setShowCustom] = React.useState(false);
+  const [isCustomRangeOpen, setIsCustomRangeOpen] = React.useState(false);
   const [startDate, setStartDate] = React.useState('');
   const [endDate, setEndDate] = React.useState('');
 
@@ -41,16 +41,16 @@ export function TimeRangeSelector({
   const handleRangeSelect = (range: TimeRange) => {
     onChange(range);
     if (range === 'custom') {
-      setShowCustom(true);
+      setIsCustomRangeOpen(true);
     } else {
-      setShowCustom(false);
+      setIsCustomRangeOpen(false);
     }
   };
 
   const handleApplyCustom = () => {
     if (startDate && endDate && onCustomDateChange) {
       onCustomDateChange(startDate, endDate);
-      setShowCustom(false);
+      setIsCustomRangeOpen(false);
     }
   };
 

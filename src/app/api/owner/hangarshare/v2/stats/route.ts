@@ -2,8 +2,9 @@
 // File: src/app/api/owner/hangarshare/v2/stats/route.ts
 // Purpose: Provide owner-specific metrics and analytics
 
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import pool from '@/config/db';
+import { getAuthenticatedOwnerId, unauthorizedResponse } from '@/utils/auth';
 
 interface OwnerStatsResponse {
   success: boolean;
@@ -60,13 +61,22 @@ interface OwnerStatsResponse {
   };
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const startTime = Date.now();
 
   try {
+    // Verify authentication
+    const { ownerId: queryOwnerId, userId, isAuthorized } = await getAuthenticatedOwnerId(request);
+    
+    if (!isAuthorized && !userId) {
+      return unauthorizedResponse('Authentication required. Please provide a valid Bearer token.');
+    }
+
     // Get owner ID from query params or authenticated user
     const { searchParams } = new URL(request.url);
-    const ownerId = searchParams.get('ownerId');
+    const requestedOwnerId = searchParams.get('ownerId');
+    
+    const ownerId = queryOwnerId || requestedOwnerId;
 
     if (!ownerId) {
       return NextResponse.json(
