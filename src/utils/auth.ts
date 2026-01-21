@@ -13,17 +13,25 @@ export interface JWTPayload {
 }
 
 /**
- * Verify JWT token from Authorization header
+ * Verify JWT token - accepts either a token string or NextRequest
  * Returns decoded payload or null if invalid
  */
-export function verifyToken(request: NextRequest): JWTPayload | null {
+export function verifyToken(tokenOrRequest: string | NextRequest): JWTPayload | null {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return null;
+    let token: string;
+
+    // Handle both string token and NextRequest
+    if (typeof tokenOrRequest === 'string') {
+      token = tokenOrRequest;
+    } else {
+      // It's a NextRequest
+      const authHeader = tokenOrRequest.headers.get('authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return null;
+      }
+      token = authHeader.substring(7);
     }
 
-    const token = authHeader.substring(7);
     const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
     return decoded;
   } catch (error) {
