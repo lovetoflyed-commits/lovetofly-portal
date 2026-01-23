@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns/formatDistanceToNow';
+// If using types, ensure: npm install --save-dev @types/date-fns (for TS support)
 import {
   User,
   LogOut,

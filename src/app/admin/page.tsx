@@ -73,7 +73,11 @@ export default function AdminDashboardPage() {
         { label: 'Hangares Pendentes', value: stats.pendingListings }
       ],
       alert: stats.pendingVerifications > 0 ? 'Novos documentos aguardam revisão.' : 'Nenhuma solicitação pendente.',
-      note: 'Mantenha aprovações em dia para ativar anúncios.'
+      note: 'Mantenha aprovações em dia para ativar anúncios.',
+      items: [
+        { label: 'HangarShare V1', href: '/admin/hangarshare' },
+        { label: 'HangarShare V2', href: '/admin/hangarshare-v2' }
+      ]
     },
     {
       key: 'bookings',

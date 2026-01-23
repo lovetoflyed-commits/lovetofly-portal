@@ -54,8 +54,8 @@ export function SearchBar({
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState(-1);
-  const debounceTimerRef = useRef<NodeJS.Timeout>();
+  const [selectedIndex, setSelectedIndex] = useState<number>(-1);
+  const debounceTimerRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Debounced search

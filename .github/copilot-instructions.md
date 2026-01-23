@@ -1,100 +1,77 @@
-# Instruções para Agentes IA - Love to Fly Portal
+# Love to Fly Portal – AI Agent Instructions
 
-## Arquitetura Core
+## Core Architecture
+- **Stack:** Next.js 16 (App Router), React 19, TypeScript, Neon PostgreSQL, Stripe, Resend
+- **Co-location:** API routes live alongside features (`src/app/api/**/route.ts`), not in a global services folder
+- **State Management:** 
+  - Auth via `src/context/AuthContext.tsx` → `useAuth()` hook (user, token via localStorage)
+  - i18n via `src/context/LanguageContext.tsx` → `useLanguage()` hook (pt, en, es)
+- **Database:** Singleton `pg.Pool` in `src/config/db.ts`, migrations in `src/migrations/` (sequential: `00X_description.sql`)
+- **UI Components:** Shared in `src/components/` (Header, Sidebar, AuthGuard, HangarCarousel, LanguageSelector)
+- **Translations:** `src/translations/` (pt.json, en.json, es.json - 300+ keys each)
+- **Pages:** All in `src/app/`, interactive components use `'use client'`. Root `layout.tsx` wraps `<LanguageProvider><AuthProvider>`
 
-**Stack:** Next.js 16 (App Router) + React 19 + TypeScript + Neon PostgreSQL + Stripe + Resend  
-**Padrão:** Co-location - APIs vivem no lado da feature (`src/app/api/**/route.ts`), não em "services" separadas
+## Essential Workflows
 
-### Estrutura Crítica
-- **Client State:** `src/context/AuthContext.tsx` → `useAuth()` hook (user, token via localStorage)
-- **Language State:** `src/context/LanguageContext.tsx` → `useLanguage()` hook (language switching, i18n)
-- **DB Connection:** `src/config/db.ts` → `pg.Pool` singleton; schemas em `src/migrations/` (sequencial: `00X_description.sql`)
-- **UI Components:** `src/components/` compartilhados (Header, Sidebar, AuthGuard, HangarCarousel, LanguageSelector)
-- **Translations:** `src/translations/` com pt.json, en.json, es.json (300+ keys cada)
-- **Pages:** `src/app/` com `'use client'` em components interativos; layout.tsx raiz wrappa `<LanguageProvider><AuthProvider>`
-
----
-
-## Fluxos de Trabalho Essenciais
-
-### Desenvolvimento
+### Development Commands
 ```bash
-npm run dev              # Inicia Next.js em http://localhost:3000
-npm run build && npm run start  # Build/serve production
-npm run lint            # ESLint check
+npm run dev          # Start dev server on :3000
+npm run build        # Production build
+npm run lint         # ESLint check
+npm run seed:dev     # Seed database with test data
 ```
 
-### Banco de Dados (Neon PostgreSQL via node-pg-migrate)
+### Database Operations
 ```bash
-npm run migrate         # Status das migrations
-npm run migrate:up      # Executa próxima migration pendente
-npm run migrate:down    # Desfaz última migration
-npm run migrate:create  # Cria novo arquivo de migration
+npm run migrate:up      # Run next pending migration
+npm run migrate:down    # Rollback last migration
+npm run migrate:create  # Create new migration file
 ```
 
-**Padrão de Migration:** Cada alteração em arquivo novo (`src/migrations/00X_...sql`). Usar `IF NOT EXISTS` e criar índices para FKs. Atualizar `src/types/db.d.ts` após.
+**Migration Pattern:** Always create new file in `src/migrations/00X_description.sql`. Use `IF NOT EXISTS` for safety. Create indexes for all foreign keys. Update `src/types/db.d.ts` after schema changes.
 
-### Variáveis de Ambiente
-Obrigatórias em `.env.local`:
-- `DATABASE_URL` (Neon PostgreSQL connection string)
-- `JWT_SECRET`, `NEXTAUTH_SECRET` (autenticação)
-- `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET` (pagamentos)
-- `RESEND_API_KEY` (emails)
+### Environment Variables
+Required in `.env.local`:
+- `DATABASE_URL` - Neon PostgreSQL connection string
+- `JWT_SECRET`, `NEXTAUTH_SECRET` - Authentication
+- `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET` - Payments
+- `RESEND_API_KEY` - Email service
 
-Deploy (Netlify): adicione mesmas variáveis em Settings → Environment Variables
+For Netlify deployment: Add same variables in Settings → Environment Variables
 
----
+## Project Patterns
 
-## Padrões de Código
-
-### API Routes (`src/app/api/**/route.ts`)
+### API Routes
+Pattern for all routes in `src/app/api/**/route.ts`:
 ```typescript
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    // validação, business logic
+    // validation, business logic
     const result = await pool.query('SELECT ...', [params]);
     return NextResponse.json({ data: result.rows }, { status: 200 });
   } catch (error) {
-    console.error('Erro descritivo:', error);
-    return NextResponse.json({ message: 'Erro' }, { status: 500 });
+    console.error('Descriptive error:', error);
+    return NextResponse.json({ message: 'Error message' }, { status: 500 });
   }
 }
 ```
-- Sempre `try/catch` com `console.error()`
-- Resposta: `NextResponse.json({ message|data }, { status })`
-- Auth: JWT no header `Authorization: Bearer <token>` (verificar em autenticação)
+- Always use `try/catch` with descriptive `console.error()`
+- Return format: `NextResponse.json({ message|data }, { status })`
+- Auth: JWT in `Authorization: Bearer <token>` header
 
-### Autenticação
-- Login em `/api/auth/login` → retorna `{ token, user: { id, name, email, plan } }`
-- Context guarda `token` + `user` em localStorage
-- Rotas privadas: usar `<AuthGuard>` ou validar `useAuth()` no client
+### Authentication Flow
+- Login endpoint: `/api/auth/login` returns `{ token, user: { id, name, email, plan } }`
+- State persisted in localStorage via `AuthContext`
+- Protected routes: Use `<AuthGuard>` component or validate `useAuth()` on client
+- Session expires → auto-redirect to `/login`
 
-### Componentes UI
-- **Tailwind CSS** (configurado em `tailwind.config.js`)
-- **Componentes reutilizáveis** em `src/components/`: Header, Sidebar, BookingModal, HangarCarousel
-- **Dashboard modular** em `src/app/page.tsx`: objeto `modules` controla acesso por plano (free/premium/pro)
+### UI Components
+- **Styling:** Tailwind CSS (see `tailwind.config.js`)
+- **Reusable Components:** `src/components/` (Header, Sidebar, BookingModal, HangarCarousel)
+- **Dashboard Pattern:** See `src/app/page.tsx` - modular with plan-based access control (free/premium/pro)
 
-### Estado Global
-- Usar `useAuth()` para obter `user`, `token`, `login()`, `logout()`
-- localStorage persiste entre refresh
-- Dados sensíveis (senhas, chaves) NUNCA no client
-
----
-
-## Features Principais
-
-### Internacionalização (i18n) - Multilingual Support
-**Versão:** v1.0 - Completa e Production-Ready  
-**Linguagens:** Português (🇧🇷), English (🇺🇸), Spanish (🇪🇸)
-
-**Componentes:**
-- `src/context/LanguageContext.tsx` → `useLanguage()` hook para acesso a idioma e função `t()`
-- `src/components/LanguageSelector.tsx` → UI dropdown com flags para seleção
-- `src/translations/pt.json|en.json|es.json` → Dicionários com 300+ keys cada
-- `src/app/layout.tsx` → Wrapper `<LanguageProvider>` app-wide
-
-**Como Usar:**
+### Internationalization (i18n)
 ```typescript
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -103,79 +80,95 @@ export function MyComponent() {
   return <h1>{t('section.key')}</h1>;
 }
 ```
+- Add new keys to **all 3 files**: `src/translations/pt.json`, `en.json`, `es.json`
+- Auto-detects browser language, persists in localStorage
+- SSR-safe with fallback handling
 
-**Recursos:**
-- ✅ Detecção automática de idioma do navegador
-- ✅ Persistência em localStorage
-- ✅ Troca instantânea sem reload
-- ✅ Fallback seguro para SSR
-- ✅ Type-safe com TypeScript
-- ✅ 300+ keys traduzidas para cada idioma
+### Database Seeding
+- Seed scripts in `scripts/seeds/` with realistic test data
+- Run `npm run seed:dev` to populate local database
+- Local assets in `public/seed-assets/` (avatars, hangars, company logos)
 
-**Adicionando Traduções:**
-1. Add key to all 3 files: `src/translations/pt.json|en.json|es.json`
-2. Use em component: `{t('section.key')}`
+## Integration Points
 
-**Documentação:** `INTERNATIONALIZATION_COMPLETE.md`, `MULTILINGUAL_QUICK_START.md`, `MULTILINGUAL_VISUAL_GUIDE.md`
-
-### HangarShare v1.0 (Marketplace de Hangares)
-**Páginas:** `src/app/hangarshare/*`
-- `/hangarshare/owner/setup` → Onboarding simplificado (6 campos de empresa)
-- `/hangarshare/listing/create` → Formulário 4 passos com auto-fetch ICAO
-- `/hangarshare/owner/dashboard` → Estatísticas + tabela de hangares + relatórios (PDF, CSV)
-
-**APIs:**
-- `GET /api/hangarshare/airport/search?icao=SBSP` → Busca aeródromos (migrations 008/009 com 14 aeródromos)
-- `POST/GET /api/hangarshare/owners` → Gerencia perfis de anunciantes
-
-**Nota:** APIs usam **mock data** - TODO conectar ao BD real
-
-### Autenticação & Segurança
-- JWT com `jsonwebtoken` lib, secret em `JWT_SECRET`
-- Senha com `bcryptjs` (hashed em DB)
-- `AuthContext` persiste sessão em localStorage + redireciona `/login` se expirado
-
-### Pagamentos (Stripe)
+### Payments (Stripe)
 - **Client:** `@stripe/react-stripe-js` + `@stripe/stripe-js` (CardElement, confirmPayment)
-- **Server:** lib `stripe` cria PaymentIntent, webhook em `/api/hangarshare/webhook/stripe`
-- Guias: `STRIPE_SETUP.md`, `PAYMENT_INTEGRATION.md`
+- **Server:** `stripe` lib creates PaymentIntent
+- **Webhook:** `/api/hangarshare/webhook/stripe` handles payment events
+- **Guides:** `STRIPE_SETUP.md`, `PAYMENT_INTEGRATION.md`
 
-### Emails (Resend)
-- **Util function** em `src/utils/email.ts` (confirmação booking, notificação owner, falha pagamento)
-- Webhook Stripe dispara envio
-- Guia: `EMAIL_SETUP_GUIDE.md`
+### Email (Resend)
+- **Utility:** `src/utils/email.ts` (booking confirmation, owner notification, payment failures)
+- **Trigger:** Stripe webhook dispatches emails
+- **Guide:** `EMAIL_SETUP_GUIDE.md`
 
-### Ferramentas de Voo
-- **E6B Analógico/Digital:** `src/app/tools/e6b`
-- **Assets Jeppesen:** `public/e6b/jeppesen/` (README.md com instruções)
+### WebSocket (Real-time)
+- **Server:** `server.js` with Socket.io integration
+- **Client Utils:** `src/utils/websocket-client.ts`, `src/hooks/useRealtimeMetrics.tsx`
+- **Features:** JWT auth, 30s heartbeat, auto-reconnect
+- **Test Console:** `public/test-websocket.html` (browser-based testing)
 
-### Relatórios
-- **Libs:** jsPDF + jspdf-autotable
-- **Dashboard HangarShare:** botão exporta PDF, CSV ou imprime
+### HangarShare Marketplace
+- **Routes:** `src/app/hangarshare/*` (owner setup, listing create, owner dashboard)
+- **Admin Routes:** `src/app/admin/hangarshare-v2/*` (management interface)
+- **APIs:** Airport search, owner management, listing approval
+- **Reports:** PDF/CSV export via jsPDF + jspdf-autotable
+
+## Admin System
+
+### Role-Based Access Control (RBAC)
+- **Permissions:** `src/utils/admin-permissions.ts` - complete permission matrix
+- **Audit Logging:** `src/utils/admin-audit.ts` - tracks all admin actions
+- **Components:** `src/components/admin-v2/` - reusable admin UI (MetricsCard, DataTable, FilterPanel, SearchBar, ActivityFeed)
+
+### Admin Dashboard V2
+- **Status:** Phase 1 complete (foundation components)
+- **Location:** `/admin/v2/*` routes
+- **Documentation:** See `ADMIN_DASHBOARD_V2_*` files (8 docs, 100KB total)
+- **Features:** Real-time updates, advanced search/filtering, audit trails
+
+## Critical Conventions
+
+### Migrations
+- ✅ Always create new file, never edit existing migrations
+- ✅ Use `IF NOT EXISTS` for idempotent operations
+- ✅ Create indexes for all foreign keys
+- ✅ Update TypeScript types in `src/types/db.d.ts`
+
+### Security
+- ❌ Never expose secrets or credentials to client
+- ✅ Hash passwords with `bcryptjs` before storing
+- ✅ Validate JWT tokens on protected endpoints
+- ✅ Log all admin actions for audit compliance
+
+### State Management
+- ✅ localStorage is source of truth for auth state
+- ✅ Sync auth token with `JWT_SECRET`
+- ✅ Clear storage on logout
+
+### Known TODOs
+- ⚠️ Some APIs use mock data - replace with real DB queries before production
+- ⚠️ Photo upload not implemented - plan for S3 or local storage
+- ⚠️ Some listing edit endpoints missing
+
+## Reference Files
+
+### Example Patterns
+- **Auth Flow:** `src/app/login/page.tsx`
+- **Dashboard Modules:** `src/app/page.tsx`
+- **Admin Logic:** `src/app/admin/README.md`, `src/utils/admin-permissions.ts`
+
+### Documentation
+- **Quick Start:** `documentation/QUICK_START.md`, `documentation/START_HERE.md`
+- **Features:** HangarShare, Email, Payment guides in `documentation/`
+- **Setup:** `NEON_SETUP.md` (database), `DEPLOYMENT.md` (Netlify)
+- **Status:** `SYSTEM_STATUS_REPORT_2026-01-23.md` (current state)
+
+### Tool Assets
+- **E6B Calculator:** `src/app/tools/e6b` (analog/digital flight computer)
+- **Jeppesen Assets:** `public/e6b/jeppesen/README.md` (asset instructions)
 
 ---
 
-## Conhecidas Limitações & TODO
-
-⚠️ **APIs usam mock data:** `/api/hangarshare/airport/search` e `/api/hangarshare/owners` retornam hardcoded data - substituir por queries ao `airport_icao` e `hangar_owners` tables  
-⚠️ **Upload de fotos:** não implementado - será AWS S3 ou storage local  
-⚠️ **Edição de anúncios:** botão existe mas endpoint não  
-
----
-
-## Documentação de Referência (Prioridade)
-
-1. **Guias de feature:** `HANGARSHARE_COMPLETE_GUIDE.md`, `EMAIL_SETUP_GUIDE.md`, `STRIPE_SETUP.md` (passo a passo)
-2. **Entrega/Status:** `HANGARSHARE_ENHANCED.md`, `HANGARSHARE_DELIVERY_SUMMARY.md`
-3. **Setup inicial:** `QUICK_START.md`, `START_HERE.md`
-4. **Infraestrutura:** `NEON_SETUP.md` (BD), `DEPLOYMENT.md` (Netlify)
-
----
-
-## Tips para Produtividade
-
-- `src/app/login/page.tsx` é exemplo bom de flow auth client-side
-- `src/app/page.tsx` mostra padrão dashboard com múltiplos módulos e gating por plano
-- Migrations executam em ordem alfabética - sempre criar novo arquivo
-- LocalStorage é o source of truth para auth - sincronize com JWT_SECRET
-- Mock data ajuda development offline - mas TODO conectar ao BD antes de produção
+**For complete documentation index, see:** `documentation/README.md`  
+**For latest system status, see:** `SYSTEM_STATUS_REPORT_2026-01-23.md`

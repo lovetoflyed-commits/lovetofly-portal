@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 /**
  * Permission Middleware
  * 
@@ -221,10 +223,10 @@ export function PermissionGate({
 }: {
   permission: keyof AdminPermissions;
   userRole: AdminRole;
-  children: React.ReactNode;
-  fallback?: React.ReactNode;
-}) {
-  return hasPermission(userRole, permission) ? <>{children}</> : <>{fallback}</>;
+  children: ReactNode;
+  fallback?: ReactNode;
+}): ReactNode {
+  return hasPermission(userRole, permission) ? children : fallback;
 }
 
 /**
