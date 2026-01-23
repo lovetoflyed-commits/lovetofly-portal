@@ -37,9 +37,8 @@ export default function Header() {
       };
 
       fetchUnreadCount();
-      // Poll every 30 seconds
-      const interval = setInterval(fetchUnreadCount, 30000);
-      return () => clearInterval(interval);
+      // Poll only on initial load, not periodically
+      return () => {};
     }
   }, [user]);
 

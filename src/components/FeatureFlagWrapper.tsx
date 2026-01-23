@@ -80,9 +80,8 @@ export function FeatureFlagWrapper({
 
     checkFlag();
 
-    // Optionally refresh flag status periodically (30 seconds)
-    const interval = setInterval(checkFlag, 30000);
-    return () => clearInterval(interval);
+    // Check flag status only on initial load, not periodically
+    return () => {};
   }, [flag, onStatusChange]);
 
   // While loading, show fallback or nothing
@@ -150,9 +149,8 @@ export function useFeatureFlag(flagName: string) {
 
     checkFlag();
 
-    // Refresh flag status periodically (30 seconds)
-    const interval = setInterval(checkFlag, 30000);
-    return () => clearInterval(interval);
+    // Check flag status only on initial load, not periodically
+    return () => {};
   }, [flagName]);
 
   return { enabled, loading, error };

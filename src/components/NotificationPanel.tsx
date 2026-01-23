@@ -43,8 +43,8 @@ export default function NotificationPanel() {
     };
 
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000); // Refresh every 30 sec
-    return () => clearInterval(interval);
+    // Fetch notifications only on initial load, not periodically
+    return () => {};
   }, [token]);
 
   const handleMarkAsRead = async (notificationId: number) => {
