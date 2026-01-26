@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     try {
       const decoded = jwt.verify(token, secret) as any;
-      userId = decoded.userId;
+      userId = decoded.userId ?? decoded.id;
     } catch (err) {
       return NextResponse.json(
         { error: 'Token inválido' },
@@ -103,7 +103,7 @@ export async function PATCH(request: NextRequest) {
 
     try {
       const decoded = jwt.verify(token, secret) as any;
-      userId = decoded.userId;
+      userId = decoded.userId ?? decoded.id;
     } catch (err) {
       return NextResponse.json(
         { error: 'Token inválido' },

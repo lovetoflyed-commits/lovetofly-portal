@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface Notification {
   id: string;
@@ -25,6 +26,7 @@ export default function NotificationDropdown({
   onClose,
   unreadCount,
 }: NotificationDropdownProps) {
+  const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -81,6 +83,14 @@ export default function NotificationDropdown({
       }
     } catch (error) {
       console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const handleOpenNotification = async (notification: Notification) => {
+    await handleMarkAsRead(notification.id);
+    if (notification.action_url) {
+      router.push(notification.action_url);
+      onClose();
     }
   };
 
@@ -174,7 +184,7 @@ export default function NotificationDropdown({
               className={`px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
                 !notification.is_read ? 'bg-blue-50' : ''
               }`}
-              onClick={() => handleMarkAsRead(notification.id)}
+              onClick={() => handleOpenNotification(notification)}
             >
               <div className="flex items-start gap-3">
                 <span className="text-xl flex-shrink-0">
