@@ -34,7 +34,7 @@ export default function CreateAvionicsListing() {
     compatible_aircraft: '',
     includes_installation: false,
     warranty_remaining: '',
-    status: 'draft'
+    status: 'active'
   });
 
   const categories = [
@@ -93,7 +93,8 @@ export default function CreateAvionicsListing() {
         body: JSON.stringify({
           ...formData,
           price: parseFloat(formData.price),
-          user_id: user?.id
+          user_id: user?.id,
+          status: 'active'
         })
       });
 

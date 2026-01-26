@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 
@@ -19,23 +19,109 @@ export default function UserProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [isEditingUser, setIsEditingUser] = useState(false);
+  const [isEditingHangar, setIsEditingHangar] = useState(false);
+  const [editUser, setEditUser] = useState<any>(null);
+  const [editHangar, setEditHangar] = useState<any>(null);
+  const [saving, setSaving] = useState(false);
+  const hasFetchedRef = useRef(false);
+  const inFlightRef = useRef(false);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    (window as any).__disableAutoRefresh = true;
+    return () => {
+      (window as any).__disableAutoRefresh = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (hasFetchedRef.current) {
+      setLoading(false);
+      return;
+    }
+
+    if (inFlightRef.current) {
+      return;
+    }
+
+    if (profile) {
+      return;
+    }
+
     const fetchProfile = async () => {
       try {
+        inFlightRef.current = true;
         const res = await fetch(`/api/admin/users/${userId}/profile`);
         if (!res.ok) throw new Error('Failed to fetch profile');
         const data = await res.json();
         setProfile(data);
+        hasFetchedRef.current = true;
       } catch (error) {
         console.error('Error:', error);
       } finally {
+        inFlightRef.current = false;
         setLoading(false);
       }
     };
 
     fetchProfile();
   }, [userId]);
+
+  useEffect(() => {
+    if (profile?.user) {
+      setEditUser(profile.user);
+    }
+    if (profile?.hangarOwner) {
+      setEditHangar(profile.hangarOwner);
+    }
+  }, [profile]);
+
+  const handleSaveUser = async () => {
+    if (!editUser) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/admin/users/${userId}/profile`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user: editUser })
+      });
+      if (!res.ok) {
+        throw new Error('Falha ao salvar perfil');
+      }
+      const data = await res.json();
+      setProfile((prev) => prev ? { ...prev, user: data.user || prev.user } : prev);
+      setIsEditingUser(false);
+    } catch (error) {
+      console.error('Error saving user profile:', error);
+      alert('Erro ao salvar perfil');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveHangar = async () => {
+    if (!editHangar) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/admin/users/${userId}/profile`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hangarOwner: editHangar })
+      });
+      if (!res.ok) {
+        throw new Error('Falha ao salvar dados do hangar');
+      }
+      const data = await res.json();
+      setProfile((prev) => prev ? { ...prev, hangarOwner: data.hangarOwner || prev.hangarOwner } : prev);
+      setIsEditingHangar(false);
+    } catch (error) {
+      console.error('Error saving hangar owner:', error);
+      alert('Erro ao salvar dados do hangar');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -256,6 +342,186 @@ export default function UserProfilePage() {
                   </div>
                 </div>
               )}
+
+              <div className="col-span-2">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-gray-900">Editar Perfil</h3>
+                  <button
+                    onClick={() => setIsEditingUser(!isEditingUser)}
+                    className="px-3 py-2 text-sm bg-slate-100 text-slate-700 rounded-lg font-semibold hover:bg-slate-200"
+                  >
+                    {isEditingUser ? 'Cancelar' : 'Editar'}
+                  </button>
+                </div>
+
+                {isEditingUser && editUser && (
+                  <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700">Nome</label>
+                        <input
+                          value={editUser.first_name || ''}
+                          onChange={(e) => setEditUser((prev: any) => ({ ...prev, first_name: e.target.value }))}
+                          className="w-full border border-gray-200 rounded px-3 py-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700">Sobrenome</label>
+                        <input
+                          value={editUser.last_name || ''}
+                          onChange={(e) => setEditUser((prev: any) => ({ ...prev, last_name: e.target.value }))}
+                          className="w-full border border-gray-200 rounded px-3 py-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700">Email</label>
+                        <input
+                          value={editUser.email || ''}
+                          onChange={(e) => setEditUser((prev: any) => ({ ...prev, email: e.target.value }))}
+                          className="w-full border border-gray-200 rounded px-3 py-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700">CPF</label>
+                        <input
+                          value={editUser.cpf || ''}
+                          onChange={(e) => setEditUser((prev: any) => ({ ...prev, cpf: e.target.value }))}
+                          className="w-full border border-gray-200 rounded px-3 py-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700">Telefone</label>
+                        <input
+                          value={editUser.mobile_phone || ''}
+                          onChange={(e) => setEditUser((prev: any) => ({ ...prev, mobile_phone: e.target.value }))}
+                          className="w-full border border-gray-200 rounded px-3 py-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700">Data de Nascimento</label>
+                        <input
+                          type="date"
+                          value={editUser.birth_date ? String(editUser.birth_date).slice(0, 10) : ''}
+                          onChange={(e) => setEditUser((prev: any) => ({ ...prev, birth_date: e.target.value }))}
+                          className="w-full border border-gray-200 rounded px-3 py-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700">Função</label>
+                        <input
+                          value={editUser.aviation_role || ''}
+                          onChange={(e) => setEditUser((prev: any) => ({ ...prev, aviation_role: e.target.value }))}
+                          className="w-full border border-gray-200 rounded px-3 py-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700">Plano</label>
+                        <select
+                          value={editUser.plan || ''}
+                          onChange={(e) => setEditUser((prev: any) => ({ ...prev, plan: e.target.value }))}
+                          className="w-full border border-gray-200 rounded px-3 py-2"
+                        >
+                          <option value="">—</option>
+                          <option value="free">free</option>
+                          <option value="standard">standard</option>
+                          <option value="premium">premium</option>
+                          <option value="pro">pro</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700">Role</label>
+                        <select
+                          value={editUser.role || ''}
+                          onChange={(e) => setEditUser((prev: any) => ({ ...prev, role: e.target.value }))}
+                          className="w-full border border-gray-200 rounded px-3 py-2"
+                        >
+                          <option value="">—</option>
+                          <option value="user">user</option>
+                          <option value="admin">admin</option>
+                          <option value="master">master</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700">Rua</label>
+                        <input
+                          value={editUser.address_street || ''}
+                          onChange={(e) => setEditUser((prev: any) => ({ ...prev, address_street: e.target.value }))}
+                          className="w-full border border-gray-200 rounded px-3 py-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700">Número</label>
+                        <input
+                          value={editUser.address_number || ''}
+                          onChange={(e) => setEditUser((prev: any) => ({ ...prev, address_number: e.target.value }))}
+                          className="w-full border border-gray-200 rounded px-3 py-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700">Complemento</label>
+                        <input
+                          value={editUser.address_complement || ''}
+                          onChange={(e) => setEditUser((prev: any) => ({ ...prev, address_complement: e.target.value }))}
+                          className="w-full border border-gray-200 rounded px-3 py-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700">Bairro</label>
+                        <input
+                          value={editUser.address_neighborhood || ''}
+                          onChange={(e) => setEditUser((prev: any) => ({ ...prev, address_neighborhood: e.target.value }))}
+                          className="w-full border border-gray-200 rounded px-3 py-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700">Cidade</label>
+                        <input
+                          value={editUser.address_city || ''}
+                          onChange={(e) => setEditUser((prev: any) => ({ ...prev, address_city: e.target.value }))}
+                          className="w-full border border-gray-200 rounded px-3 py-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700">Estado</label>
+                        <input
+                          value={editUser.address_state || ''}
+                          onChange={(e) => setEditUser((prev: any) => ({ ...prev, address_state: e.target.value }))}
+                          className="w-full border border-gray-200 rounded px-3 py-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700">CEP</label>
+                        <input
+                          value={editUser.address_zip || ''}
+                          onChange={(e) => setEditUser((prev: any) => ({ ...prev, address_zip: e.target.value }))}
+                          className="w-full border border-gray-200 rounded px-3 py-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700">País</label>
+                        <input
+                          value={editUser.address_country || ''}
+                          onChange={(e) => setEditUser((prev: any) => ({ ...prev, address_country: e.target.value }))}
+                          className="w-full border border-gray-200 rounded px-3 py-2"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end">
+                      <button
+                        onClick={handleSaveUser}
+                        disabled={saving}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:bg-slate-300"
+                      >
+                        Salvar alterações
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -385,6 +651,94 @@ export default function UserProfilePage() {
                           </p>
                         </div>
                       </div>
+                    </div>
+
+                    <div className="bg-white border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-bold text-gray-900">Editar dados do proprietário</h3>
+                        <button
+                          onClick={() => setIsEditingHangar(!isEditingHangar)}
+                          className="px-3 py-2 text-sm bg-slate-100 text-slate-700 rounded-lg font-semibold hover:bg-slate-200"
+                        >
+                          {isEditingHangar ? 'Cancelar' : 'Editar'}
+                        </button>
+                      </div>
+
+                      {isEditingHangar && editHangar && (
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700">Empresa</label>
+                            <input
+                              value={editHangar.company_name || ''}
+                              onChange={(e) => setEditHangar((prev: any) => ({ ...prev, company_name: e.target.value }))}
+                              className="w-full border border-gray-200 rounded px-3 py-2"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700">CNPJ</label>
+                            <input
+                              value={editHangar.cnpj || ''}
+                              onChange={(e) => setEditHangar((prev: any) => ({ ...prev, cnpj: e.target.value }))}
+                              className="w-full border border-gray-200 rounded px-3 py-2"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700">Telefone</label>
+                            <input
+                              value={editHangar.phone || ''}
+                              onChange={(e) => setEditHangar((prev: any) => ({ ...prev, phone: e.target.value }))}
+                              className="w-full border border-gray-200 rounded px-3 py-2"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700">Website</label>
+                            <input
+                              value={editHangar.website || ''}
+                              onChange={(e) => setEditHangar((prev: any) => ({ ...prev, website: e.target.value }))}
+                              className="w-full border border-gray-200 rounded px-3 py-2"
+                            />
+                          </div>
+                          <div className="col-span-2">
+                            <label className="block text-sm font-semibold text-gray-700">Endereço</label>
+                            <input
+                              value={editHangar.address || ''}
+                              onChange={(e) => setEditHangar((prev: any) => ({ ...prev, address: e.target.value }))}
+                              className="w-full border border-gray-200 rounded px-3 py-2"
+                            />
+                          </div>
+                          <div className="col-span-2">
+                            <label className="block text-sm font-semibold text-gray-700">Descrição</label>
+                            <textarea
+                              value={editHangar.description || ''}
+                              onChange={(e) => setEditHangar((prev: any) => ({ ...prev, description: e.target.value }))}
+                              className="w-full border border-gray-200 rounded px-3 py-2"
+                              rows={4}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700">Status</label>
+                            <select
+                              value={editHangar.verification_status || ''}
+                              onChange={(e) => setEditHangar((prev: any) => ({ ...prev, verification_status: e.target.value }))}
+                              className="w-full border border-gray-200 rounded px-3 py-2"
+                            >
+                              <option value="">—</option>
+                              <option value="pending">pending</option>
+                              <option value="approved">approved</option>
+                              <option value="rejected">rejected</option>
+                            </select>
+                          </div>
+                          <div className="col-span-2 flex justify-end">
+                            <button
+                              onClick={handleSaveHangar}
+                              disabled={saving}
+                              className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:bg-slate-300"
+                            >
+                              Salvar alterações
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ) : (

@@ -2,8 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { AlertCircle, Wifi, WifiOff, TrendingUp, DollarSign, Users, Calendar } from 'lucide-react';
-import { useRealtimeStats } from '@/hooks/useRealtimeStats';
-
 interface RealtimeMetricsDisplayProps {
   ownerId: string;
   token: string;
@@ -11,98 +9,18 @@ interface RealtimeMetricsDisplayProps {
 }
 
 export function RealtimeMetricsDisplay({
-  ownerId,
-  token,
-  enabled = true
+  enabled = true,
 }: RealtimeMetricsDisplayProps) {
-  const {
-    metrics,
-    bookingNotifications,
-    occupancyChanges,
-    isConnected,
-    connect,
-    disconnect,
-    clearNotifications
-  } = useRealtimeStats({
-    ownerId,
-    token,
-    autoConnect: enabled
-  });
-
-  const [unreadNotifications, setUnreadNotifications] = useState(0);
-
-  // Update unread count when new notifications arrive
-  useEffect(() => {
-    setUnreadNotifications(bookingNotifications.length + occupancyChanges.length);
-  }, [bookingNotifications, occupancyChanges]);
-
-  const handleClearNotifications = () => {
-    clearNotifications();
-    setUnreadNotifications(0);
-  };
-
-  if (!enabled) {
-    return null;
-  }
+  if (!enabled) return null;
 
   return (
-    <div className="space-y-4">
-      {/* Connection Status */}
-      <div className={`p-4 rounded-lg border-2 flex items-center justify-between ${
-        isConnected 
-          ? 'border-green-200 bg-green-50' 
-          : 'border-gray-300 bg-gray-50'
-      }`}>
-        <div className="flex items-center gap-3">
-          {isConnected ? (
-            <>
-              <Wifi className="w-5 h-5 text-green-600 animate-pulse" />
-              <span className="text-sm font-medium text-green-700">
-                Conectado em tempo real
-              </span>
-            </>
-          ) : (
-            <>
-              <WifiOff className="w-5 h-5 text-gray-600" />
-              <span className="text-sm font-medium text-gray-700">
-                Desconectado - Tentando reconectar...
-              </span>
-            </>
-          )}
-        </div>
-        {!isConnected && (
-          <button
-            onClick={connect}
-            className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-          >
-            Reconectar
-          </button>
-        )}
-      </div>
-
-      {/* Live Metrics Cards */}
-      {metrics && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Revenue Card */}
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-blue-700">Receita em Tempo Real</span>
-              <DollarSign className="w-5 h-5 text-blue-600" />
-            </div>
-            <p className="text-2xl font-bold text-blue-900">
-              R$ {metrics.revenueToday?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
-            </p>
-            <p className="text-xs text-blue-600 mt-1">Hoje</p>
-          </div>
-
-          {/* Bookings Card */}
-          <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg border border-purple-200">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-purple-700">Reservas Hoje</span>
-              <Calendar className="w-5 h-5 text-purple-600" />
-            </div>
-            <p className="text-2xl font-bold text-purple-900">
-              {metrics.bookingsToday || 0}
+    <div className="bg-white rounded-lg shadow p-6 border border-slate-200">
+      <h3 className="text-lg font-bold text-slate-900">Atualizações em tempo real</h3>
+      <p className="text-sm text-slate-500 mt-1">
+        WebSocket desativado. Atualize a página para ver novos dados.
+      </p>
+    </div>
+  );
             </p>
             <p className="text-xs text-purple-600 mt-1">Novas reservas</p>
           </div>

@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Role, hasPermission } from '../accessControl';
 
 interface Verification {
-  id: string;
+  id: string | null;
   user_id: string;
   first_name: string;
   last_name: string;
@@ -35,6 +35,8 @@ export default function AdminVerificationsPage() {
   const [statusFilter, setStatusFilter] = useState('pending');
   const [selectedVerification, setSelectedVerification] = useState<Verification | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const lastFetchRef = useRef<{ status: string; at: number } | null>(null);
+  const fetchingRef = useRef(false);
 
   // Efficient role gating: only master or compliance can access
   const role = user?.role as Role | undefined;
@@ -43,6 +45,11 @@ export default function AdminVerificationsPage() {
   // Call all hooks before any conditional returns
   useEffect(() => {
     if (hasAccess && token) {
+      const lastFetch = lastFetchRef.current;
+      if (fetchingRef.current) return;
+      if (lastFetch && lastFetch.status === statusFilter && Date.now() - lastFetch.at < 60000) {
+        return;
+      }
       fetchVerifications();
     }
   }, [statusFilter, token, hasAccess]);
@@ -60,6 +67,7 @@ export default function AdminVerificationsPage() {
   }
 
   const fetchVerifications = async () => {
+    fetchingRef.current = true;
     console.log('[Verifications Page] Current user:', user);
     console.log('[Verifications Page] User ID:', user?.id);
     console.log('[Verifications Page] User role:', user?.role);
@@ -80,6 +88,7 @@ export default function AdminVerificationsPage() {
         console.log('[Verifications Page] Data received:', data);
         console.log('[Verifications Page] Verifications count:', data.verifications?.length);
         setVerifications(data.verifications);
+        lastFetchRef.current = { status: statusFilter, at: Date.now() };
       } else {
         const error = await res.text();
         console.error('[Verifications Page] Error response:', error);
@@ -88,6 +97,7 @@ export default function AdminVerificationsPage() {
       console.error('[Verifications Page] Fetch error:', error);
     } finally {
       setLoading(false);
+      fetchingRef.current = false;
     }
   };
 
@@ -180,7 +190,7 @@ export default function AdminVerificationsPage() {
         ) : (
           <div className="grid gap-4">
             {verifications.map((verification) => (
-              <div key={verification.id} className="bg-white rounded-lg shadow p-6">
+              <div key={verification.id ?? verification.user_id} className="bg-white rounded-lg shadow p-6">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <h3 className="text-xl font-bold text-blue-900">
@@ -212,14 +222,16 @@ export default function AdminVerificationsPage() {
                     </p>
                   </div>
 
-                  <div className="flex flex-col gap-2">
-                    <button
-                      onClick={() => setSelectedVerification(verification)}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold"
-                    >
-                      Revisar
-                    </button>
-                  </div>
+                  {statusFilter === 'pending' && verification.id && (
+                    <div className="flex flex-col gap-2">
+                      <button
+                        onClick={() => setSelectedVerification(verification)}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold"
+                      >
+                        Revisar
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -301,34 +313,38 @@ export default function AdminVerificationsPage() {
 
                 {/* Actions */}
                 <div className="flex gap-4">
-                  <button
-                    onClick={() => {
-                      const notes = prompt('Adicionar observações (opcional):');
-                      handleAction(selectedVerification.id, 'approve', undefined, notes || undefined);
-                    }}
-                    disabled={actionLoading}
-                    className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold disabled:bg-slate-300"
-                  >
-                    ✓ Aprovar
-                  </button>
-                  <button
-                    onClick={() => {
-                      const reason = prompt('Motivo da rejeição:');
-                      if (reason) {
-                        const notes = prompt('Adicionar observações (opcional):');
-                        handleAction(selectedVerification.id, 'reject', reason, notes || undefined);
-                      }
-                    }}
-                    disabled={actionLoading}
-                    className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-bold disabled:bg-slate-300"
-                  >
-                    ✗ Rejeitar
-                  </button>
+                  {statusFilter === 'pending' && selectedVerification.id ? (
+                    <>
+                      <button
+                        onClick={() => {
+                          const notes = prompt('Adicionar observações (opcional):');
+                          handleAction(selectedVerification.id, 'approve', undefined, notes || undefined);
+                        }}
+                        disabled={actionLoading}
+                        className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold disabled:bg-slate-300"
+                      >
+                        ✓ Aprovar
+                      </button>
+                      <button
+                        onClick={() => {
+                          const reason = prompt('Motivo da rejeição:');
+                          if (reason) {
+                            const notes = prompt('Adicionar observações (opcional):');
+                            handleAction(selectedVerification.id, 'reject', reason, notes || undefined);
+                          }
+                        }}
+                        disabled={actionLoading}
+                        className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-bold disabled:bg-slate-300"
+                      >
+                        ✗ Rejeitar
+                      </button>
+                    </>
+                  ) : null}
                   <button
                     onClick={() => setSelectedVerification(null)}
                     className="px-6 py-3 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 font-bold"
                   >
-                    Cancelar
+                    Fechar
                   </button>
                 </div>
               </div>

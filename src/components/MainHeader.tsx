@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 
@@ -7,6 +8,15 @@ export default function MainHeader() {
   const router = useRouter();
   const pathname = usePathname();
   const userPlan = user?.plan || 'free';
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    return null;
+  }
 
   // Hide header on home page if user is not logged in (landing page handles its own navigation)
   if (pathname === '/' && !user) {

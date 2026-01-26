@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import AuthGuard from '@/components/AuthGuard';
 import Header from '@/components/Header';
@@ -177,12 +178,12 @@ export default function AvionicsDetail() {
             <main className="flex-1 overflow-y-auto p-6">
               <div className="text-center py-12">
                 <p className="text-gray-600 mb-4">Equipamento não encontrado</p>
-                <button
-                onClick={() => router.back()}
-                className="text-blue-600 hover:text-blue-800 font-medium"
-              >
-                ← Voltar
-              </button>
+                <Link
+                  href="/classifieds/avionics"
+                  className="text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  ← Voltar
+                </Link>
             </div>
           </main>
         </div>
@@ -198,12 +199,12 @@ export default function AvionicsDetail() {
         <div className="flex-1 flex flex-col overflow-hidden">
           <Header />
           <main className="flex-1 overflow-y-auto p-6">
-            <button
-              onClick={() => router.back()}
-              className="text-blue-600 hover:text-blue-800 font-medium mb-6"
+            <Link
+              href="/classifieds/avionics"
+              className="text-blue-600 hover:text-blue-800 font-medium mb-6 inline-block"
             >
               ← Voltar
-            </button>
+            </Link>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Left Column - Photos & Details */}

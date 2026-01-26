@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
@@ -73,6 +73,8 @@ export default function HangarShareAdminPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'owners' | 'listings' | 'bookings'>('overview');
   const [selectedOwnerId, setSelectedOwnerId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const hasFetchedRef = useRef(false);
+  const inFlightRef = useRef(false);
 
   // Handle URL tab and owner ID parameters on client side only
   useEffect(() => {
@@ -95,8 +97,21 @@ export default function HangarShareAdminPage() {
       return;
     }
 
+    if (hasFetchedRef.current) {
+      return;
+    }
+
+    if (stats || owners.length > 0 || listings.length > 0 || bookings.length > 0) {
+      return;
+    }
+
+    if (inFlightRef.current) {
+      return;
+    }
+
     const fetchData = async () => {
       try {
+        inFlightRef.current = true;
         setLoading(true);
         const [statsRes, ownersRes, listingsRes, bookingsRes] = await Promise.all([
           fetch('/api/admin/hangarshare/stats'),
@@ -109,9 +124,11 @@ export default function HangarShareAdminPage() {
         if (ownersRes.ok) setOwners(await ownersRes.json());
         if (listingsRes.ok) setListings(await listingsRes.json());
         if (bookingsRes.ok) setBookings(await bookingsRes.json());
+        hasFetchedRef.current = true;
       } catch (error) {
         console.error('Error fetching HangarShare data:', error);
       } finally {
+        inFlightRef.current = false;
         setLoading(false);
       }
     };
@@ -302,7 +319,7 @@ export default function HangarShareAdminPage() {
                         <td className="px-6 py-4 text-sm">{owner.listings_count || 0}</td>
                         <td className="px-6 py-4 text-sm">
                           <Link
-                            href={`/admin/hangarshare/users/approve?id=${owner.id}`}
+                            href={`/admin/hangarshare/owners/${owner.id}`}
                             className="text-blue-600 hover:text-blue-800 font-semibold"
                           >
                             Verificar →
@@ -429,6 +446,7 @@ export default function HangarShareAdminPage() {
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase">Check-out</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase">Valor</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase">Status</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase">Ação</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
@@ -453,6 +471,14 @@ export default function HangarShareAdminPage() {
                         }`}>
                           {booking.status}
                         </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm">
+                        <Link
+                          href={`/admin/hangarshare/bookings/${booking.id}`}
+                          className="text-blue-600 hover:text-blue-800 font-semibold"
+                        >
+                          Ver →
+                        </Link>
                       </td>
                     </tr>
                   ))}

@@ -1,86 +1,131 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { MessageSquare, ThumbsUp, MessageCircle, Eye, Plus, X } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 import AuthGuard from '../../components/AuthGuard';
+import { useAuth } from '@/context/AuthContext';
 
-// Dados mockados de tópicos
-const TOPICS = [
-  {
-    id: 1,
-    title: 'Dúvida sobre regulamento de Voo VFR Noturno',
-    author: 'Cmte. Silva',
-    category: 'Regulamentos',
-    replies: 12,
-    views: 340,
-    likes: 5,
-    time: '2h atrás',
-    avatar: 'S'
-  },
-  {
-    id: 2,
-    title: 'Melhor escola para fazer o curso de INVA em SP?',
-    author: 'Aluno João',
-    category: 'Formação',
-    replies: 28,
-    views: 890,
-    likes: 15,
-    time: '5h atrás',
-    avatar: 'J'
-  },
-  {
-    id: 3,
-    title: 'Relato de pane de rádio próximo a SBMT',
-    author: 'Cmte. Oliveira',
-    category: 'Segurança',
-    replies: 45,
-    views: 1200,
-    likes: 32,
-    time: '1d atrás',
-    avatar: 'O'
-  },
-  {
-    id: 4,
-    title: 'Alguém vendendo Bose A20 usado?',
-    author: 'Piloto Marcos',
-    category: 'Classificados',
-    replies: 8,
-    views: 150,
-    likes: 2,
-    time: '2d atrás',
-    avatar: 'M'
-  },
-  {
-    id: 5,
-    title: 'Dicas para a banca da ANAC de Navegação',
-    author: 'Estudante Ana',
-    category: 'Estudos',
-    replies: 56,
-    views: 2100,
-    likes: 48,
-    time: '3d atrás',
-    avatar: 'A'
-  }
-];
+interface ForumTopic {
+  id: number;
+  title: string;
+  category: string;
+  content: string;
+  views: number;
+  replies_count: number;
+  likes_count?: number;
+  created_at: string;
+  author_name: string | null;
+}
 
 export default function ForumPage() {
+  const { token } = useAuth();
   const [showNewTopicModal, setShowNewTopicModal] = useState(false);
   const [newTopic, setNewTopic] = useState({
     title: '',
     category: 'Regulamentos',
     content: ''
   });
+  const [topics, setTopics] = useState<ForumTopic[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const getPreview = (text: string) => {
+    const cleaned = text?.trim() || '';
+    if (!cleaned) return 'Sem conteúdo disponível.';
+    return cleaned.length > 180 ? `${cleaned.slice(0, 180)}…` : cleaned;
+  };
+
+  const getCategoryLabel = (value: string) => {
+    const map: Record<string, string> = {
+      general: 'Outros',
+      technical: 'Segurança',
+      regulations: 'Regulamentos',
+      events: 'Eventos',
+      classifieds: 'Classificados',
+      questions: 'Estudos',
+    };
+    return map[value] || value;
+  };
 
   const categories = ['Regulamentos', 'Formação', 'Segurança', 'Classificados', 'Estudos', 'Manutenção', 'Meteorologia', 'Outros'];
 
-  const handleSubmitTopic = (e: React.FormEvent) => {
+  useEffect(() => {
+    const fetchTopics = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await fetch('/api/forum/topics?limit=50');
+        if (!response.ok) {
+          throw new Error('Erro ao carregar tópicos');
+        }
+        const data = await response.json();
+        setTopics(data.topics || []);
+      } catch (err) {
+        console.error('Error fetching topics:', err);
+        setError('Não foi possível carregar os tópicos agora.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTopics();
+  }, []);
+
+  const handleSubmitTopic = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('New topic:', newTopic);
-    alert('Funcionalidade em desenvolvimento. Em breve você poderá criar novos tópicos!');
-    setShowNewTopicModal(false);
-    setNewTopic({ title: '', category: 'Regulamentos', content: '' });
+    if (!token) {
+      alert('Faça login novamente para publicar.');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const response = await fetch('/api/forum/topics', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: newTopic.title.trim(),
+          category: newTopic.category,
+          content: newTopic.content.trim()
+        })
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.message || 'Erro ao publicar tópico');
+      }
+
+      const created = await response.json();
+      if (created?.topic?.id) {
+        setTopics((prev) => [
+          {
+            id: created.topic.id,
+            title: newTopic.title.trim(),
+            category: newTopic.category,
+            content: newTopic.content.trim(),
+            views: 0,
+            replies_count: 0,
+            created_at: created.topic.created_at || new Date().toISOString(),
+            author_name: null,
+          },
+          ...prev
+        ]);
+      }
+
+      setShowNewTopicModal(false);
+      setNewTopic({ title: '', category: 'Regulamentos', content: '' });
+    } catch (err) {
+      console.error('Failed to create topic:', err);
+      alert('Erro ao publicar tópico. Tente novamente.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -128,11 +173,13 @@ export default function ForumPage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
               <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                 <div className="text-sm text-gray-500 mb-1">Total de Tópicos</div>
-                <div className="text-2xl font-bold text-gray-900">1,234</div>
+                <div className="text-2xl font-bold text-gray-900">{topics.length}</div>
               </div>
               <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                 <div className="text-sm text-gray-500 mb-1">Respostas</div>
-                <div className="text-2xl font-bold text-gray-900">8,567</div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {topics.reduce((sum, topic) => sum + (topic.replies_count || 0), 0)}
+                </div>
               </div>
               <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                 <div className="text-sm text-gray-500 mb-1">Membros Ativos</div>
@@ -150,31 +197,47 @@ export default function ForumPage() {
                 <h2 className="text-xl font-bold text-gray-900">Discussões Recentes</h2>
               </div>
               <div className="divide-y divide-gray-200">
-                {TOPICS.map((topic) => (
+                {loading && (
+                  <div className="p-6 text-gray-500">Carregando tópicos...</div>
+                )}
+                {!loading && error && (
+                  <div className="p-6 text-red-600">{error}</div>
+                )}
+                {!loading && !error && topics.length === 0 && (
+                  <div className="p-6 text-gray-500">Nenhum tópico encontrado.</div>
+                )}
+                {topics.map((topic) => (
                   <div key={topic.id} className="p-6 hover:bg-gray-50 transition-colors cursor-pointer group">
                     <div className="flex items-start gap-4">
                       {/* Avatar */}
                       <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-600 flex-shrink-0">
-                        {topic.avatar}
+                        {(topic.author_name || 'U')[0]}
                       </div>
 
                       {/* Content */}
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start gap-4 mb-2">
-                          <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                          <Link
+                            href={`/forum/topics/${topic.id}`}
+                            className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors"
+                          >
                             {topic.title}
-                          </h3>
+                          </Link>
                           <span className="text-sm text-gray-500 whitespace-nowrap">
-                            {topic.time}
+                            {new Date(topic.created_at).toLocaleDateString('pt-BR')}
                           </span>
                         </div>
 
+                        <p className="text-sm text-gray-600 mb-3">
+                          {getPreview(topic.content)}
+                        </p>
+
                         <div className="flex items-center gap-3 mb-3">
                           <span className="inline-block bg-blue-100 text-blue-700 text-xs font-medium px-3 py-1 rounded-full">
-                            {topic.category}
+                            {getCategoryLabel(topic.category)}
                           </span>
                           <span className="text-sm text-gray-600">
-                            por <span className="font-medium text-gray-900">{topic.author}</span>
+                            por <span className="font-medium text-gray-900">{topic.author_name || 'Usuário'}</span>
                           </span>
                         </div>
 
@@ -182,7 +245,7 @@ export default function ForumPage() {
                         <div className="flex items-center gap-6 text-gray-500">
                           <div className="flex items-center gap-2 text-sm">
                             <MessageCircle size={16} />
-                            <span>{topic.replies} respostas</span>
+                            <span>{topic.replies_count} respostas</span>
                           </div>
                           <div className="flex items-center gap-2 text-sm">
                             <Eye size={16} />
@@ -190,7 +253,7 @@ export default function ForumPage() {
                           </div>
                           <div className="flex items-center gap-2 text-sm">
                             <ThumbsUp size={16} />
-                            <span>{topic.likes} curtidas</span>
+                            <span>{topic.likes_count || 0} curtidas</span>
                           </div>
                         </div>
                       </div>
@@ -279,9 +342,10 @@ export default function ForumPage() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition-colors"
+                  disabled={submitting}
+                  className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition-colors disabled:bg-gray-300"
                 >
-                  Publicar Tópico
+                  {submitting ? 'Publicando...' : 'Publicar Tópico'}
                 </button>
               </div>
             </form>

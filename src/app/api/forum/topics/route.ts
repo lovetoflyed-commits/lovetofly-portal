@@ -29,6 +29,7 @@ export async function GET(request: Request) {
         t.content,
         t.views,
         t.replies_count,
+        COALESCE(likes.likes_count, 0) AS likes_count,
         t.is_pinned,
         t.is_locked,
         t.created_at,
@@ -37,6 +38,11 @@ export async function GET(request: Request) {
         COUNT(*) OVER () as total_count
       FROM forum_topics t
       LEFT JOIN users u ON t.user_id = u.id
+      LEFT JOIN (
+        SELECT topic_id, COUNT(*)::int AS likes_count
+        FROM forum_topic_likes
+        GROUP BY topic_id
+      ) likes ON likes.topic_id = t.id
       WHERE ${whereClause}
       ORDER BY t.is_pinned DESC, t.created_at DESC
       LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
@@ -67,9 +73,12 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { title, category, content, token } = body;
+    const authHeader = request.headers.get('authorization');
+    const headerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    const jwtSecret = process.env.JWT_SECRET || '';
 
     // Validate required fields
-    if (!title || !category || !content || !token) {
+    if (!title || !category || !content || (!token && !headerToken)) {
       return NextResponse.json(
         { message: 'Missing required fields' },
         { status: 400 }
@@ -77,8 +86,16 @@ export async function POST(request: Request) {
     }
 
     // Verify JWT token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || '');
-    const userId = (decoded as any).user_id;
+    if (!jwtSecret) {
+      return NextResponse.json(
+        { message: 'Server configuration error' },
+        { status: 500 }
+      );
+    }
+
+    const decoded = jwt.verify(headerToken || token, jwtSecret);
+    const decodedAny = decoded as any;
+    const userId = decodedAny.user_id ?? decodedAny.id;
 
     if (!userId) {
       return NextResponse.json(
@@ -87,12 +104,36 @@ export async function POST(request: Request) {
       );
     }
 
+    const normalizedCategory = typeof category === 'string' ? category.trim() : '';
+    const categoryMap: Record<string, string> = {
+      Regulamentos: 'regulations',
+      Formação: 'technical',
+      Segurança: 'technical',
+      Classificados: 'classifieds',
+      Estudos: 'questions',
+      Manutenção: 'technical',
+      Meteorologia: 'technical',
+      Outros: 'general',
+    };
+
+    const allowedCategories = new Set([
+      'general',
+      'technical',
+      'regulations',
+      'events',
+      'classifieds',
+      'questions',
+    ]);
+
+    const dbCategory = categoryMap[normalizedCategory] || normalizedCategory.toLowerCase();
+    const finalCategory = allowedCategories.has(dbCategory) ? dbCategory : 'general';
+
     // Insert topic
     const result = await pool.query(
       `INSERT INTO forum_topics (user_id, title, category, content)
        VALUES ($1, $2, $3, $4)
        RETURNING id, created_at`,
-      [userId, title, category, content]
+      [userId, title, finalCategory, content]
     );
 
     return NextResponse.json({

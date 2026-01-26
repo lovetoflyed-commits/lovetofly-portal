@@ -44,30 +44,123 @@ export async function GET(
 
     const owner = ownerResult.rows[0];
 
-    // Fetch documents for this owner
-    const docsResult = await pool.query(`
-      SELECT 
-        id,
-        document_type,
-        document_name,
-        file_path,
-        file_size,
-        mime_type,
-        upload_status,
-        uploaded_at,
-        verified_at,
-        rejection_reason
-      FROM owner_documents
-      WHERE owner_id = $1
-      ORDER BY uploaded_at DESC
-    `, [ownerId]);
+    const tableCheck = await pool.query(
+      "SELECT to_regclass('public.hangar_owner_verification') AS hov, to_regclass('public.owner_documents') AS od"
+    );
+
+    const hasHov = Boolean(tableCheck.rows[0]?.hov);
+    const hasOwnerDocs = Boolean(tableCheck.rows[0]?.od);
+
+    let verification: any = null;
+    const documents: Array<{ id: string; label: string; url: string; status?: string; type?: string }> = [];
+
+    if (hasHov) {
+      const columnsResult = await pool.query(
+        "SELECT column_name FROM information_schema.columns WHERE table_name = 'hangar_owner_verification'"
+      );
+      const columns = new Set(columnsResult.rows.map((row: any) => row.column_name));
+      const hasKycFields = columns.has('id_document_front_url');
+
+      if (hasKycFields) {
+        const verificationResult = await pool.query(`
+          SELECT 
+            hov.id,
+            hov.id_document_type,
+            hov.id_document_number,
+            hov.id_document_front_url,
+            hov.id_document_back_url,
+            hov.selfie_url,
+            hov.ownership_proof_type,
+            hov.ownership_document_url,
+            hov.company_registration_url,
+            hov.tax_document_url,
+            hov.verification_status,
+            hov.rejection_reason,
+            hov.admin_notes,
+            hov.created_at,
+            hov.updated_at
+          FROM hangar_owner_verification hov
+          WHERE hov.owner_id = $1
+          ORDER BY hov.created_at DESC
+          LIMIT 1
+        `, [ownerId]);
+
+        verification = verificationResult.rows[0] || null;
+
+        if (verification) {
+          const docMap = [
+            { key: 'id_document_front_url', label: 'RG/CNH Frente' },
+            { key: 'id_document_back_url', label: 'RG/CNH Verso' },
+            { key: 'selfie_url', label: 'Selfie com Documento' },
+            { key: 'ownership_document_url', label: 'Comprovante de Propriedade' },
+            { key: 'company_registration_url', label: 'Registro da Empresa' },
+            { key: 'tax_document_url', label: 'Documento Fiscal' }
+          ];
+
+          for (const doc of docMap) {
+            const url = verification[doc.key];
+            if (url) {
+              documents.push({
+                id: `${verification.id}-${doc.key}`,
+                label: doc.label,
+                url,
+                status: verification.verification_status
+              });
+            }
+          }
+        }
+      } else {
+        const legacyDocs = await pool.query(`
+          SELECT 
+            id,
+            document_type,
+            document_url,
+            verification_status,
+            created_at
+          FROM hangar_owner_verification
+          WHERE owner_id = $1
+          ORDER BY created_at DESC
+        `, [ownerId]);
+
+        legacyDocs.rows.forEach((row: any) => {
+          if (row.document_url) {
+            documents.push({
+              id: String(row.id),
+              label: row.document_type || 'Documento',
+              url: row.document_url,
+              status: row.verification_status,
+              type: row.document_type
+            });
+          }
+        });
+      }
+    }
+
+    if (hasOwnerDocs) {
+      const ownerDocs = await pool.query(`
+        SELECT id, document_type, file_path, upload_status
+        FROM owner_documents
+        WHERE owner_id = $1
+        ORDER BY uploaded_at DESC
+      `, [ownerId]);
+
+      ownerDocs.rows.forEach((row: any) => {
+        if (row.file_path) {
+          documents.push({
+            id: `owner-doc-${row.id}`,
+            label: row.document_type || 'Documento',
+            url: row.file_path,
+            status: row.upload_status,
+            type: row.document_type
+          });
+        }
+      });
+    }
 
     return NextResponse.json({
       owner,
-      documents: docsResult.rows,
-      documentCount: docsResult.rows.length,
-      pendingDocuments: docsResult.rows.filter((d: any) => d.upload_status === 'pending').length,
-      verifiedDocuments: docsResult.rows.filter((d: any) => d.upload_status === 'verified').length,
+      verification,
+      documents
     });
   } catch (error) {
     const err = error instanceof Error ? error.message : String(error);

@@ -34,7 +34,7 @@ export default function CreatePartListing() {
     has_logbook: false,
     shipping_available: true,
     return_policy: '',
-    status: 'draft'
+    status: 'active'
   });
 
   const categories = [
@@ -74,7 +74,8 @@ export default function CreatePartListing() {
         ...formData,
         user_id: user.id,
         time_since_overhaul: formData.time_since_overhaul ? parseInt(formData.time_since_overhaul) : null,
-        price: parseFloat(formData.price)
+        price: parseFloat(formData.price),
+        status: 'active'
       };
 
       const response = await fetch('/api/classifieds/parts', {

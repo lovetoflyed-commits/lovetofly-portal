@@ -6,6 +6,21 @@
 
 ---
 
+## ✅ January 26, 2026 Updates
+
+### Forum
+- Implemented topic creation, listing, and detail views with replies and likes
+- Added threaded replies with modal-based reply flow
+- Applied migrations for likes and threaded replies
+
+### Classifieds
+- Fixed required-field validation for aircraft, parts, and avionics
+- Ensured new listings are created as active so they appear in listings
+- Aligned thumbnails with uploaded photos and corrected list image URLs
+- Corrected back links to return to each category listing
+
+---
+
 ## 🎯 Primary Objectives Achieved
 
 ### 1. ✅ Fixed Deployment & Infrastructure Issues

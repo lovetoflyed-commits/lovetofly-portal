@@ -31,8 +31,27 @@ export async function POST(request: Request) {
       status = 'draft'
     } = body;
 
+    const isEmptyString = (value: unknown) => typeof value === 'string' && value.trim().length === 0;
+    const isMissing = (value: unknown) => value === null || value === undefined || isEmptyString(value);
+    const parsedYear = typeof year === 'string' ? parseInt(year, 10) : year;
+    const parsedPrice = typeof price === 'string' ? parseFloat(price) : price;
+
     // Validation
-    if (!user_id || !title || !manufacturer || !model || !year || !price || !location_city || !location_state || !category) {
+    if (
+      isMissing(user_id) ||
+      isMissing(title) ||
+      isMissing(manufacturer) ||
+      isMissing(model) ||
+      isMissing(category) ||
+      isMissing(location_city) ||
+      isMissing(location_state) ||
+      parsedYear === null ||
+      parsedYear === undefined ||
+      Number.isNaN(parsedYear) ||
+      parsedPrice === null ||
+      parsedPrice === undefined ||
+      Number.isNaN(parsedPrice)
+    ) {
       return NextResponse.json(
         { message: 'Campos obrigatórios: user_id, title, manufacturer, model, year, price, location_city, location_state, category' },
         { status: 400 }
@@ -52,8 +71,8 @@ export async function POST(request: Request) {
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
       RETURNING *`,
       [
-        user_id, title, manufacturer, model, year, registration, serial_number, category,
-        total_time, engine_time, price, location_city, location_state, location_country,
+        user_id, title, manufacturer, model, parsedYear, registration, serial_number, category,
+        total_time, engine_time, parsedPrice, location_city, location_state, location_country,
         description, avionics, interior_condition, exterior_condition, logs_status,
         damage_history, financing_available, partnership_available, status, expires_at
       ]
@@ -128,8 +147,14 @@ export async function GET(request: Request) {
         a.*,
         CONCAT(u.first_name, ' ', u.last_name) as seller_name,
         u.email as seller_email,
-        (SELECT COUNT(*) FROM listing_photos WHERE listing_type = 'aircraft' AND listing_id = a.id) as photo_count,
-        (SELECT url FROM listing_photos WHERE listing_type = 'aircraft' AND listing_id = a.id AND is_primary = true LIMIT 1) as primary_photo,
+        (SELECT COUNT(*) FROM classified_photos WHERE listing_type = 'aircraft' AND listing_id = a.id) as photo_count,
+        (
+          SELECT id
+          FROM classified_photos
+          WHERE listing_type = 'aircraft' AND listing_id = a.id
+          ORDER BY is_primary DESC, display_order ASC
+          LIMIT 1
+        ) as primary_photo_id,
         COUNT(*) OVER () as total_count
       FROM aircraft_listings a
       LEFT JOIN users u ON a.user_id = u.id
@@ -141,8 +166,15 @@ export async function GET(request: Request) {
 
     const total = result.rows.length > 0 ? parseInt(result.rows[0].total_count) : 0;
 
+    const data = result.rows.map((row: any) => ({
+      ...row,
+      primary_photo: row.primary_photo_id
+        ? `/api/classifieds/aircraft/${row.id}/upload-photo?photoId=${row.primary_photo_id}`
+        : null,
+    }));
+
     return NextResponse.json({
-      data: result.rows,
+      data,
       pagination: {
         page,
         limit,

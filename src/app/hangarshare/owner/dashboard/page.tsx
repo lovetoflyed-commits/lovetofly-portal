@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { RealtimeMetricsDisplay } from '@/components/hangarshare-v2/RealtimeMetricsDisplay';
 
 interface AdvertiserProfile {
   id: string;
@@ -371,17 +370,6 @@ export default function AdvertiserDashboard() {
             </div>
           </div>
         </div>
-
-        {/* Real-Time Metrics Display */}
-        {profile && user && token && (
-          <div className="mb-8">
-            <RealtimeMetricsDisplay 
-              ownerId={profile.id} 
-              token={token}
-              enabled={true}
-            />
-          </div>
-        )}
 
         {/* Statistics */}
         <div className="grid grid-cols-4 gap-4 mb-8">

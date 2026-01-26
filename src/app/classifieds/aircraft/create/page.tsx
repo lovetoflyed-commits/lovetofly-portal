@@ -39,7 +39,7 @@ export default function CreateAircraftListing() {
     damage_history: false,
     financing_available: false,
     partnership_available: false,
-    status: 'draft'
+    status: 'active'
   });
 
   const categories = [
@@ -175,7 +175,8 @@ export default function CreateAircraftListing() {
         user_id: user.id,
         total_time: formData.total_time ? parseInt(formData.total_time) : null,
         engine_time: formData.engine_time ? parseInt(formData.engine_time) : null,
-        price: parseFloat(formData.price)
+        price: parseFloat(formData.price),
+        status: 'active'
       };
 
       const response = await fetch('/api/classifieds/aircraft', {

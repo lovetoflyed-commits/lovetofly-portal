@@ -25,8 +25,24 @@ export async function POST(request: Request) {
       status = 'active'
     } = body;
 
+    const isEmptyString = (value: unknown) => typeof value === 'string' && value.trim().length === 0;
+    const isMissing = (value: unknown) => value === null || value === undefined || isEmptyString(value);
+    const parsedPrice = typeof price === 'string' ? parseFloat(price) : price;
+
     // Validation
-    if (!user_id || !title || !manufacturer || !model || !category || !condition || !price || !location_city || !location_state) {
+    if (
+      isMissing(user_id) ||
+      isMissing(title) ||
+      isMissing(manufacturer) ||
+      isMissing(model) ||
+      isMissing(category) ||
+      isMissing(condition) ||
+      isMissing(location_city) ||
+      isMissing(location_state) ||
+      parsedPrice === null ||
+      parsedPrice === undefined ||
+      Number.isNaN(parsedPrice)
+    ) {
       return NextResponse.json(
         { message: 'Campos obrigatórios: user_id, title, manufacturer, model, category, condition, price, location_city, location_state' },
         { status: 400 }
@@ -42,7 +58,7 @@ export async function POST(request: Request) {
       RETURNING *`,
       [
         user_id, title, manufacturer, model, category, condition, software_version,
-        tso_certified, panel_mount, price, location_city, location_state, description,
+        tso_certified, panel_mount, parsedPrice, location_city, location_state, description,
         compatible_aircraft, includes_installation, warranty_remaining, status
       ]
     );
@@ -135,8 +151,14 @@ export async function GET(request: Request) {
         a.*,
         CONCAT(u.first_name, ' ', u.last_name) as seller_name,
         u.email as seller_email,
-        (SELECT COUNT(*) FROM listing_photos WHERE listing_type = 'avionics' AND listing_id = a.id) as photo_count,
-        (SELECT url FROM listing_photos WHERE listing_type = 'avionics' AND listing_id = a.id AND is_primary = true LIMIT 1) as primary_photo,
+        (SELECT COUNT(*) FROM classified_photos WHERE listing_type = 'avionics' AND listing_id = a.id) as photo_count,
+        (
+          SELECT id
+          FROM classified_photos
+          WHERE listing_type = 'avionics' AND listing_id = a.id
+          ORDER BY is_primary DESC, display_order ASC
+          LIMIT 1
+        ) as primary_photo_id,
         COUNT(*) OVER () as total_count
       FROM avionics_listings a
       LEFT JOIN users u ON a.user_id = u.id
@@ -148,8 +170,15 @@ export async function GET(request: Request) {
 
     const total = result.rows.length > 0 ? parseInt(result.rows[0].total_count) : 0;
 
+    const data = result.rows.map((row: any) => ({
+      ...row,
+      primary_photo: row.primary_photo_id
+        ? `/api/classifieds/avionics/${row.id}/upload-photo?photoId=${row.primary_photo_id}`
+        : null,
+    }));
+
     return NextResponse.json({
-      data: result.rows,
+      data,
       pagination: {
         page,
         limit,

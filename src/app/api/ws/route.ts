@@ -80,10 +80,20 @@ export async function OPTIONS(request: NextRequest): Promise<NextResponse> {
       headers: {
         'Upgrade': 'websocket',
         'Connection': 'Upgrade',
-        'Allow': 'GET, OPTIONS',
-      },
-    }
-  );
-}
+        import { NextResponse } from 'next/server';
+
+        export async function GET() {
+          return NextResponse.json(
+            { message: 'WebSocket disabled. Use manual refresh.' },
+            { status: 410 }
+          );
+        }
+
+        export async function OPTIONS() {
+          return NextResponse.json(
+            { message: 'WebSocket disabled.' },
+            { status: 410 }
+          );
+        }
 
 

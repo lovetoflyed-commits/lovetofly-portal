@@ -20,6 +20,7 @@ export default function ReportsPage() {
   const [report, setReport] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState('30'); // days
+  const [exporting, setExporting] = useState<'pdf' | 'csv' | null>(null);
 
   useEffect(() => {
     fetchReport();
@@ -50,12 +51,93 @@ export default function ReportsPage() {
     }
   };
 
-  const exportPDF = () => {
-    alert('Exportar PDF em desenvolvimento');
+  const getReportRows = () => {
+    if (!report) return [];
+    return [
+      ['Total de anunciantes', report.total_owners],
+      ['Anunciantes verificados', report.verified_owners],
+      ['Total de anúncios', report.total_listings],
+      ['Anúncios ativos', report.active_listings],
+      ['Total de reservas', report.total_bookings],
+      ['Reservas concluídas', report.completed_bookings],
+      ['Receita gerada (R$)', report.revenue],
+      ['Ocupação média (%)', report.average_occupancy],
+      ['Pendências de aprovação', report.pending_approvals],
+      ['Conflitos de reserva', report.booking_conflicts]
+    ];
+  };
+
+  const exportPDF = async () => {
+    if (!report || exporting) return;
+    setExporting('pdf');
+    try {
+      const [{ default: jsPDF }, autoTableModule] = await Promise.all([
+        import('jspdf'),
+        import('jspdf-autotable')
+      ]);
+
+      const doc = new jsPDF();
+      const autoTable = (autoTableModule as any).default || autoTableModule;
+      const title = 'Relatório HangarShare';
+      const periodLabel = `Período: últimos ${dateRange} dias`;
+
+      doc.setFontSize(16);
+      doc.text(title, 14, 18);
+      doc.setFontSize(11);
+      doc.text(periodLabel, 14, 26);
+
+      autoTable(doc, {
+        head: [['Métrica', 'Valor']],
+        body: getReportRows().map(([label, value]) => [label, String(value)]),
+        startY: 32,
+        styles: { fontSize: 10 },
+        headStyles: { fillColor: [30, 64, 175] }
+      });
+
+      doc.save(`relatorio-hangarshare-${dateRange}d.pdf`);
+    } catch (error) {
+      console.error('Erro ao exportar PDF:', error);
+      alert('Erro ao exportar PDF');
+    } finally {
+      setExporting(null);
+    }
   };
 
   const exportCSV = () => {
-    alert('Exportar CSV em desenvolvimento');
+    if (!report || exporting) return;
+    setExporting('csv');
+    try {
+      const rows = getReportRows();
+      const header = ['Métrica', 'Valor'];
+      const csvLines = [header, ...rows].map((row) =>
+        row
+          .map((cell) => {
+            const value = String(cell ?? '');
+            if (value.includes('"')) {
+              return `"${value.replace(/"/g, '""')}"`;
+            }
+            if (value.includes(',') || value.includes('\n')) {
+              return `"${value}"`;
+            }
+            return value;
+          })
+          .join(',')
+      );
+
+      const csvContent = '\uFEFF' + csvLines.join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `relatorio-hangarshare-${dateRange}d.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Erro ao exportar CSV:', error);
+      alert('Erro ao exportar CSV');
+    } finally {
+      setExporting(null);
+    }
   };
 
   if (loading) {
@@ -95,15 +177,17 @@ export default function ReportsPage() {
       <div className="mb-6 flex gap-3">
         <button
           onClick={exportPDF}
-          className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-semibold"
+          disabled={!report || exporting !== null}
+          className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-semibold disabled:bg-slate-300"
         >
-          📄 Exportar PDF
+          {exporting === 'pdf' ? 'Gerando PDF...' : '📄 Exportar PDF'}
         </button>
         <button
           onClick={exportCSV}
-          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-semibold"
+          disabled={!report || exporting !== null}
+          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-semibold disabled:bg-slate-300"
         >
-          📊 Exportar CSV
+          {exporting === 'csv' ? 'Gerando CSV...' : '📊 Exportar CSV'}
         </button>
       </div>
 

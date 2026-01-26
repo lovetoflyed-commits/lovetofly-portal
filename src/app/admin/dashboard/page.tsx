@@ -37,10 +37,10 @@ export default function AdminDashboard() {
   async function fetchLogs() {
     setLoadingLogs(true);
     try {
-      const res = await fetch('/api/admin/activity-log?limit=10');
+      const res = await fetch('/api/admin/activity/log?limit=10');
       if (res.ok) {
         const data = await res.json();
-        setLogs(data.logs || []);
+        setLogs(data.activities || []);
       }
     } finally {
       setLoadingLogs(false);

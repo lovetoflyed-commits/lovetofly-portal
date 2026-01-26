@@ -123,7 +123,13 @@ export default function PendingListingsPage() {
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-600">{listing.company_name}</td>
                     <td className="px-6 py-4 text-sm">
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap">
+                        <Link
+                          href={`/admin/hangarshare/listings/${listing.id}`}
+                          className="px-3 py-1 bg-slate-100 text-slate-700 rounded hover:bg-slate-200 font-semibold"
+                        >
+                          Ver
+                        </Link>
                         <button
                           onClick={() => handleApprove(listing.id)}
                           disabled={approving === listing.id}

@@ -127,11 +127,6 @@ export default function HangarShareV2DashboardPage() {
     fetchStats();
   }, [user, router]);
 
-  // Auto-refresh every 30 seconds
-  useEffect(() => {
-    const interval = setInterval(fetchStats, 30000);
-    return () => clearInterval(interval);
-  }, []);
 
   // Fallback to old dashboard
   const FallbackDashboard = () => (

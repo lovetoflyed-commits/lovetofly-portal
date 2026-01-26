@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
@@ -163,12 +164,12 @@ export default function AircraftDetail() {
         <main className="flex-1 overflow-y-auto">
             {/* Back button */}
             <div className="bg-white border-b px-6 py-4">
-              <button
-                onClick={() => router.back()}
+              <Link
+                href="/classifieds/aircraft"
                 className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-2"
               >
                 ← Voltar para listagem
-              </button>
+              </Link>
             </div>
 
             <div className="max-w-7xl mx-auto p-6">

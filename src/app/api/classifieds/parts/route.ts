@@ -25,8 +25,24 @@ export async function POST(request: Request) {
       status = 'active'
     } = body;
 
+    const isEmptyString = (value: unknown) => typeof value === 'string' && value.trim().length === 0;
+    const isMissing = (value: unknown) => value === null || value === undefined || isEmptyString(value);
+    const parsedPrice = typeof price === 'string' ? parseFloat(price) : price;
+    const parsedTimeSinceOverhaul =
+      typeof time_since_overhaul === 'string' ? parseInt(time_since_overhaul, 10) : time_since_overhaul;
+
     // Validation
-    if (!user_id || !title || !category || !condition || !price || !location_city || !location_state) {
+    if (
+      isMissing(user_id) ||
+      isMissing(title) ||
+      isMissing(category) ||
+      isMissing(condition) ||
+      isMissing(location_city) ||
+      isMissing(location_state) ||
+      parsedPrice === null ||
+      parsedPrice === undefined ||
+      Number.isNaN(parsedPrice)
+    ) {
       return NextResponse.json(
         { message: 'Campos obrigatórios: user_id, title, category, condition, price, location_city, location_state' },
         { status: 400 }
@@ -41,8 +57,8 @@ export async function POST(request: Request) {
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
       RETURNING *`,
       [
-        user_id, title, part_number, manufacturer, category, condition, time_since_overhaul,
-        price, location_city, location_state, description, compatible_aircraft,
+        user_id, title, part_number, manufacturer, category, condition, parsedTimeSinceOverhaul,
+        parsedPrice, location_city, location_state, description, compatible_aircraft,
         has_certification, has_logbook, shipping_available, return_policy, status
       ]
     );
@@ -135,8 +151,14 @@ export async function GET(request: Request) {
         p.*,
         CONCAT(u.first_name, ' ', u.last_name) as seller_name,
         u.email as seller_email,
-        (SELECT COUNT(*) FROM listing_photos WHERE listing_type = 'parts' AND listing_id = p.id) as photo_count,
-        (SELECT url FROM listing_photos WHERE listing_type = 'parts' AND listing_id = p.id AND is_primary = true LIMIT 1) as primary_photo,
+        (SELECT COUNT(*) FROM classified_photos WHERE listing_type = 'parts' AND listing_id = p.id) as photo_count,
+        (
+          SELECT id
+          FROM classified_photos
+          WHERE listing_type = 'parts' AND listing_id = p.id
+          ORDER BY is_primary DESC, display_order ASC
+          LIMIT 1
+        ) as primary_photo_id,
         COUNT(*) OVER () as total_count
       FROM parts_listings p
       LEFT JOIN users u ON p.user_id = u.id
@@ -148,8 +170,15 @@ export async function GET(request: Request) {
 
     const total = result.rows.length > 0 ? parseInt(result.rows[0].total_count) : 0;
 
+    const data = result.rows.map((row: any) => ({
+      ...row,
+      primary_photo: row.primary_photo_id
+        ? `/api/classifieds/parts/${row.id}/upload-photo?photoId=${row.primary_photo_id}`
+        : null,
+    }));
+
     return NextResponse.json({
-      data: result.rows,
+      data,
       pagination: {
         page,
         limit,

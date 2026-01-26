@@ -12,10 +12,8 @@ export default function ApproveUsersPage() {
     const ownerId = url.searchParams.get('id');
     
     if (ownerId) {
-      // Redirect to the HangarShare admin page with tab and owner ID
-      router.replace(`/admin/hangarshare?tab=users&ownerId=${ownerId}`);
+      router.replace(`/admin/hangarshare/owners/${ownerId}`);
     } else {
-      // No owner ID, just show the verifications tab
       router.replace('/admin/hangarshare?tab=users');
     }
   }, [router]);

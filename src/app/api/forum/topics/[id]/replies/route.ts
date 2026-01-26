@@ -9,18 +9,30 @@ export async function POST(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { content, token } = body;
+    const { content, token, parentReplyId, parent_reply_id } = body;
+    const resolvedParentReplyId = parentReplyId ?? parent_reply_id ?? null;
+    const authHeader = request.headers.get('authorization');
+    const headerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    const jwtSecret = process.env.JWT_SECRET || '';
 
-    if (!content || !token) {
+    if (!content || (!token && !headerToken)) {
       return NextResponse.json(
         { message: 'Missing required fields' },
         { status: 400 }
       );
     }
 
+    if (!jwtSecret) {
+      return NextResponse.json(
+        { message: 'Server configuration error' },
+        { status: 500 }
+      );
+    }
+
     // Verify JWT token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || '');
-    const userId = (decoded as any).user_id;
+    const decoded = jwt.verify(headerToken || token, jwtSecret);
+    const decodedAny = decoded as any;
+    const userId = decodedAny.user_id ?? decodedAny.id;
 
     if (!userId) {
       return NextResponse.json(
@@ -42,16 +54,29 @@ export async function POST(
       );
     }
 
+    if (resolvedParentReplyId) {
+      const parentResult = await pool.query(
+        `SELECT id FROM forum_replies WHERE id = $1 AND topic_id = $2 AND is_deleted = FALSE`,
+        [resolvedParentReplyId, id]
+      );
+      if (parentResult.rowCount === 0) {
+        return NextResponse.json(
+          { message: 'Parent reply not found' },
+          { status: 400 }
+        );
+      }
+    }
+
     // Insert reply
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
 
       const replyResult = await client.query(
-        `INSERT INTO forum_replies (topic_id, user_id, content)
-         VALUES ($1, $2, $3)
+        `INSERT INTO forum_replies (topic_id, user_id, content, parent_reply_id)
+         VALUES ($1, $2, $3, $4)
          RETURNING id, created_at`,
-        [id, userId, content]
+        [id, userId, content, resolvedParentReplyId]
       );
 
       // Update reply count

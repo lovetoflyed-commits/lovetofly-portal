@@ -111,3 +111,132 @@ export async function GET(
     return NextResponse.json({ message: 'Error fetching user profile' }, { status: 500 });
   }
 }
+
+// PATCH /api/admin/users/[userId]/profile - Update user profile and hangar owner info
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ userId: string }> }
+) {
+  try {
+    const { userId } = await params;
+    const body = await request.json();
+    const userUpdates = body?.user ?? {};
+    const hangarUpdates = body?.hangarOwner ?? null;
+
+    const userFields = new Set([
+      'first_name',
+      'last_name',
+      'email',
+      'cpf',
+      'mobile_phone',
+      'birth_date',
+      'aviation_role',
+      'role',
+      'plan',
+      'address_street',
+      'address_number',
+      'address_complement',
+      'address_neighborhood',
+      'address_city',
+      'address_state',
+      'address_zip',
+      'address_country'
+    ]);
+
+    const hangarFields = new Set([
+      'company_name',
+      'cnpj',
+      'phone',
+      'address',
+      'website',
+      'description',
+      'verification_status'
+    ]);
+
+    const userUpdatesSql: string[] = [];
+    const userValues: any[] = [];
+    let userParam = 1;
+
+    Object.entries(userUpdates).forEach(([key, value]) => {
+      if (!userFields.has(key)) return;
+      userUpdatesSql.push(`${key} = $${userParam}`);
+      userValues.push(value);
+      userParam++;
+    });
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      let updatedUser = null;
+      if (userUpdatesSql.length > 0) {
+        userUpdatesSql.push('updated_at = NOW()');
+        userValues.push(userId);
+        const userQuery = `
+          UPDATE users
+          SET ${userUpdatesSql.join(', ')}
+          WHERE id = $${userParam}
+          RETURNING id, first_name, last_name, email, role, aviation_role,
+            plan, cpf, birth_date, mobile_phone, address_street, address_number,
+            address_complement, address_neighborhood, address_city, address_state,
+            address_zip, address_country, created_at, updated_at
+        `;
+        const result = await client.query(userQuery, userValues);
+        updatedUser = result.rows[0] || null;
+      }
+
+      let updatedHangar = null;
+      if (hangarUpdates) {
+        const hangarSql: string[] = [];
+        const hangarValues: any[] = [];
+        let hangarParam = 1;
+
+        Object.entries(hangarUpdates).forEach(([key, value]) => {
+          if (!hangarFields.has(key)) return;
+          hangarSql.push(`${key} = $${hangarParam}`);
+          hangarValues.push(value);
+          hangarParam++;
+        });
+
+        if (hangarSql.length > 0) {
+          hangarSql.push('updated_at = NOW()');
+          hangarValues.push(userId);
+          const hangarQuery = `
+            UPDATE hangar_owners
+            SET ${hangarSql.join(', ')}
+            WHERE user_id = $${hangarParam}
+            RETURNING id, company_name, cnpj, phone, address, website, description, verification_status, created_at, updated_at
+          `;
+          const result = await client.query(hangarQuery, hangarValues);
+          updatedHangar = result.rows[0] || null;
+        }
+      }
+
+      if (!updatedUser && !updatedHangar) {
+        await client.query('ROLLBACK');
+        return NextResponse.json({ message: 'No fields to update' }, { status: 400 });
+      }
+
+      await client.query('COMMIT');
+
+      return NextResponse.json({
+        message: 'Profile updated successfully',
+        user: updatedUser
+          ? {
+              ...updatedUser,
+              name: [updatedUser.first_name, updatedUser.last_name].filter(Boolean).join(' ')
+            }
+          : null,
+        hangarOwner: updatedHangar
+      });
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error('Error updating user profile:', error);
+    return NextResponse.json({ message: 'Error updating user profile' }, { status: 500 });
+  }
+}

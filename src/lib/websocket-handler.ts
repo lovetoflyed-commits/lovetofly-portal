@@ -1,88 +1,24 @@
 // WebSocket Server Handler
 // File: src/lib/websocket-handler.ts
 // Purpose: Server-side WebSocket connection management
-
-import * as jwt from 'jsonwebtoken';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-
-interface AuthenticatedClient {
-  ownerId: string;
-  userId: number;
-  ws: WebSocket;
-}
-
-interface RealTimeUpdate {
-  type: string;
-  ownerId: string;
-  timestamp: number;
-  data: Record<string, any>;
-}
+// WebSocket disabled (manual refresh only)
 
 export class WebSocketHandler {
-  private static instance: WebSocketHandler;
-  private clients: Map<string, Set<AuthenticatedClient>> = new Map(); // ownerId -> Set of clients
-
-  private constructor() {}
-
   static getInstance(): WebSocketHandler {
-    if (!WebSocketHandler.instance) {
-      WebSocketHandler.instance = new WebSocketHandler();
-    }
-    return WebSocketHandler.instance;
+    return new WebSocketHandler();
   }
 
-  handleUpgrade(request: Request): Response {
-    // Note: Next.js doesn't natively support WebSocket upgrades in API routes
-    // This is a placeholder implementation
-    // In production, you would need to use a separate WebSocket server
-    // or use a library like next-ws
-    
+  public handleUpgrade(): Response {
     return new Response(
-      JSON.stringify({
-        error: 'WebSocket upgrade not available in Next.js API routes',
-        note: 'Consider using Socket.io or a separate WebSocket server',
-        suggestion: 'Run a separate Node.js server with ws or Socket.io library'
-      }),
-      {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      }
+      JSON.stringify({ message: 'WebSocket disabled.' }),
+      { status: 410 }
     );
   }
+}
 
-  /**
-   * Register a new client connection
-   * In production, this would be called by your WebSocket server
-   */
-  registerClient(ownerId: string, userId: number, ws: WebSocket): void {
-    if (!this.clients.has(ownerId)) {
-      this.clients.set(ownerId, new Set());
-    }
-
-    const client: AuthenticatedClient = { ownerId, userId, ws };
-    this.clients.get(ownerId)!.add(client);
-
-    console.log(`[WebSocket] Client registered for owner ${ownerId}`);
-
-    // Setup disconnect handler
-    ws.onclose = () => {
-      this.unregisterClient(ownerId, client);
-    };
-  }
-
-  /**
-   * Unregister a client connection
-   */
-  private unregisterClient(ownerId: string, client: AuthenticatedClient): void {
-    const clients = this.clients.get(ownerId);
-    if (clients) {
-      clients.delete(client);
-      if (clients.size === 0) {
-        this.clients.delete(ownerId);
-      }
-    }
-    console.log(`[WebSocket] Client unregistered for owner ${ownerId}`);
+export function verifyWebSocketToken(): null {
+  return null;
+}
   }
 
   /**

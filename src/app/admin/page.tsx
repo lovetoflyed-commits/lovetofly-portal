@@ -55,10 +55,7 @@ export default function AdminDashboardPage() {
     // Initial fetch
     fetchStats();
 
-    // Auto-refresh every 30 seconds for live updates
-    const interval = setInterval(fetchStats, 30000);
-
-    return () => clearInterval(interval);
+    return () => {};
   }, [user, router]);
 
   const modules: ModuleCard[] = [
