@@ -13,7 +13,4 @@ export async function OPTIONS() {
     { status: 410 }
   );
 }
-    if (!authHeader?.startsWith('Bearer ')) {
-
-      return NextResponse.json(
 
