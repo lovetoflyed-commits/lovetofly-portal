@@ -1,9 +1,6 @@
 "use client";
 
 import { useState } from 'react';
-import HangarCarousel from './HangarCarousel';
-import LanguageSelector from './LanguageSelector';
-import Link from 'next/link';
 
 interface LandingPageProps {
   onOpenLogin: () => void;
@@ -25,7 +22,6 @@ export default function LandingPage({ onOpenLogin, onOpenRegister }: LandingPage
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <LanguageSelector />
               <button
                 onClick={onOpenLogin}
                 className="text-slate-700 hover:text-blue-900 font-medium transition-colors"
@@ -120,7 +116,6 @@ export default function LandingPage({ onOpenLogin, onOpenRegister }: LandingPage
             <h2 className="text-3xl md:text-4xl font-black mb-3">🏢 HangarShare</h2>
             <p className="text-lg text-blue-100">Reserve ou alugue hangares em aeródromos por todo o Brasil</p>
           </div>
-          <HangarCarousel />
           <div className="text-center mt-8">
             <button
               onClick={onOpenRegister}
@@ -529,8 +524,8 @@ export default function LandingPage({ onOpenLogin, onOpenRegister }: LandingPage
             <div>
               <h4 className="font-bold text-sm mb-4">Legal</h4>
               <ul className="space-y-2 text-sm text-slate-400">
-                <li><Link href="/privacy" className="hover:text-white">Privacidade</Link></li>
-                <li><Link href="/terms" className="hover:text-white">Termos</Link></li>
+                <li><a href="/privacy" className="hover:text-white">Privacidade</a></li>
+                <li><a href="/terms" className="hover:text-white">Termos</a></li>
                 <li><a href="#" className="hover:text-white">Cookies</a></li>
                 <li><a href="#" className="hover:text-white">LGPD</a></li>
               </ul>

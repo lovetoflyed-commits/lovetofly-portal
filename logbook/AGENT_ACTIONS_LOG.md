@@ -691,3 +691,17 @@
 - Investigação: Lista de mudanças do commit e escopo solicitado pelo usuário.
 - Correção: Não aplicável.
 - Verificação: docs/records/deployment/DEPLOYMENT_RECORD_2026-01-31.md.
+
+- Ação: Remoção do box/carrossel HangarShare na landing page pré-login.
+- Resultado: Seção HangarShare com carrossel removida da landing page.
+- Erros: Sem erros.
+- Investigação: Identificação do componente LandingPage como página pré-login.
+- Correção: Remoção do import `HangarCarousel` e da seção correspondente.
+- Verificação: src/components/LandingPage.tsx.
+
+- Ação: Remoção apenas do carrossel HangarShare na landing page pré-login.
+- Resultado: Apenas o componente do carrossel foi removido; seção e layout mantidos.
+- Erros: Sem erros.
+- Investigação: Confirmação do trecho em LandingPage.
+- Correção: Remoção do uso do componente e do import.
+- Verificação: src/components/LandingPage.tsx.
