@@ -26,6 +26,7 @@ interface Hangar {
   services: string[];
   description: string;
   operatingHours: any;
+  verificationStatus?: string;
   owner: {
     firstName: string;
     lastName: string;
@@ -254,9 +255,16 @@ function SearchResultsContent() {
                   <div className="p-6">
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1">
-                        <h3 className="text-2xl font-bold text-blue-900 mb-1">
-                          Hangar {hangar.hangarNumber}
-                        </h3>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="text-2xl font-bold text-blue-900">
+                            Hangar {hangar.hangarNumber}
+                          </h3>
+                          {['verified', 'approved'].includes(hangar.verificationStatus || '') && (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full">
+                              ✅ Verificado
+                            </span>
+                          )}
+                        </div>
                         <p className="text-slate-600 font-mono text-sm">
                           {hangar.icaoCode} • {hangar.aerodromeName}
                         </p>

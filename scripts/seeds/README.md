@@ -15,7 +15,12 @@ Seeds execute in numerical order:
 - **002_seed_career_profiles.sql** - 6 detailed pilot career profiles (150-8500 flight hours)
 - **003_seed_companies.sql** - 12 aviation companies (airlines, flight schools, MROs, charter operators)
 - **004_seed_jobs.sql** - 20+ job postings (active, filled, closed statuses)
+- **009_seed_jobs_bulk.sql** - 500+ additional job postings across companies
 - **006_seed_hangar_listings.sql** - 14 hangar properties (various types, locations, price ranges)
+- **010_seed_hangar_listings_bulk.sql** - 100+ additional hangar listings across airports
+- **007_seed_classifieds.sql** - Aircraft, parts, and avionics listings with photos
+- **011_seed_aircraft_listings_bulk.sql** - 200+ additional aircraft listings
+- **008_seed_forum.sql** - Forum topics and replies across categories
 
 ## 🚀 Quick Start
 
@@ -79,8 +84,11 @@ After seeding, you'll have:
 - **15 users** - Diverse roles, plans (free/pro/premium), Brazilian and international
 - **6 career profiles** - Detailed aviation careers with licenses, experience, skills
 - **12 companies** - LATAM, Azul, GOL, Embraer, flight schools, MROs, etc.
-- **20+ jobs** - Pilot positions, mechanics, instructors, various statuses
-- **14 hangar listings** - SBSP, SBGR, SBRJ, SBKP, various types and prices
+- **500+ jobs** - Pilot positions, mechanics, instructors, various statuses
+- **100+ hangar listings** - SBSP, SBGR, SBRJ, SBKP, various types and prices
+- **200+ aircraft classifieds** - Aircraft listings with sample photos
+- **8 forum topics** - General, technical, regulations, events, classifieds, questions
+- **9 forum replies** - Conversation starters across topics
 
 ## 🎨 Data Characteristics
 

@@ -2,8 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/config/db';
 import jwt from 'jsonwebtoken';
-import { writeFile, mkdir } from 'fs/promises';
-import path from 'path';
+import { deleteFile, uploadFile } from '@/utils/storage';
 
 interface JWTPayload {
   userId: string;
@@ -29,10 +28,10 @@ export async function POST(
     const token = authHeader.substring(7);
     const secret = process.env.JWT_SECRET || 'your-secret-key';
     
-    let userId: string;
+    let userId: number;
     try {
       const decoded = jwt.verify(token, secret) as JWTPayload;
-      userId = decoded.userId;
+      userId = Number(decoded.userId);
     } catch (error) {
       return NextResponse.json(
         { message: 'Unauthorized - Invalid token' },
@@ -87,38 +86,16 @@ export async function POST(
       }
     }
 
-    // 5. Save files to disk (local storage for now)
-    // TODO: Replace with AWS S3 or Vercel Blob for production
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'hangars', listingId);
-    
-    try {
-      await mkdir(uploadDir, { recursive: true });
-    } catch (error) {
-      console.error('Error creating upload directory:', error);
-    }
-
     const uploadedPhotos = [];
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-
-      // Generate unique filename
-      const timestamp = Date.now();
-      const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-      const filename = `${timestamp}_${sanitizedName}`;
-      const filepath = path.join(uploadDir, filename);
-
-      // Save file
-      await writeFile(filepath, buffer);
-
-      // Public URL
-      const photoUrl = `/uploads/hangars/${listingId}/${filename}`;
+      const uploadResult = await uploadFile(file, `hangar-photos/${listingId}`);
+      const photoUrl = uploadResult.url;
 
       // Get next display order
       const orderResult = await pool.query(
-        'SELECT COALESCE(MAX(display_order), -1) + 1 as next_order FROM hangar_photos WHERE hangar_id = $1',
+        'SELECT COALESCE(MAX(display_order), -1) + 1 as next_order FROM hangar_photos WHERE listing_id = $1',
         [listingId]
       );
       const displayOrder = orderResult.rows[0].next_order;
@@ -126,17 +103,17 @@ export async function POST(
       // If this is first photo or marked as primary, unset other primary photos
       if (isPrimary || i === 0) {
         await pool.query(
-          'UPDATE hangar_photos SET is_primary = false WHERE hangar_id = $1',
+          'UPDATE hangar_photos SET is_primary = false WHERE listing_id = $1',
           [listingId]
         );
       }
 
       // Insert into database
       const result = await pool.query(
-        `INSERT INTO hangar_photos (hangar_id, photo_url, is_primary, display_order)
-         VALUES ($1, $2, $3, $4)
+        `INSERT INTO hangar_photos (listing_id, photo_url, is_primary, display_order, mime_type, file_name, file_size)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
          RETURNING id, photo_url, is_primary, display_order`,
-        [listingId, photoUrl, isPrimary || i === 0, displayOrder]
+        [listingId, photoUrl, isPrimary || i === 0, displayOrder, file.type, uploadResult.fileName, uploadResult.size]
       );
 
       uploadedPhotos.push(result.rows[0]);
@@ -173,7 +150,7 @@ export async function DELETE(
     const token = authHeader.substring(7);
     const secret = process.env.JWT_SECRET || 'your-secret-key';
     const decoded = jwt.verify(token, secret) as JWTPayload;
-    const userId = decoded.userId;
+    const userId = Number(decoded.userId);
 
     const { searchParams } = new URL(request.url);
     const photoId = searchParams.get('photoId');
@@ -186,8 +163,8 @@ export async function DELETE(
     const result = await pool.query(
       `DELETE FROM hangar_photos
        WHERE id = $1
-       AND hangar_id = $2
-       AND hangar_id IN (
+       AND listing_id = $2
+       AND listing_id IN (
          SELECT hl.id FROM hangar_listings hl
          JOIN hangar_owners ho ON hl.owner_id = ho.id
          WHERE ho.user_id = $3
@@ -200,7 +177,7 @@ export async function DELETE(
       return NextResponse.json({ message: 'Photo not found or unauthorized' }, { status: 404 });
     }
 
-    // TODO: Delete physical file from storage
+    await deleteFile(result.rows[0].photo_url);
 
     return NextResponse.json({
       success: true,

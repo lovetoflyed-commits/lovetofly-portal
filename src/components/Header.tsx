@@ -2,14 +2,11 @@
 
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import NotificationDropdown from './NotificationDropdown';
 
 export default function Header() {
-  const { user, logout } = useAuth();
-  const router = useRouter();
-  const pathname = usePathname();
+  const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
@@ -41,13 +38,6 @@ export default function Header() {
       return () => {};
     }
   }, [user]);
-
-  const handleLogout = () => {
-    // AuthContext already redirects to /landing on logout
-    logout();
-  };
-
-  const hideLogout = pathname?.startsWith('/classifieds');
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
@@ -144,14 +134,6 @@ export default function Header() {
                 >
                   Página inicial
                 </Link>
-                {!hideLogout && (
-                  <button
-                    onClick={handleLogout}
-                    className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
-                  >
-                    Logout
-                  </button>
-                )}
               </>
             ) : (
               <>

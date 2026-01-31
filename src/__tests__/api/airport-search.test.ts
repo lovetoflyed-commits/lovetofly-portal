@@ -1,3 +1,4 @@
+/** @jest-environment node */
 /**
  * Test suite for airport search API
  */

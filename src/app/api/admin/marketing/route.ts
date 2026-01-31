@@ -1,14 +1,12 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/config/db';
+import { requireAdmin } from '@/utils/adminAuth';
 
 // GET: List marketing campaigns
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-    // TODO: JWT validation
+    const authError = await requireAdmin(request);
+    if (authError) return authError;
     const result = await pool.query('SELECT * FROM marketing_campaigns ORDER BY created_at DESC LIMIT 100');
     return NextResponse.json({ campaigns: result.rows }, { status: 200 });
   } catch (error) {
@@ -18,13 +16,10 @@ export async function GET(request: Request) {
 }
 
 // POST: Add new marketing campaign
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-    // TODO: JWT validation
+    const authError = await requireAdmin(request);
+    if (authError) return authError;
     const body = await request.json();
     const insert = await pool.query(
       'INSERT INTO marketing_campaigns (name, description, status, start_date, end_date, created_by) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',

@@ -15,6 +15,8 @@ interface ForumTopicDetail {
   content: string;
   views: number;
   replies_count: number;
+  is_pinned?: boolean;
+  is_locked?: boolean;
   created_at: string;
   author_name: string | null;
   likes_count: number;
@@ -35,7 +37,7 @@ interface ForumReply {
 export default function ForumTopicPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const topicId = useMemo(() => params?.id?.toString() ?? '', [params]);
 
   const [topic, setTopic] = useState<ForumTopicDetail | null>(null);
@@ -52,6 +54,9 @@ export default function ForumTopicPage() {
     | { type: 'reply'; replyId: string; authorName: string | null }
     | null
   >(null);
+  const [moderating, setModerating] = useState(false);
+
+  const isAdmin = user?.role === 'master' || user?.role === 'admin' || user?.role === 'staff';
 
   const { rootReplies, repliesByParent } = useMemo(() => {
     const grouped: Record<string, ForumReply[]> = {};
@@ -181,6 +186,46 @@ export default function ForumTopicPage() {
     }
   };
 
+  const handleModeration = async (action: 'pin' | 'unpin' | 'lock' | 'unlock' | 'delete') => {
+    if (!token || !topic) {
+      alert('Faça login novamente para moderar.');
+      return;
+    }
+    if (moderating) return;
+
+    if (action === 'delete') {
+      const confirmed = window.confirm('Tem certeza que deseja remover este tópico?');
+      if (!confirmed) return;
+    }
+
+    try {
+      setModerating(true);
+      const response = await fetch(`/api/admin/forum/topics/${topicId}/moderate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ action }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.message || 'Falha ao moderar tópico');
+      }
+
+      const data = await response.json();
+      if (data?.topic) {
+        setTopic((prev) => (prev ? { ...prev, ...data.topic } : prev));
+      }
+    } catch (err) {
+      console.error('Moderation error:', err);
+      alert('Erro ao moderar tópico.');
+    } finally {
+      setModerating(false);
+    }
+  };
+
   const toggleReplyLike = async (replyId: string) => {
     if (!token) {
       alert('Faça login novamente para curtir.');
@@ -250,24 +295,63 @@ export default function ForumTopicPage() {
                       <span className="inline-flex items-center bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full">
                         {getCategoryLabel(topic.category)}
                       </span>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {topic.is_pinned && (
+                          <span className="inline-flex items-center bg-amber-100 text-amber-700 text-xs font-semibold px-3 py-1 rounded-full">
+                            📌 Fixado
+                          </span>
+                        )}
+                        {topic.is_locked && (
+                          <span className="inline-flex items-center bg-rose-100 text-rose-700 text-xs font-semibold px-3 py-1 rounded-full">
+                            🔒 Fechado
+                          </span>
+                        )}
+                      </div>
                       <h1 className="text-2xl font-bold text-gray-900 mt-3">{topic.title}</h1>
                       <p className="text-sm text-gray-500 mt-1">
                         por <span className="font-semibold text-gray-700">{topic.author_name || 'Usuário'}</span> •{' '}
                         {new Date(topic.created_at).toLocaleString('pt-BR')}
                       </p>
                     </div>
-                    <button
-                      onClick={toggleTopicLike}
-                      disabled={likingTopic}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-semibold transition-colors ${
-                        topic.liked_by_user
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'
-                      }`}
-                    >
-                      <ThumbsUp size={16} />
-                      {topic.likes_count || 0}
-                    </button>
+                    <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+                      {isAdmin && (
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            onClick={() => handleModeration(topic.is_pinned ? 'unpin' : 'pin')}
+                            disabled={moderating}
+                            className="px-3 py-2 text-xs font-semibold rounded-lg border border-amber-200 text-amber-700 hover:bg-amber-50"
+                          >
+                            {topic.is_pinned ? 'Desafixar' : 'Fixar'}
+                          </button>
+                          <button
+                            onClick={() => handleModeration(topic.is_locked ? 'unlock' : 'lock')}
+                            disabled={moderating}
+                            className="px-3 py-2 text-xs font-semibold rounded-lg border border-rose-200 text-rose-700 hover:bg-rose-50"
+                          >
+                            {topic.is_locked ? 'Reabrir' : 'Fechar'}
+                          </button>
+                          <button
+                            onClick={() => handleModeration('delete')}
+                            disabled={moderating}
+                            className="px-3 py-2 text-xs font-semibold rounded-lg border border-red-200 text-red-700 hover:bg-red-50"
+                          >
+                            Remover
+                          </button>
+                        </div>
+                      )}
+                      <button
+                        onClick={toggleTopicLike}
+                        disabled={likingTopic}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-semibold transition-colors ${
+                          topic.liked_by_user
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'
+                        }`}
+                      >
+                        <ThumbsUp size={16} />
+                        {topic.likes_count || 0}
+                      </button>
+                    </div>
                   </div>
 
                   <div className="mt-6 text-gray-700 whitespace-pre-wrap leading-relaxed">
@@ -279,12 +363,16 @@ export default function ForumTopicPage() {
                       <MessageCircle size={16} /> {topic.replies_count} respostas
                     </span>
                     <span>{topic.views} visualizações</span>
-                    <button
-                      onClick={() => openReplyModal({ type: 'topic' })}
-                      className="ml-auto inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-semibold"
-                    >
-                      <MessageCircle size={16} /> Responder
-                    </button>
+                    {topic.is_locked ? (
+                      <span className="ml-auto text-rose-600 font-semibold">Tópico fechado para novas respostas</span>
+                    ) : (
+                      <button
+                        onClick={() => openReplyModal({ type: 'topic' })}
+                        className="ml-auto inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-semibold"
+                      >
+                        <MessageCircle size={16} /> Responder
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -305,12 +393,14 @@ export default function ForumTopicPage() {
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => openReplyModal({ type: 'reply', replyId: reply.id, authorName: reply.author_name })}
-                            className="text-xs font-semibold text-blue-600 hover:text-blue-700"
-                          >
-                            Responder
-                          </button>
+                          {!topic?.is_locked && (
+                            <button
+                              onClick={() => openReplyModal({ type: 'reply', replyId: reply.id, authorName: reply.author_name })}
+                              className="text-xs font-semibold text-blue-600 hover:text-blue-700"
+                            >
+                              Responder
+                            </button>
+                          )}
                           <button
                             onClick={() => toggleReplyLike(reply.id)}
                             disabled={likingReplyId === reply.id}

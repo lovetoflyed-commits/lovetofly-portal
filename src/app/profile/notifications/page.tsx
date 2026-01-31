@@ -11,8 +11,9 @@ interface Notification {
   title: string;
   message: string;
   type: 'info' | 'success' | 'warning' | 'error';
-  read: boolean;
-  link: string | null;
+  is_read: boolean;
+  action_url: string | null;
+  action_label: string | null;
   created_at: string;
 }
 
@@ -21,6 +22,7 @@ export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     fetchNotifications();
@@ -46,7 +48,8 @@ export default function NotificationsPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setNotifications(data.notifications);
+        setNotifications(data.notifications || []);
+        setUnreadCount(data.unreadCount ?? 0);
       } else if (response.status === 401) {
         router.push('/login');
       }
@@ -74,8 +77,9 @@ export default function NotificationsPage() {
       if (response.ok) {
         // Update local state
         setNotifications(notifications.map(n => 
-          n.id === notificationId ? { ...n, read: true } : n
+          n.id === notificationId ? { ...n, is_read: true } : n
         ));
+        setUnreadCount((count) => Math.max(0, count - 1));
       }
     } catch (error) {
       console.error('Error marking notification as read:', error);
@@ -98,7 +102,8 @@ export default function NotificationsPage() {
 
       if (response.ok) {
         // Update local state
-        setNotifications(notifications.map(n => ({ ...n, read: true })));
+        setNotifications(notifications.map(n => ({ ...n, is_read: true })));
+        setUnreadCount(0);
       }
     } catch (error) {
       console.error('Error marking all as read:', error);
@@ -173,7 +178,7 @@ export default function NotificationsPage() {
             </div>
           </div>
 
-          {notifications.some(n => !n.read) && (
+          {unreadCount > 0 && (
             <button
               onClick={markAllAsRead}
               className="mt-4 text-sm text-blue-600 hover:text-blue-800 font-bold"
@@ -195,7 +200,7 @@ export default function NotificationsPage() {
                 key={notification.id}
                 className={`bg-white rounded-xl shadow border-2 p-6 transition ${
                   getTypeColor(notification.type)
-                } ${!notification.read ? 'border-l-4 border-l-blue-600' : ''}`}
+                } ${!notification.is_read ? 'border-l-4 border-l-blue-600' : ''}`}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -204,7 +209,7 @@ export default function NotificationsPage() {
                       <h3 className="text-lg font-bold text-slate-900">
                         {notification.title}
                       </h3>
-                      {!notification.read && (
+                      {!notification.is_read && (
                         <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
                           Nova
                         </span>
@@ -218,18 +223,18 @@ export default function NotificationsPage() {
                         {new Date(notification.created_at).toLocaleString('pt-BR')}
                       </p>
                       
-                      {notification.link && (
+                      {notification.action_url && (
                         <Link
-                          href={notification.link}
+                          href={notification.action_url}
                           className="text-sm text-blue-600 hover:text-blue-800 font-bold"
                         >
-                          Ver detalhes →
+                          {notification.action_label || 'Ver detalhes →'}
                         </Link>
                       )}
                     </div>
                   </div>
 
-                  {!notification.read && (
+                  {!notification.is_read && (
                     <button
                       onClick={() => markAsRead(notification.id)}
                       className="ml-4 text-sm text-slate-600 hover:text-blue-600 font-bold"

@@ -5,6 +5,121 @@ async function getResendClient() {
 }
 
 /**
+ * Send aircraft transfer quote request email
+ */
+export async function sendTransferQuoteRequest({
+  requestId,
+  aircraftModel,
+  aircraftPrefix,
+  aircraftCategory,
+  maintenanceStatus,
+  originCity,
+  originAirport,
+  destinationCity,
+  destinationAirport,
+  dateWindowStart,
+  dateWindowEnd,
+  contactName,
+  contactEmail,
+  contactPhone,
+  operatorName,
+  notes,
+}: {
+  requestId?: number;
+  aircraftModel: string;
+  aircraftPrefix: string;
+  aircraftCategory: string;
+  maintenanceStatus?: string;
+  originCity: string;
+  originAirport?: string;
+  destinationCity: string;
+  destinationAirport?: string;
+  dateWindowStart: string;
+  dateWindowEnd?: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone?: string;
+  operatorName?: string;
+  notes?: string;
+}) {
+  try {
+    if (!process.env.RESEND_API_KEY) {
+      console.warn('RESEND_API_KEY not set; transfer quote email skipped');
+      return false;
+    }
+
+    const resend = await getResendClient();
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; background: #f9f9f9; }
+    .header { background: #0ea5e9; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background: white; padding: 20px; border-radius: 0 0 8px 8px; }
+    .section { margin-bottom: 16px; }
+    .label { font-weight: bold; color: #0f172a; }
+    .value { color: #475569; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h2>Solicitação de Cotação — Traslados</h2>
+    </div>
+    <div class="content">
+      <div class="section">
+        <div class="label">Protocolo</div>
+        <div class="value">${requestId ? `TR-${requestId}` : 'Não disponível'}</div>
+      </div>
+      <div class="section">
+        <div class="label">Aeronave</div>
+        <div class="value">${aircraftModel} (${aircraftPrefix}) — ${aircraftCategory}</div>
+        <div class="value">Status manutenção: ${maintenanceStatus || 'Não informado'}</div>
+      </div>
+      <div class="section">
+        <div class="label">Rota</div>
+        <div class="value">Origem: ${originCity} ${originAirport ? `(${originAirport})` : ''}</div>
+        <div class="value">Destino: ${destinationCity} ${destinationAirport ? `(${destinationAirport})` : ''}</div>
+      </div>
+      <div class="section">
+        <div class="label">Janela de datas</div>
+        <div class="value">Início: ${dateWindowStart}</div>
+        <div class="value">Fim: ${dateWindowEnd || 'Não informado'}</div>
+      </div>
+      <div class="section">
+        <div class="label">Contato</div>
+        <div class="value">${contactName} — ${contactEmail}</div>
+        <div class="value">Telefone: ${contactPhone || 'Não informado'}</div>
+        <div class="value">Operador/Responsável: ${operatorName || 'Não informado'}</div>
+      </div>
+      <div class="section">
+        <div class="label">Observações</div>
+        <div class="value">${notes || 'Nenhuma'}</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+    await resend.emails.send({
+      from: 'LoveToFly Portal <suporte@lovetofly.com.br>',
+      to: ['suporte@lovetofly.com.br'],
+      subject: `Solicitação de cotação - Traslados (${aircraftPrefix})`,
+      html: htmlContent,
+    });
+
+    return true;
+  } catch (error) {
+    console.error('Error sending transfer quote email:', error);
+    throw error;
+  }
+}
+
+/**
  * Send password reset email with reset code
  */
 export async function sendPasswordResetEmail({

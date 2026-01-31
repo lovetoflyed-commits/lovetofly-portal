@@ -135,6 +135,28 @@ export default function ProfilePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="md:col-span-3">
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex flex-wrap gap-3">
+                <button
+                  onClick={() => router.push('/profile/edit')}
+                  className="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50"
+                >
+                  Editar perfil
+                </button>
+                <button
+                  onClick={() => router.push('/profile/bookings')}
+                  className="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50"
+                >
+                  Minhas reservas
+                </button>
+                <button
+                  onClick={() => router.push('/profile/notifications')}
+                  className="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50"
+                >
+                  Notificações
+                </button>
+              </div>
+            </div>
 
             {/* --- COLUNA ESQUERDA: DADOS PESSOAIS --- */}
             <div className="md:col-span-1 space-y-6">

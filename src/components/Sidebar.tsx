@@ -46,6 +46,16 @@ export default function Sidebar({ onFeatureClick, disabled }: SidebarProps) {
       ],
     },
     {
+      title: 'Traslados',
+      items: [
+        { href: '/traslados', label: 'Traslados de Aeronaves', icon: '🧭' },
+        { href: '/traslados/messages', label: 'Mensagens', icon: '💬' },
+        { href: '/traslados/status', label: 'Status da Operação', icon: '📡' },
+        { href: '/traslados/owners', label: 'Para Proprietários', icon: '🧑‍✈️' },
+        { href: '/traslados/pilots', label: 'Para Pilotos', icon: '🛫' },
+      ],
+    },
+    {
       title: 'Comunidade',
       items: [
         { href: '/forum', label: 'Fórum', icon: '💬' },
@@ -71,8 +81,9 @@ export default function Sidebar({ onFeatureClick, disabled }: SidebarProps) {
       title: 'HangarShare',
       items: [
         { href: '/hangarshare', label: 'Buscar Hangares', icon: '🏢' },
+        { href: '/hangarshare/favorites', label: 'Favoritos', icon: '❤️' },
         { href: '/hangarshare/owner/register', label: 'Anunciar Hangar', icon: '➕' },
-        { href: '/hangarshare/bookings', label: 'Minhas Reservas', icon: '📅' },
+        { href: '/profile/bookings', label: 'Minhas Reservas', icon: '📅' },
       ],
     },
     {

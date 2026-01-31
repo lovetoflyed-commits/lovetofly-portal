@@ -8,6 +8,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { FeatureFlagWrapper } from '@/components/hangarshare-v2/FeatureFlagWrapper';
+import { useRouter } from 'next/navigation';
 import { MetricsGrid } from '@/components/hangarshare-v2/MetricCard';
 import { RevenueChart } from '@/components/hangarshare-v2/RevenueChart';
 import { OccupancyChart } from '@/components/hangarshare-v2/OccupancyChart';
@@ -81,6 +82,8 @@ function FallbackDashboard() {
 export default function OwnerDashboardPage() {
   const { user } = useAuth();
   const { t } = useLanguage();
+  const router = useRouter();
+
   const [state, setState] = useState<DashboardState>({
     loading: true,
     error: null,
@@ -121,6 +124,8 @@ export default function OwnerDashboardPage() {
 
   useEffect(() => {
     fetchData();
+
+    router.replace('/hangarshare/owner/dashboard');
 
     // Auto-refresh every 60 seconds
     const interval = setInterval(fetchData, 60000);

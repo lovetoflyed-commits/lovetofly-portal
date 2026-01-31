@@ -52,6 +52,8 @@ export async function GET(
         h.special_notes as "specialNotes",
         h.is_available as "isAvailable",
         h.approval_status as "approvalStatus",
+        h.verification_status as "verificationStatus",
+        h.status as "status",
         h.created_at as "createdAt",
         h.updated_at as "updatedAt",
         u.first_name || ' ' || u.last_name as "ownerName",
@@ -62,6 +64,7 @@ export async function GET(
             json_build_object(
               'id', p.id,
               'photoUrl', p.photo_url,
+              'isPrimary', p.is_primary,
               'displayOrder', p.display_order
             ) ORDER BY p.display_order
           ) FILTER (WHERE p.id IS NOT NULL),

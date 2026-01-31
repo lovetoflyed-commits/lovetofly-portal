@@ -6,6 +6,7 @@ import AuthGuard from '@/components/AuthGuard';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
 import { trackEvent, trackPageView } from '@/utils/analytics';
+import { useLanguage } from '@/context/LanguageContext';
 
 type TransferFormData = {
   aircraftModel: string;
@@ -29,6 +30,7 @@ type TransferFormData = {
 type TransferFormErrors = Partial<Record<keyof TransferFormData, string>>;
 
 export default function AircraftTransfersPage() {
+  const { t } = useLanguage();
   const [formData, setFormData] = useState<TransferFormData>({
     aircraftModel: '',
     aircraftPrefix: '',
@@ -67,15 +69,15 @@ export default function AircraftTransfersPage() {
   const validateForm = () => {
     const nextErrors: TransferFormErrors = {};
 
-    if (!formData.aircraftModel.trim()) nextErrors.aircraftModel = 'Informe o modelo da aeronave.';
-    if (!formData.aircraftPrefix.trim()) nextErrors.aircraftPrefix = 'Informe o prefixo.';
-    if (!formData.aircraftCategory) nextErrors.aircraftCategory = 'Selecione a categoria.';
-    if (!formData.originCity.trim()) nextErrors.originCity = 'Informe a cidade de origem.';
-    if (!formData.destinationCity.trim()) nextErrors.destinationCity = 'Informe a cidade de destino.';
-    if (!formData.dateWindowStart) nextErrors.dateWindowStart = 'Selecione a data inicial.';
-    if (!formData.contactName.trim()) nextErrors.contactName = 'Informe o nome para contato.';
-    if (!formData.contactEmail.trim()) nextErrors.contactEmail = 'Informe o e-mail.';
-    if (!formData.ownerAuthorization) nextErrors.ownerAuthorization = 'Confirme a autorização do proprietário.';
+    if (!formData.aircraftModel.trim()) nextErrors.aircraftModel = t('transfers.formErrors.aircraftModel');
+    if (!formData.aircraftPrefix.trim()) nextErrors.aircraftPrefix = t('transfers.formErrors.aircraftPrefix');
+    if (!formData.aircraftCategory) nextErrors.aircraftCategory = t('transfers.formErrors.aircraftCategory');
+    if (!formData.originCity.trim()) nextErrors.originCity = t('transfers.formErrors.originCity');
+    if (!formData.destinationCity.trim()) nextErrors.destinationCity = t('transfers.formErrors.destinationCity');
+    if (!formData.dateWindowStart) nextErrors.dateWindowStart = t('transfers.formErrors.dateWindowStart');
+    if (!formData.contactName.trim()) nextErrors.contactName = t('transfers.formErrors.contactName');
+    if (!formData.contactEmail.trim()) nextErrors.contactEmail = t('transfers.formErrors.contactEmail');
+    if (!formData.ownerAuthorization) nextErrors.ownerAuthorization = t('transfers.formErrors.ownerAuthorization');
 
     return nextErrors;
   };
@@ -88,6 +90,7 @@ export default function AircraftTransfersPage() {
     if (Object.keys(nextErrors).length === 0) {
       setIsSubmitting(true);
       setSubmitError('');
+      setRequestId(null);
 
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       fetch('/api/traslados/quote', {
@@ -99,11 +102,12 @@ export default function AircraftTransfersPage() {
         body: JSON.stringify(formData),
       })
         .then(async (response) => {
+          const payload = await response.json().catch(() => null);
           if (!response.ok) {
-            const payload = await response.json().catch(() => null);
             throw new Error(payload?.message || 'Falha ao enviar solicitação');
           }
           setSubmitted(true);
+          setRequestId(payload?.requestId ?? null);
           trackEvent('transfer_quote_submitted', '/traslados/quote-submitted');
         })
         .catch((error: Error) => {
@@ -120,26 +124,20 @@ export default function AircraftTransfersPage() {
       <div className="flex min-h-screen bg-gray-50">
         <Sidebar />
         <div className="flex-1 flex flex-col">
-          const payload = await response.json().catch(() => null);
-          if (payload?.requestId) {
-            setRequestId(payload.requestId);
-          }
           <Header />
           <main className="flex-1 p-8">
             <div className="max-w-6xl mx-auto space-y-12">
               <section className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
                 <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                   <div className="space-y-3">
-                    <h1 className="text-3xl font-bold text-gray-900">Traslados de Aeronaves</h1>
-                    <p className="text-lg text-gray-600">
-                      Planejamento completo, equipe experiente e acompanhamento ponta a ponta no Brasil.
-                    </p>
+                    <h1 className="text-3xl font-bold text-gray-900">{t('transfers.heroTitle')}</h1>
+                    <p className="text-lg text-gray-600">{t('transfers.heroSubtitle')}</p>
                   </div>
                   <a
                     href="#traslados-cotacao"
                     className="inline-flex items-center justify-center rounded-lg bg-sky-600 px-5 py-3 text-sm font-semibold text-white shadow hover:bg-sky-700"
                   >
-                    Solicitar cotação
+                    {t('transfers.heroCta')}
                   </a>
                 </div>
               </section>
@@ -147,16 +145,16 @@ export default function AircraftTransfersPage() {
               <section className="grid gap-6 md:grid-cols-3">
                 {[
                   {
-                    title: 'Entrega pós-compra e reposicionamento',
-                    description: 'Traslado seguro para novo hangar, base operacional ou destino final.',
+                    title: t('transfers.services.deliveryTitle'),
+                    description: t('transfers.services.deliveryDescription'),
                   },
                   {
-                    title: 'Manutenção (ida e volta)',
-                    description: 'Coordenação de logística completa para MRO e retorno.',
+                    title: t('transfers.services.maintenanceTitle'),
+                    description: t('transfers.services.maintenanceDescription'),
                   },
                   {
-                    title: 'Ferry pós-reparo',
-                    description: 'Gestão de documentação e execução com foco em conformidade.',
+                    title: t('transfers.services.ferryTitle'),
+                    description: t('transfers.services.ferryDescription'),
                   },
                 ].map((item) => (
                   <div key={item.title} className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -168,43 +166,41 @@ export default function AircraftTransfersPage() {
 
               <section className="grid gap-6 md:grid-cols-2">
                 <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-                  <h2 className="text-2xl font-semibold text-gray-900">Sou proprietário ou operador</h2>
-                  <p className="mt-3 text-sm text-gray-600">
-                    Solicite traslado com planejamento completo, compliance e acompanhamento dedicado.
-                  </p>
+                  <h2 className="text-2xl font-semibold text-gray-900">{t('transfers.ownersTitle')}</h2>
+                  <p className="mt-3 text-sm text-gray-600">{t('transfers.ownersSubtitle')}</p>
                   <a
                     href="/traslados/owners"
                     className="mt-6 inline-flex items-center justify-center rounded-lg bg-sky-600 px-5 py-3 text-sm font-semibold text-white shadow hover:bg-sky-700"
                   >
-                    Ver detalhes para proprietários
+                    {t('transfers.ownersCta')}
                   </a>
                 </div>
                 <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-                  <h2 className="text-2xl font-semibold text-gray-900">Sou piloto</h2>
-                  <p className="mt-3 text-sm text-gray-600">
-                    Conheça os requisitos e o fluxo de cadastro para atuar nos traslados.
-                  </p>
+                  <h2 className="text-2xl font-semibold text-gray-900">{t('transfers.pilotsTitle')}</h2>
+                  <p className="mt-3 text-sm text-gray-600">{t('transfers.pilotsSubtitle')}</p>
                   <a
                     href="/traslados/pilots"
                     className="mt-6 inline-flex items-center justify-center rounded-lg border border-sky-600 px-5 py-3 text-sm font-semibold text-sky-600 hover:bg-sky-50"
                   >
-                    Ver detalhes para pilotos
+                    {t('transfers.pilotsCta')}
                   </a>
                 </div>
               </section>
 
               <section className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-                <h2 className="text-2xl font-semibold text-gray-900">Como funciona</h2>
+                <h2 className="text-2xl font-semibold text-gray-900">{t('transfers.howItWorksTitle')}</h2>
                 <div className="mt-6 grid gap-4 md:grid-cols-5">
                   {[
-                    'Envio dos dados',
-                    'Análise técnica e regulatória',
-                    'Proposta e cronograma',
-                    'Execução e acompanhamento',
-                    'Relatório final',
+                    t('transfers.howItWorksStep1'),
+                    t('transfers.howItWorksStep2'),
+                    t('transfers.howItWorksStep3'),
+                    t('transfers.howItWorksStep4'),
+                    t('transfers.howItWorksStep5'),
                   ].map((step, index) => (
                     <div key={step} className="rounded-xl bg-sky-50 p-4 text-sm text-gray-700">
-                      <div className="text-xs font-semibold text-sky-700">Etapa {index + 1}</div>
+                      <div className="text-xs font-semibold text-sky-700">
+                        {t('transfers.stepLabel')} {index + 1}
+                      </div>
                       <div className="mt-2 font-medium text-gray-900">{step}</div>
                     </div>
                   ))}
@@ -213,21 +209,21 @@ export default function AircraftTransfersPage() {
 
               <section className="grid gap-6 md:grid-cols-2">
                 <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-                  <h2 className="text-2xl font-semibold text-gray-900">Segurança e compliance</h2>
+                  <h2 className="text-2xl font-semibold text-gray-900">{t('transfers.securityTitle')}</h2>
                   <ul className="mt-4 space-y-3 text-sm text-gray-600">
-                    <li>Checklists operacionais e documentação válida.</li>
-                    <li>Tripulação habilitada e compatível com a operação.</li>
-                    <li>Coordenação ATC e planejamento de rotas.</li>
-                    <li>Monitoramento e comunicação com o cliente.</li>
+                    <li>{t('transfers.securityItem1')}</li>
+                    <li>{t('transfers.securityItem2')}</li>
+                    <li>{t('transfers.securityItem3')}</li>
+                    <li>{t('transfers.securityItem4')}</li>
                   </ul>
                 </div>
                 <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-                  <h2 className="text-2xl font-semibold text-gray-900">Custos típicos</h2>
+                  <h2 className="text-2xl font-semibold text-gray-900">{t('transfers.costsTitle')}</h2>
                   <ul className="mt-4 space-y-3 text-sm text-gray-600">
-                    <li>Combustível e taxas aeroportuárias.</li>
-                    <li>Handling, estacionamento e apoio em solo.</li>
-                    <li>Seguro e despesas de tripulação.</li>
-                    <li>Serviços adicionais sob demanda.</li>
+                    <li>{t('transfers.costsItem1')}</li>
+                    <li>{t('transfers.costsItem2')}</li>
+                    <li>{t('transfers.costsItem3')}</li>
+                    <li>{t('transfers.costsItem4')}</li>
                   </ul>
                 </div>
               </section>
@@ -235,33 +231,31 @@ export default function AircraftTransfersPage() {
               <section className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
                 <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                   <div>
-                    <h2 className="text-2xl font-semibold text-gray-900">Precisa de um traslado?</h2>
-                    <p className="mt-2 text-sm text-gray-600">
-                      Receba uma proposta personalizada em até 48–72h úteis após o envio completo dos dados.
-                    </p>
+                    <h2 className="text-2xl font-semibold text-gray-900">{t('transfers.ctaTitle')}</h2>
+                    <p className="mt-2 text-sm text-gray-600">{t('transfers.ctaSubtitle')}</p>
                   </div>
                   <a
                     href="#traslados-cotacao"
                     className="inline-flex items-center justify-center rounded-lg border border-sky-600 px-5 py-3 text-sm font-semibold text-sky-600 hover:bg-sky-50"
                   >
-                    Iniciar solicitação
+                    {t('transfers.ctaButton')}
                   </a>
                 </div>
               </section>
 
               <section id="traslados-cotacao" className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
                 <div className="flex flex-col gap-2">
-                  <h2 className="text-2xl font-semibold text-gray-900">Solicite sua cotação</h2>
-                  <p className="text-sm text-gray-600">
-                    Preencha os dados essenciais para iniciarmos a análise técnica. Campos com * são obrigatórios.
-                  </p>
+                  <h2 className="text-2xl font-semibold text-gray-900">{t('transfers.formTitle')}</h2>
+                  <p className="text-sm text-gray-600">{t('transfers.formSubtitle')}</p>
                 </div>
 
                 {submitted && (
                   <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
-                    Solicitação enviada. Nossa equipe retornará com a proposta em até 72h úteis.
+                    {t('transfers.formSuccess')}
                     {requestId && (
-                      <span className="block mt-1">Protocolo: TR-{requestId}</span>
+                      <span className="block mt-1">
+                        {t('transfers.formProtocol')}: TR-{requestId}
+                      </span>
                     )}
                   </div>
                 )}
@@ -276,7 +270,7 @@ export default function AircraftTransfersPage() {
                   <div className="grid gap-4 md:grid-cols-3">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700" htmlFor="aircraft-model">
-                        Modelo da aeronave *
+                        {t('transfers.form.aircraftModelLabel')} *
                       </label>
                       <input
                         id="aircraft-model"
@@ -296,7 +290,7 @@ export default function AircraftTransfersPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700" htmlFor="aircraft-prefix">
-                        Prefixo *
+                        {t('transfers.form.aircraftPrefixLabel')} *
                       </label>
                       <input
                         id="aircraft-prefix"
@@ -316,7 +310,7 @@ export default function AircraftTransfersPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700" htmlFor="aircraft-category">
-                        Categoria *
+                        {t('transfers.form.aircraftCategoryLabel')} *
                       </label>
                       <select
                         id="aircraft-category"
@@ -327,11 +321,11 @@ export default function AircraftTransfersPage() {
                         aria-describedby={errors.aircraftCategory ? 'aircraft-category-error' : undefined}
                         required
                       >
-                        <option value="">Selecione</option>
-                        <option value="pistao">Monomotor a pistão</option>
-                        <option value="multi">Multimotor a pistão</option>
-                        <option value="turboelice">Turboélice</option>
-                        <option value="jato">Jato</option>
+                        <option value="">{t('transfers.form.selectOption')}</option>
+                        <option value="pistao">{t('transfers.form.categoryPistonSingle')}</option>
+                        <option value="multi">{t('transfers.form.categoryPistonMulti')}</option>
+                        <option value="turboelice">{t('transfers.form.categoryTurboprop')}</option>
+                        <option value="jato">{t('transfers.form.categoryJet')}</option>
                       </select>
                       {errors.aircraftCategory && (
                         <p id="aircraft-category-error" className="mt-2 text-xs text-red-600">
@@ -343,7 +337,7 @@ export default function AircraftTransfersPage() {
 
                   <div>
                     <label className="block text-sm font-semibold text-gray-700" htmlFor="maintenance-status">
-                      Status de manutenção
+                      {t('transfers.form.maintenanceStatusLabel')}
                     </label>
                     <input
                       id="maintenance-status"
@@ -351,14 +345,14 @@ export default function AircraftTransfersPage() {
                       value={formData.maintenanceStatus}
                       onChange={(event) => updateField('maintenanceStatus', event.target.value)}
                       className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
-                      placeholder="Ex.: Inspeção vigente, ADs cumpridas"
+                      placeholder={t('transfers.form.maintenanceStatusPlaceholder')}
                     />
                   </div>
 
                   <div className="grid gap-4 md:grid-cols-2">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700" htmlFor="origin-city">
-                        Cidade/UF de origem *
+                        {t('transfers.form.originCityLabel')} *
                       </label>
                       <input
                         id="origin-city"
@@ -378,7 +372,7 @@ export default function AircraftTransfersPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700" htmlFor="origin-airport">
-                        Aeródromo de origem
+                        {t('transfers.form.originAirportLabel')}
                       </label>
                       <input
                         id="origin-airport"
@@ -386,7 +380,7 @@ export default function AircraftTransfersPage() {
                         value={formData.originAirport}
                         onChange={(event) => updateField('originAirport', event.target.value)}
                         className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
-                        placeholder="ICAO/IATA"
+                        placeholder={t('transfers.form.airportPlaceholder')}
                       />
                     </div>
                   </div>
@@ -394,7 +388,7 @@ export default function AircraftTransfersPage() {
                   <div className="grid gap-4 md:grid-cols-2">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700" htmlFor="destination-city">
-                        Cidade/UF de destino *
+                        {t('transfers.form.destinationCityLabel')} *
                       </label>
                       <input
                         id="destination-city"
@@ -414,7 +408,7 @@ export default function AircraftTransfersPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700" htmlFor="destination-airport">
-                        Aeródromo de destino
+                        {t('transfers.form.destinationAirportLabel')}
                       </label>
                       <input
                         id="destination-airport"
@@ -422,7 +416,7 @@ export default function AircraftTransfersPage() {
                         value={formData.destinationAirport}
                         onChange={(event) => updateField('destinationAirport', event.target.value)}
                         className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
-                        placeholder="ICAO/IATA"
+                        placeholder={t('transfers.form.airportPlaceholder')}
                       />
                     </div>
                   </div>
@@ -430,7 +424,7 @@ export default function AircraftTransfersPage() {
                   <div className="grid gap-4 md:grid-cols-2">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700" htmlFor="date-window-start">
-                        Data inicial *
+                        {t('transfers.form.dateWindowStartLabel')} *
                       </label>
                       <input
                         id="date-window-start"
@@ -450,7 +444,7 @@ export default function AircraftTransfersPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700" htmlFor="date-window-end">
-                        Data final
+                        {t('transfers.form.dateWindowEndLabel')}
                       </label>
                       <input
                         id="date-window-end"
@@ -465,7 +459,7 @@ export default function AircraftTransfersPage() {
                   <div className="grid gap-4 md:grid-cols-3">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700" htmlFor="contact-name">
-                        Nome para contato *
+                        {t('transfers.form.contactNameLabel')} *
                       </label>
                       <input
                         id="contact-name"
@@ -485,7 +479,7 @@ export default function AircraftTransfersPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700" htmlFor="contact-email">
-                        E-mail *
+                        {t('transfers.form.contactEmailLabel')} *
                       </label>
                       <input
                         id="contact-email"
@@ -505,7 +499,7 @@ export default function AircraftTransfersPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700" htmlFor="contact-phone">
-                        Telefone
+                        {t('transfers.form.contactPhoneLabel')}
                       </label>
                       <input
                         id="contact-phone"
@@ -513,14 +507,14 @@ export default function AircraftTransfersPage() {
                         value={formData.contactPhone}
                         onChange={(event) => updateField('contactPhone', event.target.value)}
                         className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
-                        placeholder="(11) 90000-0000"
+                        placeholder={t('transfers.form.contactPhonePlaceholder')}
                       />
                     </div>
                   </div>
 
                   <div>
                     <label className="block text-sm font-semibold text-gray-700" htmlFor="operator-name">
-                      Responsável técnico/operador
+                      {t('transfers.form.operatorNameLabel')}
                     </label>
                     <input
                       id="operator-name"
@@ -533,7 +527,7 @@ export default function AircraftTransfersPage() {
 
                   <div>
                     <label className="block text-sm font-semibold text-gray-700" htmlFor="notes">
-                      Observações
+                      {t('transfers.form.notesLabel')}
                     </label>
                     <textarea
                       id="notes"
@@ -541,7 +535,7 @@ export default function AircraftTransfersPage() {
                       value={formData.notes}
                       onChange={(event) => updateField('notes', event.target.value)}
                       className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
-                      placeholder="Requisitos especiais, escalas, etc."
+                      placeholder={t('transfers.form.notesPlaceholder')}
                     />
                   </div>
 
@@ -554,7 +548,7 @@ export default function AircraftTransfersPage() {
                         onChange={(event) => updateField('ownerAuthorization', event.target.checked)}
                         className="mt-1 h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500"
                       />
-                      <span>Confirmo que tenho autorização do proprietário para solicitar este traslado. *</span>
+                      <span>{t('transfers.form.ownerAuthorizationLabel')} *</span>
                     </label>
                     {errors.ownerAuthorization && (
                       <p className="mt-2 text-xs text-red-600">{errors.ownerAuthorization}</p>
@@ -563,51 +557,47 @@ export default function AircraftTransfersPage() {
 
                   <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                     <p className="text-xs text-gray-500">
-                      Ao enviar, você concorda com o uso das informações para análise da solicitação.
+                      {t('transfers.form.disclaimer')}
                     </p>
                     <button
                       type="submit"
                       disabled={isSubmitting}
                       className="inline-flex items-center justify-center rounded-lg bg-sky-600 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-sky-300"
                     >
-                      {isSubmitting ? 'Enviando...' : 'Enviar solicitação'}
+                      {isSubmitting ? t('transfers.form.submitting') : t('transfers.form.submit')}
                     </button>
                   </div>
                 </form>
               </section>
 
               <section className="rounded-2xl border border-gray-200 bg-white p-6 text-xs text-gray-500">
-                A execução do traslado está sujeita à validação documental, aeronavegabilidade e condições operacionais.
-                Prazos podem variar conforme meteorologia, disponibilidade e autorizações aplicáveis. O portal atua
-                como conector entre contratante e piloto, oferecendo informações e status — a operação é de
-                responsabilidade das partes.
+                {t('transfers.disclaimer')}
               </section>
 
               <section className="rounded-2xl border border-gray-200 bg-white p-6 text-sm text-gray-600">
-                Acompanhe e atualize o status da operação em
-                {' '}
+                {t('transfers.statusIntro')}{' '}
                 <a href="/traslados/status" className="text-sky-700 hover:underline">/traslados/status</a>.
               </section>
 
               <section className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-                <h2 className="text-2xl font-semibold text-gray-900">FAQ</h2>
+                <h2 className="text-2xl font-semibold text-gray-900">{t('transfers.faqTitle')}</h2>
                 <div className="mt-6 grid gap-4 md:grid-cols-2">
                   {[
                     {
-                      q: 'Quanto tempo leva um traslado?',
-                      a: 'O prazo varia conforme rota e disponibilidade, com SLA de resposta em até 72h úteis.',
+                      q: t('transfers.faq.q1'),
+                      a: t('transfers.faq.a1'),
                     },
                     {
-                      q: 'Quais documentos são necessários?',
-                      a: 'Registro, aeronavegabilidade, cadernetas atualizadas e autorização do proprietário.',
+                      q: t('transfers.faq.q2'),
+                      a: t('transfers.faq.a2'),
                     },
                     {
-                      q: 'Posso acompanhar o voo?',
-                      a: 'Sim, enviamos atualizações de status durante toda a operação.',
+                      q: t('transfers.faq.q3'),
+                      a: t('transfers.faq.a3'),
                     },
                     {
-                      q: 'E se a aeronave não estiver apta?',
-                      a: 'Indicamos as adequações necessárias antes de seguir com a operação.',
+                      q: t('transfers.faq.q4'),
+                      a: t('transfers.faq.a4'),
                     },
                   ].map((item) => (
                     <div key={item.q} className="rounded-xl border border-gray-100 bg-gray-50 p-4">

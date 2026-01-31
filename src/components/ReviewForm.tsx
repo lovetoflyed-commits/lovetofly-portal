@@ -45,7 +45,7 @@ export default function ReviewForm({
     try {
       const method = existingReview ? 'PATCH' : 'POST';
       const url = existingReview 
-        ? `/api/hangarshare/reviews/[id]?id=${existingReview.id}`
+        ? `/api/hangarshare/reviews?id=${existingReview.id}`
         : '/api/hangarshare/reviews';
 
       const response = await fetch(url, {

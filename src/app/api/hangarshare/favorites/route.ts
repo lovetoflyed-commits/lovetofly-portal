@@ -48,7 +48,7 @@ export async function GET(request: Request) {
         hl.services,
         hl.created_at as listing_created_at,
         hl.updated_at as listing_updated_at,
-        ai.name as airport_name,
+        hl.icao_code as airport_name,
         ai.city,
         ai.state,
         COALESCE(booking_counts.total_bookings, 0)::int as total_bookings

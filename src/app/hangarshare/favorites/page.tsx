@@ -9,24 +9,21 @@ interface FavoriteListing {
   favorited_at: string;
   listing_id: string;
   hangar_number: string;
-  hangar_name: string;
   icao_code: string;
   description: string;
-  price_per_night: number;
-  aircraft_capacity: number;
-  width_meters: number;
-  depth_meters: number;
-  height_meters: number;
-  has_electricity: boolean;
-  has_water: boolean;
-  has_bathroom: boolean;
+  daily_rate: number | null;
+  monthly_rate: number | null;
+  size_sqm: number | null;
+  max_wingspan: number | null;
+  max_length: number | null;
+  max_height: number | null;
   security_features: string[];
   airport_name: string;
   city: string;
   state: string;
   total_bookings: number;
-  avg_rating: number;
-  review_count: number;
+  avg_rating?: number;
+  review_count?: number;
 }
 
 export default function FavoritesPage() {
@@ -157,6 +154,15 @@ export default function FavoritesPage() {
         ) : (
           <div className="grid grid-cols-1 gap-6">
             {favorites.map((favorite) => (
+              (() => {
+                const nightlyPrice = favorite.daily_rate ?? (favorite.monthly_rate ? favorite.monthly_rate / 30 : 0);
+                const priceLabel = nightlyPrice > 0 ? formatPrice(nightlyPrice) : '—';
+                const capacityLabel = favorite.size_sqm ? `${favorite.size_sqm} m²` : '—';
+                const widthLabel = favorite.max_wingspan ? `${favorite.max_wingspan}m` : '—';
+                const depthLabel = favorite.max_length ? `${favorite.max_length}m` : '—';
+                const heightLabel = favorite.max_height ? `${favorite.max_height}m` : '—';
+
+                return (
               <div 
                 key={favorite.favorite_id}
                 className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow border border-slate-200 overflow-hidden"
@@ -166,7 +172,7 @@ export default function FavoritesPage() {
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex-1">
                       <h3 className="text-2xl font-bold text-blue-900 mb-1">
-                        {favorite.hangar_name || `Hangar ${favorite.hangar_number}`}
+                        {`Hangar ${favorite.hangar_number}`}
                       </h3>
                       <p className="text-slate-600 font-mono text-sm">
                         {favorite.icao_code} • {favorite.airport_name}
@@ -192,7 +198,7 @@ export default function FavoritesPage() {
                       <div className="text-right">
                         <div className="text-sm text-slate-500">A partir de</div>
                         <div className="text-2xl font-bold text-emerald-600">
-                          {formatPrice(favorite.price_per_night)}/noite
+                          {priceLabel}/noite
                         </div>
                       </div>
                     </div>
@@ -209,19 +215,19 @@ export default function FavoritesPage() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 bg-slate-50 rounded-lg p-4">
                     <div>
                       <div className="text-xs text-slate-500 uppercase font-bold">Capacidade</div>
-                      <div className="text-lg font-bold text-slate-800">{favorite.aircraft_capacity} aeronaves</div>
+                      <div className="text-lg font-bold text-slate-800">{capacityLabel}</div>
                     </div>
                     <div>
                       <div className="text-xs text-slate-500 uppercase font-bold">Largura</div>
-                      <div className="text-lg font-bold text-slate-800">{favorite.width_meters}m</div>
+                      <div className="text-lg font-bold text-slate-800">{widthLabel}</div>
                     </div>
                     <div>
                       <div className="text-xs text-slate-500 uppercase font-bold">Profundidade</div>
-                      <div className="text-lg font-bold text-slate-800">{favorite.depth_meters}m</div>
+                      <div className="text-lg font-bold text-slate-800">{depthLabel}</div>
                     </div>
                     <div>
                       <div className="text-xs text-slate-500 uppercase font-bold">Altura</div>
-                      <div className="text-lg font-bold text-slate-800">{favorite.height_meters}m</div>
+                      <div className="text-lg font-bold text-slate-800">{heightLabel}</div>
                     </div>
                   </div>
 
@@ -250,12 +256,12 @@ export default function FavoritesPage() {
                   </div>
 
                   {/* Stats */}
-                  {(favorite.total_bookings > 0 || favorite.review_count > 0) && (
+                  {(favorite.total_bookings > 0 || (favorite.review_count || 0) > 0) && (
                     <div className="flex items-center gap-4 mb-4 text-sm text-slate-600">
                       {favorite.total_bookings > 0 && (
                         <span>📅 {favorite.total_bookings} reservas</span>
                       )}
-                      {favorite.review_count > 0 && (
+                      {(favorite.review_count || 0) > 0 && (
                         <span>
                           ⭐ {favorite.avg_rating?.toFixed(1)} ({favorite.review_count} avaliações)
                         </span>
@@ -280,6 +286,8 @@ export default function FavoritesPage() {
                   </div>
                 </div>
               </div>
+                );
+              })()
             ))}
           </div>
         )}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import pool from '@/config/db';
 import { sendCancellationEmail } from '@/utils/email';
+import { verifyToken } from '@/utils/auth';
 
 
 
@@ -20,6 +21,16 @@ const REFUND_POLICIES: RefundPolicy[] = [
 
 export async function POST(request: NextRequest) {
   try {
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const user = verifyToken(token);
+    if (!user) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    }
+
     // Initialize Stripe only at request time
     const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
     if (!stripeSecretKey) {
@@ -46,7 +57,8 @@ export async function POST(request: NextRequest) {
       `SELECT 
         b.*,
         u.email as user_email,
-        u.full_name as user_name,
+        u.first_name as user_first_name,
+        u.last_name as user_last_name,
         hl.owner_id,
         hl.cancellation_policy
       FROM hangar_bookings b
@@ -61,6 +73,12 @@ export async function POST(request: NextRequest) {
     }
 
     const booking = result.rows[0];
+    const userName = [booking.user_first_name, booking.user_last_name].filter(Boolean).join(' ').trim() || 'Cliente';
+
+    const isAdmin = ['admin', 'master', 'staff'].includes(String(user.role || '').toLowerCase());
+    if (!isAdmin && Number(booking.user_id) !== user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     // Check if booking can be cancelled
     if (booking.status === 'cancelled') {
@@ -78,7 +96,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate refund amount based on policy, booking type and non-refundable service fee
-    const refundAmount = calculateRefund(booking, refundType);
+    const refundAmount = calculateRefund(booking, refundType, isAdmin);
 
     let refundId = null;
 
@@ -96,9 +114,9 @@ export async function POST(request: NextRequest) {
         // Update booking status
         await pool.query(
           `UPDATE hangar_bookings 
-          SET status = $1, updated_at = NOW(), refund_amount = $2, refund_id = $3, cancellation_reason = $4
-          WHERE id = $5`,
-          ['cancelled', refundAmount, refundId, reason, bookingId]
+          SET status = $1, updated_at = NOW()
+          WHERE id = $2`,
+          ['cancelled', bookingId]
         );
       } catch (stripeError) {
         console.error('Stripe refund error:', stripeError);
@@ -106,25 +124,25 @@ export async function POST(request: NextRequest) {
         // Still update booking status locally even if Stripe fails
         await pool.query(
           `UPDATE hangar_bookings 
-          SET status = $1, updated_at = NOW(), refund_amount = $2, cancellation_reason = $3
-          WHERE id = $4`,
-          ['cancelled', refundAmount, reason, bookingId]
+          SET status = $1, updated_at = NOW()
+          WHERE id = $2`,
+          ['cancelled', bookingId]
         );
       }
     } else {
       // No payment to refund (payment not completed or pending)
       await pool.query(
         `UPDATE hangar_bookings 
-        SET status = $1, updated_at = NOW(), refund_amount = $2, cancellation_reason = $3
-        WHERE id = $4`,
-        ['cancelled', refundAmount, reason, bookingId]
+        SET status = $1, updated_at = NOW()
+        WHERE id = $2`,
+        ['cancelled', bookingId]
       );
     }
 
     // Send cancellation email to customer
     try {
       await sendCancellationEmail({
-        customerName: booking.user_name,
+        customerName: userName,
         customerEmail: booking.user_email,
         bookingId: booking.id,
         checkInDate: booking.check_in,
@@ -161,7 +179,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function calculateRefund(booking: any, refundType: string): number {
+function calculateRefund(booking: any, refundType: string, isAdmin: boolean): number {
   // Non-refundable bookings: zero refund
   if (booking.booking_type === 'non_refundable') {
     return 0;
@@ -178,18 +196,25 @@ function calculateRefund(booking: any, refundType: string): number {
   const refundableBase = Math.max(Number(booking.total_price) - serviceFee, 0);
 
   let refundPercentage = 0;
+  const policy = String(booking.cancellation_policy || 'moderate').toLowerCase();
 
-  if (refundType === 'full') {
-    // Moderate policy: >=7d 100%, >1d 50%, <=1d 0%
-    if (daysUntilCheckIn >= 7) {
-      refundPercentage = 100;
-    } else if (daysUntilCheckIn > 1) {
-      refundPercentage = 50;
-    } else {
-      refundPercentage = 0;
-    }
-  } else if (refundType === 'partial') {
+  if (refundType === 'partial' && isAdmin) {
     refundPercentage = 50;
+  } else {
+    if (policy === 'flexible') {
+      refundPercentage = daysUntilCheckIn >= 1 ? 100 : 0;
+    } else if (policy === 'strict') {
+      refundPercentage = daysUntilCheckIn >= 30 ? 100 : 0;
+    } else {
+      // Moderate policy: >=7d 100%, >1d 50%, <=1d 0%
+      if (daysUntilCheckIn >= 7) {
+        refundPercentage = 100;
+      } else if (daysUntilCheckIn > 1) {
+        refundPercentage = 50;
+      } else {
+        refundPercentage = 0;
+      }
+    }
   }
 
   return (refundableBase * refundPercentage) / 100;

@@ -255,28 +255,28 @@ export default function ReportsPage() {
         <h2 className="text-xl font-bold text-slate-900 mb-4">Análises Detalhadas</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Link
-            href="#"
+            href="/admin/hangarshare/reports/aerodromes"
             className="p-4 bg-white border border-slate-300 rounded hover:border-blue-500 hover:shadow-md transition"
           >
             <div className="font-semibold text-slate-900">Desempenho por Aeródromo</div>
             <div className="text-sm text-slate-600 mt-1">Veja quais aeródromos têm melhor ocupação</div>
           </Link>
           <Link
-            href="#"
+            href="/admin/hangarshare/reports/owners-revenue"
             className="p-4 bg-white border border-slate-300 rounded hover:border-blue-500 hover:shadow-md transition"
           >
             <div className="font-semibold text-slate-900">Receita por Anunciante</div>
             <div className="text-sm text-slate-600 mt-1">Ranking dos anunciantes mais lucrativos</div>
           </Link>
           <Link
-            href="#"
+            href="/admin/hangarshare/reports/trends"
             className="p-4 bg-white border border-slate-300 rounded hover:border-blue-500 hover:shadow-md transition"
           >
             <div className="font-semibold text-slate-900">Tendências Temporais</div>
             <div className="text-sm text-slate-600 mt-1">Gráficos de evolução mensal</div>
           </Link>
           <Link
-            href="#"
+            href="/admin/hangarshare/reports/satisfaction"
             className="p-4 bg-white border border-slate-300 rounded hover:border-blue-500 hover:shadow-md transition"
           >
             <div className="font-semibold text-slate-900">Satisfação de Clientes</div>

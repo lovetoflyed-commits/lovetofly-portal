@@ -26,12 +26,13 @@ export async function GET(request: NextRequest) {
     const hasBathroom = searchParams.get('hasBathroom');
     const hasSecurity = searchParams.get('hasSecurity');
     const acceptsOnlinePayment = searchParams.get('acceptsOnlinePayment');
+    const verifiedOnly = searchParams.get('verifiedOnly');
     const sortBy = searchParams.get('sortBy') || 'date'; // date, price_asc, price_desc, size
 
     // Permitir busca por preço mesmo sem cidade/ICAO
     const hasPriceFilter = (minPrice && Number(minPrice) > 0) || (maxPrice && Number(maxPrice) < 20000);
     const hasAdvancedFilter = minSize || maxSize || minWingspan || minLength || minHeight || 
-                             hasElectricity || hasWater || hasBathroom || hasSecurity || acceptsOnlinePayment;
+                 hasElectricity || hasWater || hasBathroom || hasSecurity || acceptsOnlinePayment || verifiedOnly;
     
     if (!icao && !city && !hasPriceFilter && !hasAdvancedFilter) {
       return NextResponse.json(
@@ -141,6 +142,10 @@ export async function GET(request: NextRequest) {
     // Payment filter
     if (acceptsOnlinePayment === 'true') {
       query += ` AND h.accepts_online_payment = true`;
+    }
+
+    if (verifiedOnly === 'true') {
+      query += ` AND h.verification_status IN ('verified', 'approved')`;
     }
 
     // Sorting

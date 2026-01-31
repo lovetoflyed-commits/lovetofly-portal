@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import PhotoGallery from '@/components/PhotoGallery';
 import ReviewForm from '@/components/ReviewForm';
@@ -35,6 +35,7 @@ interface HangarListing {
   specialNotes: string;
   photos: Photo[] | string[]; // Support both old and new formats
   isActive: boolean;
+  verificationStatus?: string;
   ownerName: string;
   ownerEmail: string;
   ownerPhone: string;
@@ -75,9 +76,30 @@ const formatMoney = (value: number | string | null | undefined): string => {
   return num === null ? '—' : num.toFixed(2);
 };
 
+const normalizeHangarListing = (raw: any): HangarListing => {
+  const isActive =
+    typeof raw?.isActive === 'boolean'
+      ? raw.isActive
+      : typeof raw?.isAvailable === 'boolean'
+        ? raw.isAvailable
+        : raw?.status === 'active';
+
+  return {
+    ...raw,
+    icao: raw?.icao ?? raw?.icaoCode ?? '',
+    sizeSqm: raw?.sizeSqm ?? raw?.hangarSizeSqm ?? '',
+    maxWingspan: raw?.maxWingspan ?? raw?.maxWingspanMeters ?? '',
+    maxLength: raw?.maxLength ?? raw?.maxLengthMeters ?? '',
+    maxHeight: raw?.maxHeight ?? raw?.maxHeightMeters ?? '',
+    aircraftCategories: raw?.aircraftCategories ?? raw?.acceptedAircraftCategories ?? [],
+    isActive,
+  } as HangarListing;
+};
+
 export default function HangarListingDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, token } = useAuth();
   const [hangar, setHangar] = useState<HangarListing | null>(null);
   const [loading, setLoading] = useState(true);
@@ -94,6 +116,7 @@ export default function HangarListingDetailPage() {
   const [reviews, setReviews] = useState<any[]>([]);
   const [reviewStats, setReviewStats] = useState<any>(null);
   const [loadingReviews, setLoadingReviews] = useState(false);
+  const [editingReview, setEditingReview] = useState<any>(null);
 
   useEffect(() => {
     const fetchHangar = async () => {
@@ -103,7 +126,7 @@ export default function HangarListingDetailPage() {
           throw new Error('Hangar não encontrado');
         }
         const data = await response.json();
-        setHangar(data.hangar);
+        setHangar(normalizeHangarListing(data.hangar));
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -138,6 +161,17 @@ export default function HangarListingDetailPage() {
 
     fetchReviews();
   }, [params.id]);
+
+  useEffect(() => {
+    const reviewId = searchParams.get('edit-review');
+    if (!reviewId) {
+      setEditingReview(null);
+      return;
+    }
+
+    const matched = reviews.find((review) => String(review.id) === String(reviewId));
+    setEditingReview(matched || null);
+  }, [searchParams, reviews]);
 
   const calculatePrice = async () => {
     if (!checkIn || !checkOut) {
@@ -188,6 +222,44 @@ export default function HangarListingDetailPage() {
     setShowBooking(true);
   };
 
+  const handleReport = async () => {
+    if (!token) {
+      router.push('/login?redirect=' + encodeURIComponent(`/hangarshare/listing/${params.id}`));
+      return;
+    }
+
+    const reason = window.prompt('Descreva o motivo da denúncia');
+    if (!reason) return;
+
+    const details = window.prompt('Detalhes adicionais (opcional)') || null;
+
+    try {
+      const response = await fetch('/api/moderation/reports', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          contentType: 'hangar_listing',
+          contentId: Number(params.id),
+          reason,
+          details,
+        }),
+      });
+
+      if (response.ok) {
+        alert('Denúncia enviada. Obrigado por ajudar a manter a comunidade segura.');
+      } else {
+        const data = await response.json();
+        alert(data.message || 'Não foi possível enviar a denúncia.');
+      }
+    } catch (error) {
+      console.error('Error reporting listing:', error);
+      alert('Não foi possível enviar a denúncia.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -216,9 +288,26 @@ export default function HangarListingDetailPage() {
     );
   }
 
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: `Hangar ${hangar.hangarNumber} - ${hangar.icao}`,
+    description: hangar.description,
+    offers: {
+      '@type': 'Offer',
+      priceCurrency: 'BRL',
+      price: toNumber(hangar.monthlyRate) ?? toNumber(hangar.dailyRate) ?? toNumber(hangar.hourlyRate) ?? 0,
+      availability: hangar.isActive ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+    },
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white py-8">
       <div className="max-w-7xl mx-auto px-4">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
         {/* Header */}
         <button
           onClick={() => router.back()}
@@ -243,12 +332,24 @@ export default function HangarListingDetailPage() {
                   <p className="text-md text-slate-500">
                     {hangar.city}, {hangar.state}
                   </p>
+                  {reviewStats && (
+                    <p className="text-sm text-slate-600 mt-2">
+                      ⭐ {reviewStats.avg_rating || 0} ({reviewStats.total_reviews || 0} avaliações)
+                    </p>
+                  )}
                 </div>
-                {hangar.isActive && (
-                  <span className="px-4 py-2 bg-green-100 text-green-800 font-bold rounded-full text-sm">
-                    ✓ Disponível
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  {hangar.isActive && (
+                    <span className="px-4 py-2 bg-green-100 text-green-800 font-bold rounded-full text-sm">
+                      ✓ Disponível
+                    </span>
+                  )}
+                  {['verified', 'approved'].includes(hangar.verificationStatus || '') && (
+                    <span className="px-3 py-2 bg-emerald-100 text-emerald-800 font-bold rounded-full text-sm">
+                      ✅ Verificado
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Pricing */}
@@ -392,11 +493,21 @@ export default function HangarListingDetailPage() {
                   </p>
                 )}
               </div>
+              {user && (
+                <div className="mt-6 pt-4 border-t border-slate-200">
+                  <button
+                    onClick={handleReport}
+                    className="w-full py-2 bg-red-50 text-red-700 border border-red-200 rounded-lg hover:bg-red-100 transition"
+                  >
+                    ⚠️ Reportar anúncio
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Reviews Section */}
             <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-              {!loadingReviews && reviews.length > 0 && reviewStats && (
+              {!loadingReviews && reviewStats && (
                 <ReviewList
                   listingId={parseInt(String(params.id))}
                   reviews={reviews}
@@ -414,9 +525,13 @@ export default function HangarListingDetailPage() {
                 <div className="mt-8 pt-8 border-t border-slate-200">
                   <ReviewForm
                     listingId={parseInt(String(params.id))}
+                    existingReview={editingReview}
                     onReviewSubmitted={(newReview) => {
-                      // Refresh reviews
-                      setReviews([newReview, ...reviews]);
+                      setReviews([
+                        newReview,
+                        ...reviews.filter((review) => review.id !== newReview.id)
+                      ]);
+                      setEditingReview(null);
                     }}
                   />
                 </div>

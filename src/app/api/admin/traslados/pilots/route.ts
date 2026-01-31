@@ -10,22 +10,41 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') || 'pending';
+    const query = searchParams.get('q')?.trim();
     const page = Number(searchParams.get('page') || '1');
     const limit = Number(searchParams.get('limit') || '20');
     const offset = (page - 1) * limit;
     const includeDocs = searchParams.get('includeDocs') === '1';
 
+    const whereClauses = ['status = $1'];
+    const values: Array<string | number> = [status];
+    let paramIndex = 2;
+
+    if (query) {
+      values.push(`%${query}%`);
+      whereClauses.push(
+        `(full_name ILIKE $${paramIndex}
+          OR contact_email ILIKE $${paramIndex}
+          OR license_number ILIKE $${paramIndex}
+          OR base_city ILIKE $${paramIndex}
+          OR CAST(id as text) ILIKE $${paramIndex})`
+      );
+      paramIndex += 1;
+    }
+
+    const whereSql = whereClauses.join(' AND ');
+
     const result = await pool.query(
       `SELECT * FROM traslados_pilots
-       WHERE status = $1
+       WHERE ${whereSql}
        ORDER BY created_at DESC
-       LIMIT $2 OFFSET $3`,
-      [status, limit, offset]
+       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+      [...values, limit, offset]
     );
 
     const countResult = await pool.query(
-      'SELECT COUNT(*) FROM traslados_pilots WHERE status = $1',
-      [status]
+      `SELECT COUNT(*) FROM traslados_pilots WHERE ${whereSql}`,
+      values
     );
 
     let documents: Array<{ pilot_id: number; document_type: string; file_path: string; file_name: string | null }> = [];

@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import Sidebar from '@/components/Sidebar';
+import dynamic from 'next/dynamic';
+
+const Sidebar = dynamic(() => import('@/components/Sidebar'), { ssr: false });
 
 // Dados simulados dos cursos
 const COURSES = [

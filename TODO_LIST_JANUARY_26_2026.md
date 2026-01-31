@@ -9,7 +9,7 @@
 ## 🔴 URGENT (Next 24 Hours)
 
 ### Production Verification
-- [ ] **Verify Netlify build completed successfully**
+- [x] **Verify Netlify build completed successfully** (Completed Jan 28, 2026)
   - Check: https://app.netlify.com/sites/lovetofly-portal/deploys
   - Expected: ✓ Deployed status
   - Estimated Time: 15 min
@@ -113,7 +113,49 @@
   - Estimated Time: 1 hour
   - Owner: Backend Developer
 
+### Classifieds Payments
+- [x] **Classifieds payment + escrow** (Completed Jan 28, 2026)
+  - Action: Stripe PaymentIntent + escrow flow
+  - Files: `src/app/api/classifieds/escrow/*`, `src/app/api/classifieds/webhook/stripe/*`
+  - Owner: Backend Developer
+
+### Admin Communication & Tasks
+- [x] **Admin alerts + inbox counters on dashboard** (Completed Jan 28, 2026)
+  - UI: Unread counters, floating alert, inline inbox panel
+  - File: `src/app/admin/page.tsx`
+- [x] **Staff message modal + send endpoint** (Completed Jan 28, 2026)
+  - UI: Subject/body/priority/target routing
+  - API: `POST /api/admin/team-messages`
+- [x] **Task modal + create/update endpoint** (Completed Jan 28, 2026)
+  - UI: Title/description/priority/status/due date/target routing
+  - API: `POST/PATCH /api/admin/tasks`
+- [x] **Hydration fix on /courses** (Completed Jan 28, 2026)
+  - Sidebar loaded client-only to avoid mismatch
+
+- [ ] **Build /admin/inbox page**
+  - Full list, filters, category tabs, bulk mark read
+  - Show message/task details with action links
+  - Owner: Frontend Developer
+- [ ] **Build /admin/tasks module**
+  - Table/list view, filters, status updates
+  - Assignment and deadlines visible per staff
+  - Owner: Frontend Developer
+- [ ] **Add staff notification preferences**
+  - Opt-in/out for email/WhatsApp/push
+  - Owner: Backend + Frontend
+
 ### Photo Management
+- [x] **Photo storage + upload pipeline** (Completed Jan 28, 2026)
+  - Action: Cloud storage integration for uploads
+  - Files: `src/app/api/hangarshare/listings/*/upload-*`
+  - Owner: Backend Developer
+
+### Trust & Verification
+- [x] **Verification badge + “verified only” filter** (Completed Jan 28, 2026)
+  - Action: Badge on listing cards + verified-only filter in search
+  - Files: `src/app/hangarshare/search/page.tsx`, `src/app/hangarshare/listing/[id]/page.tsx`
+  - Owner: Frontend Developer
+
 - [ ] **Verify photo upload works**
   - Test: Upload on listing creation
   - Test: Upload on listing edit
@@ -189,7 +231,7 @@
   - Owner: Tech Lead / Product Manager
 
 ### Forum Enhancement
-- [ ] **Implement forum search**
+- [x] **Implement forum search** (Completed Jan 28, 2026)
   - Feature: Full-text search on topics
   - Filter: By category, date, author
   - Index: Add database indexes
@@ -204,7 +246,7 @@
   - Estimated Time: 3 hours
   - Owner: Backend Developer
 
-- [ ] **Create topic moderation tools**
+- [x] **Create topic moderation tools** (Completed Jan 28, 2026)
   - Features: Delete, pin, close topics
   - Permission: Admin only
   - Logging: Audit trail
@@ -212,21 +254,21 @@
   - Owner: Backend Developer
 
 ### Photo Features
-- [ ] **Add photo reordering**
+- [x] **Add photo reordering** (Completed Jan 28, 2026)
   - Feature: Drag-and-drop in edit mode
   - Update: Save order to database
   - Display: Respect order in gallery
   - Estimated Time: 2 hours
   - Owner: Frontend Developer
 
-- [ ] **Implement photo cropping**
+- [x] **Implement photo cropping** (Completed Jan 28, 2026)
   - Library: React-easy-crop or similar
   - Feature: Crop before upload
   - Save: Optimized crop coordinates
   - Estimated Time: 3 hours
   - Owner: Frontend Developer
 
-- [ ] **Add batch upload**
+- [x] **Add batch upload** (Completed Jan 28, 2026)
   - Feature: Upload multiple photos
   - UI: Progress indicator
   - Error: Individual photo error handling
@@ -234,21 +276,26 @@
   - Owner: Frontend Developer
 
 ### Content & Data
-- [ ] **Seed more career jobs**
+- [x] **Seed classifieds + forum with real data** (Completed Jan 28, 2026)
+  - Action: Seed scripts for aircraft/parts/avionics + forum topics
+  - Files: `scripts/seeds/*`, `src/app/classifieds/*`, `src/app/forum/*`
+  - Owner: Content Manager
+
+- [x] **Seed more career jobs** (Completed Jan 28, 2026)
   - Target: 500+ total jobs
   - Companies: Add 50+ companies
   - Locations: All Brazilian regions
   - Estimated Time: 4 hours
   - Owner: Content Manager
 
-- [ ] **Add hangar listings**
+- [x] **Add hangar listings** (Completed Jan 28, 2026)
   - Target: 100+ listings
   - Regions: All Brazilian airports
   - Features: Full data with photos
   - Estimated Time: 6 hours
   - Owner: Data Entry / Automation
 
-- [ ] **Expand aircraft classifieds**
+- [x] **Expand aircraft classifieds** (Completed Jan 28, 2026)
   - Target: 200+ aircraft listings
   - Data: Real market prices
   - Photos: Professional images
@@ -256,13 +303,13 @@
   - Owner: Data Entry / Automation
 
 ### Multilingual Expansion
-- [ ] **Translate weather data**
+- [x] **Translate weather data** (Completed Jan 28, 2026)
   - Radar layers: PT, EN, ES
   - METAR explanations: All languages
   - Estimated Time: 2 hours
   - Owner: Translator
 
-- [ ] **Add Portuguese forum categories**
+- [x] **Add Portuguese forum categories** (Completed Jan 28, 2026)
   - Current: 8 categories in EN
   - Add: Category descriptions in PT
   - Review: PT-BR grammar
@@ -420,7 +467,7 @@
 
 ## 🚀 Quick Start Guide for New Tasks
 
-### To Pick Up a Task:
+### To Pick Up a Task
 1. Find task in list above
 2. Update status: `[ ]` → `[🔄]` (in progress)
 3. Create branch: `git checkout -b feature/task-name`
@@ -428,12 +475,12 @@
 5. Create PR with reference to task
 6. Update status: `[🔄]` → `[✅]` (done)
 
-### To Report Progress:
+### To Report Progress
 - Daily standup: Share blockers, next steps
 - Weekly: Update task list
 - Friday: Submit sprint summary
 
-### To Escalate Issues:
+### To Escalate Issues
 - Blocker: Ping tech lead immediately
 - Design decision: Tag product manager
 - Timeline risk: Notify project manager

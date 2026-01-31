@@ -3,6 +3,25 @@ import { verifyToken } from '@/utils/auth';
 import pool from '@/config/db';
 import MonitoringService from '@/services/monitoring';
 
+async function updateOwnerScore(ownerUserId: number) {
+  const statsRes = await pool.query(
+    `SELECT COALESCE(AVG(rating), 0) AS avg_rating, COUNT(*) AS total_reviews
+     FROM hangar_reviews
+     WHERE owner_user_id = $1`,
+    [ownerUserId]
+  );
+
+  const avgRating = Number(statsRes.rows[0]?.avg_rating || 0);
+  const totalReviews = Number(statsRes.rows[0]?.total_reviews || 0);
+
+  await pool.query(
+    `UPDATE users
+     SET hangar_owner_rating = $1, hangar_owner_reviews_count = $2
+     WHERE id = $3`,
+    [avgRating, totalReviews, ownerUserId]
+  );
+}
+
 /**
  * GET /api/hangarshare/reviews
  * Get all reviews for a specific listing
@@ -45,8 +64,8 @@ export async function GET(request: Request) {
         hr.comment,
         hr.created_at,
         hr.updated_at,
-        u.id as user_id,
-        u.name as user_name,
+        hr.reviewer_user_id as user_id,
+        TRIM(COALESCE(u.first_name, '') || ' ' || COALESCE(u.last_name, '')) as user_name,
         u.email as user_email,
         -- Pagination metadata
         COUNT(*) OVER () as total_reviews,
@@ -59,7 +78,7 @@ export async function GET(request: Request) {
         COUNT(CASE WHEN hr.rating = 2 THEN 1 END) OVER () as stats_rating_2_count,
         COUNT(CASE WHEN hr.rating = 1 THEN 1 END) OVER () as stats_rating_1_count
        FROM hangar_reviews hr
-       INNER JOIN users u ON hr.user_id = u.id
+       INNER JOIN users u ON hr.reviewer_user_id = u.id
        WHERE hr.listing_id = $1
        ORDER BY ${orderClause}
        LIMIT $2 OFFSET $3`,
@@ -182,10 +201,25 @@ export async function POST(request: Request) {
       );
     }
 
+    const listingResult = await pool.query(
+      'SELECT id, user_id FROM hangar_listings WHERE id = $1',
+      [listing_id]
+    );
+
+    if (listingResult.rows.length === 0) {
+      return NextResponse.json(
+        { message: 'Hangar não encontrado' },
+        { status: 404 }
+      );
+    }
+
+    const listing = listingResult.rows[0];
+
     // Check if user has booked this listing
     const bookingCheck = await pool.query(
       `SELECT id FROM hangar_bookings 
-       WHERE listing_id = $1 AND user_id = $2 AND status = 'confirmed'
+       WHERE hangar_id = $1 AND user_id = $2 AND status IN ('confirmed', 'completed')
+       ORDER BY created_at DESC
        LIMIT 1`,
       [listing_id, decoded.id]
     );
@@ -199,7 +233,7 @@ export async function POST(request: Request) {
 
     // Check if user already reviewed this listing
     const existingReview = await pool.query(
-      'SELECT id FROM hangar_reviews WHERE listing_id = $1 AND user_id = $2',
+      'SELECT id FROM hangar_reviews WHERE listing_id = $1 AND reviewer_user_id = $2',
       [listing_id, decoded.id]
     );
 
@@ -212,14 +246,33 @@ export async function POST(request: Request) {
 
     // Insert review
     const result = await pool.query(
-      `INSERT INTO hangar_reviews (listing_id, user_id, rating, comment)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id, rating, comment, created_at, user_id`,
-      [listing_id, decoded.id, rating, comment || null]
+      `INSERT INTO hangar_reviews (
+        listing_id,
+        reviewer_user_id,
+        owner_user_id,
+        booking_id,
+        rating,
+        comment,
+        is_verified
+       ) VALUES ($1, $2, $3, $4, $5, $6, TRUE)
+       RETURNING id`,
+      [listing_id, decoded.id, listing.user_id, bookingCheck.rows[0].id, rating, comment || null]
+    );
+
+    await updateOwnerScore(Number(listing.user_id));
+
+    const reviewRes = await pool.query(
+      `SELECT r.*, 
+              r.reviewer_user_id as user_id,
+              TRIM(COALESCE(u.first_name, '') || ' ' || COALESCE(u.last_name, '')) as user_name
+       FROM hangar_reviews r
+       JOIN users u ON u.id = r.reviewer_user_id
+       WHERE r.id = $1`,
+      [result.rows[0].id]
     );
 
     return NextResponse.json(
-      { review: result.rows[0] },
+      { review: reviewRes.rows[0] },
       { status: 201 }
     );
   } catch (error) {
@@ -270,7 +323,7 @@ export async function PATCH(request: Request) {
 
     // Verify ownership
     const reviewCheck = await pool.query(
-      'SELECT user_id FROM hangar_reviews WHERE id = $1',
+      'SELECT reviewer_user_id, owner_user_id FROM hangar_reviews WHERE id = $1',
       [reviewId]
     );
 
@@ -281,7 +334,9 @@ export async function PATCH(request: Request) {
       );
     }
 
-    if (reviewCheck.rows[0].user_id !== decoded.id) {
+    const isAdmin = ['admin', 'master', 'staff'].includes(String(decoded.role || '').toLowerCase());
+
+    if (reviewCheck.rows[0].reviewer_user_id !== decoded.id && !isAdmin) {
       return NextResponse.json(
         { message: 'Você só pode editar suas próprias avaliações' },
         { status: 403 }
@@ -322,7 +377,19 @@ export async function PATCH(request: Request) {
       params
     );
 
-    return NextResponse.json({ review: result.rows[0] });
+    await updateOwnerScore(Number(reviewCheck.rows[0].owner_user_id));
+
+    const reviewRes = await pool.query(
+      `SELECT r.*, 
+              r.reviewer_user_id as user_id,
+              TRIM(COALESCE(u.first_name, '') || ' ' || COALESCE(u.last_name, '')) as user_name
+       FROM hangar_reviews r
+       JOIN users u ON u.id = r.reviewer_user_id
+       WHERE r.id = $1`,
+      [result.rows[0].id]
+    );
+
+    return NextResponse.json({ review: reviewRes.rows[0] });
   } catch (error) {
     console.error('Error updating review:', error);
     return NextResponse.json(
@@ -368,7 +435,7 @@ export async function DELETE(request: Request) {
 
     // Verify ownership
     const reviewCheck = await pool.query(
-      'SELECT user_id FROM hangar_reviews WHERE id = $1',
+      'SELECT reviewer_user_id, owner_user_id FROM hangar_reviews WHERE id = $1',
       [reviewId]
     );
 
@@ -379,7 +446,9 @@ export async function DELETE(request: Request) {
       );
     }
 
-    if (reviewCheck.rows[0].user_id !== decoded.id) {
+    const isAdmin = ['admin', 'master', 'staff'].includes(String(decoded.role || '').toLowerCase());
+
+    if (reviewCheck.rows[0].reviewer_user_id !== decoded.id && !isAdmin) {
       return NextResponse.json(
         { message: 'Você só pode deletar suas próprias avaliações' },
         { status: 403 }
@@ -391,6 +460,8 @@ export async function DELETE(request: Request) {
       'DELETE FROM hangar_reviews WHERE id = $1',
       [reviewId]
     );
+
+    await updateOwnerScore(Number(reviewCheck.rows[0].owner_user_id));
 
     return NextResponse.json(
       { message: 'Avaliação deletada com sucesso' },

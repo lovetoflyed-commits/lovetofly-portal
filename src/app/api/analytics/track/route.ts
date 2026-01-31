@@ -27,6 +27,11 @@ export async function POST(request: NextRequest) {
       ON portal_analytics(date)
     `);
 
+    await pool.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_portal_analytics_date_page
+      ON portal_analytics(date, page)
+    `);
+
     // Insert or update visit count for today
     await pool.query(`
       INSERT INTO portal_analytics (date, page, visit_count, referrer, user_agent)

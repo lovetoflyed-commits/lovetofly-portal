@@ -21,11 +21,33 @@ export async function GET(request: NextRequest) {
       "SELECT to_regclass('public.hangar_owner_verification') AS hov"
     );
 
+    const userColumnsResult = await pool.query(
+      "SELECT column_name FROM information_schema.columns WHERE table_name = 'users'"
+    );
+    const userColumns = new Set(userColumnsResult.rows.map((row: any) => row.column_name));
+    const hasMobilePhone = userColumns.has('mobile_phone');
+    const hasPlan = userColumns.has('plan');
+    const phoneSelect = hasMobilePhone
+      ? 'COALESCE(ho.phone, u.mobile_phone, u.phone_number) AS phone'
+      : 'COALESCE(ho.phone, u.phone_number) AS phone';
+    const planSelect = hasPlan ? 'u.plan' : 'NULL::varchar AS plan';
+
     const hasHov = Boolean(tableCheck.rows[0]?.hov);
+    const hovCountResult = hasHov
+      ? await pool.query('SELECT COUNT(*) FROM hangar_owner_verification')
+      : { rows: [{ count: '0' }] };
+    const hasHovRows = Number(hovCountResult.rows[0]?.count || 0) > 0;
     let result;
     let countResult;
 
-    if (!hasHov) {
+    if (!hasHov || !hasHovRows) {
+      const statusClause =
+        status === 'approved'
+          ? "(ho.is_verified = true OR ho.verification_status IN ('approved','verified'))"
+          : status === 'rejected'
+            ? "ho.verification_status = 'rejected'"
+            : "(ho.is_verified = false AND COALESCE(ho.verification_status, 'pending') = 'pending')";
+
       result = await pool.query(
         `SELECT 
           NULL::integer AS id,
@@ -39,27 +61,28 @@ export async function GET(request: NextRequest) {
           NULL::text AS ownership_document_url,
           NULL::text AS company_registration_url,
           NULL::text AS tax_document_url,
-          ho.verification_status,
+          COALESCE(ho.verification_status, CASE WHEN ho.is_verified THEN 'approved' ELSE 'pending' END) AS verification_status,
           NULL::text AS rejection_reason,
           NULL::text AS admin_notes,
           ho.created_at,
           u.first_name,
           u.last_name,
           u.email,
+          ${phoneSelect},
+          ${planSelect},
           u.cpf,
           ho.company_name,
           ho.cnpj
         FROM hangar_owners ho
         JOIN users u ON ho.user_id = u.id
-        WHERE ho.verification_status = $1
+        WHERE ${statusClause}
         ORDER BY ho.created_at ASC
-        LIMIT $2 OFFSET $3`,
-        [status, limit, offset]
+        LIMIT $1 OFFSET $2`,
+        [limit, offset]
       );
 
       countResult = await pool.query(
-        'SELECT COUNT(*) FROM hangar_owners WHERE verification_status = $1',
-        [status]
+        `SELECT COUNT(*) FROM hangar_owners ho WHERE ${statusClause}`
       );
     } else {
       const columnsResult = await pool.query(
@@ -89,6 +112,8 @@ export async function GET(request: NextRequest) {
             u.first_name,
             u.last_name,
             u.email,
+            ${phoneSelect},
+            ${planSelect},
             u.cpf,
             ho.company_name,
             ho.cnpj
@@ -142,6 +167,8 @@ export async function GET(request: NextRequest) {
             u.first_name,
             u.last_name,
             u.email,
+            ${phoneSelect},
+            ${planSelect},
             u.cpf,
             ho.company_name,
             ho.cnpj

@@ -8,6 +8,7 @@ import AuthGuard from '@/components/AuthGuard';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 const stripePromise = publishableKey ? loadStripe(publishableKey) : null;
@@ -55,6 +56,7 @@ function PaymentForm({
   requestId: number;
   onSuccess: (paymentIntentId: string) => void;
 }) {
+  const { t } = useLanguage();
   const stripe = useStripe();
   const elements = useElements();
   const [loading, setLoading] = useState(false);
@@ -75,12 +77,12 @@ function PaymentForm({
       });
 
       if (result.error) {
-        setError(result.error.message || 'Erro ao processar pagamento');
+        setError(result.error.message || t('transfersMessages.errors.paymentProcessing'));
       } else if (result.paymentIntent && result.paymentIntent.status === 'succeeded') {
         onSuccess(result.paymentIntent.id);
       }
     } catch (err: any) {
-      setError(err.message || 'Erro ao processar pagamento');
+      setError(err.message || t('transfersMessages.errors.paymentProcessing'));
     } finally {
       setLoading(false);
     }
@@ -108,13 +110,14 @@ function PaymentForm({
         disabled={!stripe || loading}
         className="w-full rounded-lg bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700 disabled:bg-slate-300"
       >
-        {loading ? 'Processando...' : 'Pagar taxa do portal'}
+        {loading ? t('transfersMessages.payment.processing') : t('transfersMessages.payment.payPortalFee')}
       </button>
     </form>
   );
 }
 
 export default function TrasladosMessagesPage() {
+  const { t, language } = useLanguage();
   const { user } = useAuth();
   const [requestId, setRequestId] = useState('');
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
@@ -175,15 +178,16 @@ export default function TrasladosMessagesPage() {
   };
 
   const getDiscountLabel = (reason: string | null) => {
-    if (!reason) return 'Sem desconto';
-    if (reason === 'premium_plan') return 'Desconto Premium';
-    if (reason === 'pro_plan') return 'Desconto Pro';
-    return 'Desconto aplicado';
+    if (!reason) return t('transfersMessages.discount.none');
+    if (reason === 'premium_plan') return t('transfersMessages.discount.premium');
+    if (reason === 'pro_plan') return t('transfersMessages.discount.pro');
+    return t('transfersMessages.discount.applied');
   };
 
   const formatCurrency = (amountCents: number) => {
     const amount = amountCents / 100;
-    return amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const locale = language === 'en' ? 'en-US' : language === 'es' ? 'es-ES' : 'pt-BR';
+    return amount.toLocaleString(locale, { style: 'currency', currency: 'BRL' });
   };
 
   const fetchConversation = useCallback(async () => {
@@ -197,7 +201,7 @@ export default function TrasladosMessagesPage() {
       });
       if (!res.ok) {
         const payload = await res.json().catch(() => null);
-        throw new Error(payload?.message || 'Erro ao carregar mensagens');
+        throw new Error(payload?.message || t('transfersMessages.errors.loadMessages'));
       }
       const data = await res.json();
       setMessages(data.messages || []);
@@ -210,20 +214,20 @@ export default function TrasladosMessagesPage() {
       setRole(data.role || '');
       setFeePreview(data.feePreview || null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao carregar mensagens');
+      setError(err instanceof Error ? err.message : t('transfersMessages.errors.loadMessages'));
     } finally {
       setLoading(false);
     }
-  }, [requestId, normalizedRequestId]);
+  }, [requestId, normalizedRequestId, t]);
 
   const handleSearch = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!requestId.trim()) {
-      setError('Informe o protocolo do traslado.');
+      setError(t('transfersMessages.errors.protocolRequired'));
       return;
     }
     if (Number.isNaN(normalizedRequestId)) {
-      setError('Informe um protocolo válido, por exemplo TR-3.');
+      setError(t('transfersMessages.errors.protocolInvalid'));
       return;
     }
     await fetchConversation();
@@ -247,16 +251,16 @@ export default function TrasladosMessagesPage() {
       });
       if (!res.ok) {
         const payload = await res.json().catch(() => null);
-        throw new Error(payload?.message || 'Erro ao enviar mensagem');
+        throw new Error(payload?.message || t('transfersMessages.errors.sendMessage'));
       }
       const data = await res.json();
       if (data.message?.has_redactions) {
-        setNotice('Alguns contatos foram removidos automaticamente da mensagem.');
+        setNotice(t('transfersMessages.notice.redacted'));
       }
       setMessageText('');
       await fetchConversation();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao enviar mensagem');
+      setError(err instanceof Error ? err.message : t('transfersMessages.errors.sendMessage'));
     } finally {
       setSending(false);
     }
@@ -277,7 +281,7 @@ export default function TrasladosMessagesPage() {
       });
       if (!res.ok) {
         const payload = await res.json().catch(() => null);
-        throw new Error(payload?.message || 'Erro ao confirmar acordo');
+        throw new Error(payload?.message || t('transfersMessages.errors.confirmAgreement'));
       }
       const data = await res.json();
       setAgreement({
@@ -286,7 +290,7 @@ export default function TrasladosMessagesPage() {
         agreement_confirmed_at: data.request?.agreement_confirmed_at || null,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao confirmar acordo');
+      setError(err instanceof Error ? err.message : t('transfersMessages.errors.confirmAgreement'));
     }
   };
 
@@ -305,11 +309,11 @@ export default function TrasladosMessagesPage() {
       });
       if (!res.ok) {
         const payload = await res.json().catch(() => null);
-        throw new Error(payload?.message || 'Erro ao gerar pagamento');
+        throw new Error(payload?.message || t('transfersMessages.errors.generatePayment'));
       }
       const data = await res.json();
       if (data.status === 'paid' && data.exempt) {
-        setNotice('Taxa isenta para seu plano.');
+        setNotice(t('transfersMessages.notice.feeExempt'));
         setClientSecret('');
         setPaymentIntentId('');
         await fetchConversation();
@@ -318,7 +322,7 @@ export default function TrasladosMessagesPage() {
       setClientSecret(data.client_secret);
       setPaymentIntentId(data.payment_intent_id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao gerar pagamento');
+      setError(err instanceof Error ? err.message : t('transfersMessages.errors.generatePayment'));
     }
   };
 
@@ -333,10 +337,10 @@ export default function TrasladosMessagesPage() {
         },
         body: JSON.stringify({ requestId: normalizedRequestId, paymentIntentId: paymentIntentIdValue }),
       });
-      setNotice('Pagamento confirmado com sucesso.');
+      setNotice(t('transfersMessages.notice.paymentConfirmed'));
       await fetchConversation();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao confirmar pagamento');
+      setError(err instanceof Error ? err.message : t('transfersMessages.errors.confirmPayment'));
     }
   };
 
@@ -359,32 +363,30 @@ export default function TrasladosMessagesPage() {
           <main className="flex-1 p-8">
             <div className="mx-auto max-w-5xl space-y-8">
               <section className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-                <h1 className="text-3xl font-bold text-slate-900">Mensagens do Traslado</h1>
-                <p className="mt-3 text-sm text-slate-600">
-                  Toda comunicação deve ocorrer aqui. Contatos pessoais são removidos automaticamente para proteger a taxa do portal.
-                </p>
+                <h1 className="text-3xl font-bold text-slate-900">{t('transfersMessages.title')}</h1>
+                <p className="mt-3 text-sm text-slate-600">{t('transfersMessages.subtitle')}</p>
               </section>
 
               <section className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
                 <form onSubmit={handleSearch} className="flex flex-col gap-4 md:flex-row md:items-end">
                   <div className="flex-1">
                     <label className="block text-sm font-semibold text-slate-700" htmlFor="request-id">
-                      Protocolo do traslado
+                      {t('transfersMessages.requestLabel')}
                     </label>
                     <input
                       id="request-id"
                       value={requestId}
                       onChange={(event) => setRequestId(event.target.value)}
                       className="mt-2 w-full rounded-lg border border-slate-300 px-4 py-2 text-sm"
-                      placeholder="TR-123"
+                      placeholder={t('transfersMessages.requestPlaceholder')}
                     />
-                    <p className="mt-2 text-xs text-slate-500">Aceita TR-3, 3 ou apenas números.</p>
+                    <p className="mt-2 text-xs text-slate-500">{t('transfersMessages.requestHint')}</p>
                   </div>
                   <button
                     type="submit"
                     className="rounded-lg bg-blue-900 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800"
                   >
-                    Carregar conversa
+                    {t('transfersMessages.loadConversation')}
                   </button>
                 </form>
                 {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
@@ -392,30 +394,28 @@ export default function TrasladosMessagesPage() {
               </section>
 
               <section className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-                <h2 className="text-2xl font-semibold text-slate-900">Acordo e pagamento</h2>
-                <p className="mt-2 text-sm text-slate-600">
-                  Confirme quando ambas as partes decidirem seguir com o traslado. Após confirmação, a taxa do portal deve ser paga.
-                </p>
+                <h2 className="text-2xl font-semibold text-slate-900">{t('transfersMessages.agreementTitle')}</h2>
+                <p className="mt-2 text-sm text-slate-600">{t('transfersMessages.agreementSubtitle')}</p>
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm">
-                    <div className="font-semibold text-slate-700">Seu papel</div>
-                    <div className="mt-2 text-slate-600">{role ? role.toUpperCase() : '—'}</div>
+                    <div className="font-semibold text-slate-700">{t('transfersMessages.yourRole')}</div>
+                    <div className="mt-2 text-slate-600">{role ? role.toUpperCase() : t('transfersMessages.notAvailable')}</div>
                     <div className="mt-4">
                       <button
                         onClick={handleConfirmAgreement}
                         className="w-full rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50"
                       >
-                        Confirmar acordo
+                        {t('transfersMessages.confirmAgreement')}
                       </button>
                     </div>
                   </div>
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm">
-                    <div className="font-semibold text-slate-700">Status do acordo</div>
+                    <div className="font-semibold text-slate-700">{t('transfersMessages.agreementStatus')}</div>
                     <ul className="mt-2 space-y-2 text-slate-600">
-                      <li>Proprietário: {agreement?.agreement_owner_confirmed_at ? 'Confirmado' : 'Pendente'}</li>
-                      <li>Piloto: {agreement?.agreement_pilot_confirmed_at ? 'Confirmado' : 'Pendente'}</li>
+                      <li>{t('transfersMessages.ownerLabel')}: {agreement?.agreement_owner_confirmed_at ? t('transfersMessages.confirmed') : t('transfersMessages.pending')}</li>
+                      <li>{t('transfersMessages.pilotLabel')}: {agreement?.agreement_pilot_confirmed_at ? t('transfersMessages.confirmed') : t('transfersMessages.pending')}</li>
                       <li className="font-semibold">
-                        Acordo final: {agreementConfirmed ? 'Confirmado' : 'Aguardando'}
+                        {t('transfersMessages.finalAgreement')}: {agreementConfirmed ? t('transfersMessages.confirmed') : t('transfersMessages.awaiting')}
                       </li>
                     </ul>
                   </div>
@@ -423,9 +423,9 @@ export default function TrasladosMessagesPage() {
                 <div className="mt-6">
                   {agreementConfirmed ? (
                     <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-                      <div className="text-sm font-semibold text-emerald-700">Acordo confirmado</div>
+                      <div className="text-sm font-semibold text-emerald-700">{t('transfersMessages.agreementConfirmed')}</div>
                       <div className="mt-2 text-sm text-emerald-700">
-                        {userPaid ? 'Taxa do portal já paga.' : 'Efetue o pagamento da taxa do portal.'}
+                        {userPaid ? t('transfersMessages.portalFeePaid') : t('transfersMessages.portalFeeDue')}
                       </div>
                       {(paidFee || userFee || feePreview) && (() => {
                         const detailSource = paidFee || userFee || feePreview;
@@ -433,14 +433,14 @@ export default function TrasladosMessagesPage() {
                         const breakdown = formatFeeBreakdown(detailSource);
                         return (
                           <div className="mt-3 rounded-lg border border-emerald-200 bg-white p-3 text-xs text-emerald-700">
-                            <div className="font-semibold">Detalhamento da taxa</div>
+                            <div className="font-semibold">{t('transfersMessages.feeBreakdownTitle')}</div>
                             <div className="mt-2 space-y-1">
-                              <div>Taxa base: {formatCurrency(breakdown.baseAmount)}</div>
+                              <div>{t('transfersMessages.feeBase')}: {formatCurrency(breakdown.baseAmount)}</div>
                               <div>
                                 {getDiscountLabel(breakdown.discountReason)}:{' '}
-                                {breakdown.discountAmount > 0 ? `- ${formatCurrency(breakdown.discountAmount)}` : '—'}
+                                {breakdown.discountAmount > 0 ? `- ${formatCurrency(breakdown.discountAmount)}` : t('transfersMessages.notAvailable')}
                               </div>
-                              <div className="font-semibold">Total: {formatCurrency(breakdown.totalAmount)}</div>
+                              <div className="font-semibold">{t('transfersMessages.feeTotal')}: {formatCurrency(breakdown.totalAmount)}</div>
                             </div>
                           </div>
                         );
@@ -449,7 +449,7 @@ export default function TrasladosMessagesPage() {
                         <div className="mt-4">
                           {!publishableKey ? (
                             <p className="text-sm text-red-600">
-                              Stripe não configurado. Adicione NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY.
+                              {t('transfersMessages.stripeNotConfigured')}
                             </p>
                           ) : clientSecret ? (
                             <div className="space-y-4">
@@ -459,14 +459,14 @@ export default function TrasladosMessagesPage() {
                                 const breakdown = formatFeeBreakdown(detailSource);
                                 return (
                                   <div className="rounded-lg border border-emerald-200 bg-white p-3 text-xs text-emerald-700">
-                                    <div className="font-semibold">Antes do pagamento</div>
+                                    <div className="font-semibold">{t('transfersMessages.beforePaymentTitle')}</div>
                                     <div className="mt-2 space-y-1">
-                                      <div>Taxa base: {formatCurrency(breakdown.baseAmount)}</div>
+                                      <div>{t('transfersMessages.feeBase')}: {formatCurrency(breakdown.baseAmount)}</div>
                                       <div>
                                         {getDiscountLabel(breakdown.discountReason)}:{' '}
-                                        {breakdown.discountAmount > 0 ? `- ${formatCurrency(breakdown.discountAmount)}` : '—'}
+                                        {breakdown.discountAmount > 0 ? `- ${formatCurrency(breakdown.discountAmount)}` : t('transfersMessages.notAvailable')}
                                       </div>
-                                      <div className="font-semibold">Total a pagar: {formatCurrency(breakdown.totalAmount)}</div>
+                                      <div className="font-semibold">{t('transfersMessages.totalToPay')}: {formatCurrency(breakdown.totalAmount)}</div>
                                     </div>
                                   </div>
                                 );
@@ -480,7 +480,7 @@ export default function TrasladosMessagesPage() {
                               onClick={handleCreatePayment}
                               className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
                             >
-                              Gerar pagamento
+                              {t('transfersMessages.generatePayment')}
                             </button>
                           )}
                         </div>
@@ -488,35 +488,35 @@ export default function TrasladosMessagesPage() {
                     </div>
                   ) : (
                     <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                      O pagamento só será liberado após ambas as partes confirmarem o acordo.
+                      {t('transfersMessages.paymentAfterAgreement')}
                     </div>
                   )}
                 </div>
                 {latestFee && (
                   <div className="mt-4 text-xs text-slate-500">
-                    Última taxa registrada: {latestFee.status.toUpperCase()} •{' '}
-                    {latestFee.amount_cents === 0 ? 'Isento' : formatCurrency(latestFee.amount_cents)}
+                    {t('transfersMessages.latestFee')}: {latestFee.status.toUpperCase()} •{' '}
+                    {latestFee.amount_cents === 0 ? t('transfersMessages.feeExempt') : formatCurrency(latestFee.amount_cents)}
                   </div>
                 )}
               </section>
 
               <section className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-                <h2 className="text-2xl font-semibold text-slate-900">Mensagens</h2>
+                <h2 className="text-2xl font-semibold text-slate-900">{t('transfersMessages.messagesTitle')}</h2>
                 {loading ? (
-                  <p className="mt-4 text-sm text-slate-600">Carregando...</p>
+                  <p className="mt-4 text-sm text-slate-600">{t('transfersMessages.loading')}</p>
                 ) : messages.length === 0 ? (
-                  <p className="mt-4 text-sm text-slate-600">Nenhuma mensagem ainda.</p>
+                  <p className="mt-4 text-sm text-slate-600">{t('transfersMessages.empty')}</p>
                 ) : (
                   <div className="mt-4 space-y-4">
                     {messages.map((message) => (
                       <div key={message.id} className="rounded-xl border border-slate-100 bg-slate-50 p-4">
                         <div className="flex items-center justify-between text-xs text-slate-500">
-                          <span>{new Date(message.created_at).toLocaleString('pt-BR')}</span>
+                          <span>{new Date(message.created_at).toLocaleString(language === 'en' ? 'en-US' : language === 'es' ? 'es-ES' : 'pt-BR')}</span>
                           <span className="uppercase">{message.sender_role}</span>
                         </div>
                         <div className="mt-2 text-sm text-slate-700">{message.message}</div>
                         {message.has_redactions && (
-                          <div className="mt-2 text-xs text-amber-600">Contato removido automaticamente.</div>
+                          <div className="mt-2 text-xs text-amber-600">{t('transfersMessages.redactedInline')}</div>
                         )}
                       </div>
                     ))}
@@ -529,7 +529,7 @@ export default function TrasladosMessagesPage() {
                     onChange={(event) => setMessageText(event.target.value)}
                     rows={3}
                     className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm"
-                    placeholder="Escreva sua mensagem."
+                    placeholder={t('transfersMessages.messagePlaceholder')}
                   />
                   <div className="flex justify-end">
                     <button
@@ -537,7 +537,7 @@ export default function TrasladosMessagesPage() {
                       disabled={sending}
                       className="rounded-lg bg-blue-900 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:bg-slate-300"
                     >
-                      {sending ? 'Enviando...' : 'Enviar mensagem'}
+                      {sending ? t('transfersMessages.sending') : t('transfersMessages.send')}
                     </button>
                   </div>
                 </form>

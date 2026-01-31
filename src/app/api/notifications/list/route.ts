@@ -22,7 +22,7 @@ export async function GET(request: Request) {
     try {
       // Get unread notifications
       const notifRes = await client.query(
-        `SELECT id, type, title, message, priority, action_url, action_label, is_read, created_at
+        `SELECT id, type, title, message, priority, action_url, action_label, metadata, is_read, created_at
          FROM user_notifications
          WHERE user_id = $1 AND is_dismissed = FALSE AND expires_at > NOW()
          ORDER BY created_at DESC

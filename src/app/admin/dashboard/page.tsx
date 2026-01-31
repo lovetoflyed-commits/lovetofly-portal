@@ -3,6 +3,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Role, hasPermission } from '../accessControl';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const features = [
   { key: "system", label: "Sistema", permission: "manage_system" },
@@ -27,12 +28,18 @@ interface AdminLog {
 export default function AdminDashboard() {
   const { user } = useAuth();
   const role = user?.role as Role | undefined;
+  const router = useRouter();
   const [logs, setLogs] = useState<AdminLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
 
   useEffect(() => {
+    if (role === Role.MASTER || hasPermission(role as Role, 'manage_system')) {
+      router.replace('/admin');
+      return;
+    }
+
     fetchLogs();
-  }, []);
+  }, [role, router]);
 
   async function fetchLogs() {
     setLoadingLogs(true);

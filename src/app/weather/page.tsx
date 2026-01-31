@@ -3,8 +3,10 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import AuthGuard from '@/components/AuthGuard';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function WeatherPage() {
+  const { t } = useLanguage();
   const [icao, setIcao] = useState('');
   const [loading, setLoading] = useState(false);
   const [metar, setMetar] = useState<string | null>(null);
@@ -39,7 +41,7 @@ export default function WeatherPage() {
 
   const useMyLocation = () => {
     if (!navigator.geolocation) {
-      setError('Geolocalização não suportada pelo navegador');
+      setError(t('weatherPage.geoNotSupported'));
       return;
     }
     setError(null);
@@ -59,7 +61,7 @@ export default function WeatherPage() {
         setTimeout(() => fetchWeather(), 50);
       },
       () => {
-        setError('Não foi possível obter sua localização');
+        setError(t('weatherPage.geoUnavailable'));
       },
       { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
     );
@@ -68,7 +70,7 @@ export default function WeatherPage() {
   const fetchWeather = async () => {
     const normalized = icao.trim().toUpperCase();
     if (!normalized || normalized.length !== 4 || !/^[A-Z]{4}$/.test(normalized)) {
-      setError('Digite um código ICAO válido (4 letras)');
+      setError(t('weatherPage.invalidIcao'));
       return;
     }
 
@@ -83,13 +85,13 @@ export default function WeatherPage() {
 
       if (response.ok) {
         const metarText = data.metar ?? data.raw ?? null;
-        setMetar(metarText || 'METAR não disponível');
-        setTaf(data.taf || 'TAF não disponível');
+        setMetar(metarText || t('weatherPage.metarUnavailable'));
+        setTaf(data.taf || t('weatherPage.tafUnavailable'));
       } else {
-        setError(data.message || data.error || 'Erro ao buscar dados meteorológicos');
+        setError(data.message || data.error || t('weatherPage.fetchError'));
       }
     } catch (err) {
-      setError('Erro ao conectar com o servidor');
+      setError(t('weatherPage.serverError'));
     } finally {
       setLoading(false);
     }
@@ -106,15 +108,15 @@ export default function WeatherPage() {
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-            <h1 className="text-3xl font-bold text-blue-900 mb-2">☁️ METAR & TAF</h1>
-            <p className="text-gray-600">Consulte informações meteorológicas de aeródromos</p>
+            <h1 className="text-3xl font-bold text-blue-900 mb-2">☁️ {t('weatherPage.title')}</h1>
+            <p className="text-gray-600">{t('weatherPage.subtitle')}</p>
             <div className="mt-4 flex gap-2">
               <Link
                 href="/"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors"
               >
                 <span className="text-lg">←</span>
-                Voltar ao Dashboard
+                {t('weatherPage.backDashboard')}
               </Link>
               <button
                 type="button"
@@ -122,7 +124,7 @@ export default function WeatherPage() {
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors"
               >
                 <span>📍</span>
-                Usar minha localização
+                {t('weatherPage.useMyLocation')}
               </button>
             </div>
           </div>
@@ -132,14 +134,14 @@ export default function WeatherPage() {
             <form onSubmit={handleSubmit} className="flex gap-4">
               <div className="flex-1">
                 <label htmlFor="icao" className="block text-sm font-medium text-gray-700 mb-2">
-                  Código ICAO do Aeródromo
+                  {t('weatherPage.icaoLabel')}
                 </label>
                 <input
                   id="icao"
                   type="text"
                   value={icao}
                   onChange={(e) => setIcao(e.target.value.toUpperCase())}
-                  placeholder="Ex: SBSP, SBBR, SBGR"
+                  placeholder={t('weatherPage.icaoPlaceholder')}
                   maxLength={4}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg font-mono uppercase"
                 />
@@ -150,14 +152,14 @@ export default function WeatherPage() {
                   disabled={loading}
                   className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors whitespace-nowrap"
                 >
-                  {loading ? 'Buscando...' : 'Buscar'}
+                  {loading ? t('weatherPage.searching') : t('weatherPage.search')}
                 </button>
               </div>
             </form>
 
             {/* Quick Access Buttons */}
             <div className="mt-4 flex flex-wrap gap-2">
-              <span className="text-sm text-gray-600 mr-2">Acesso rápido:</span>
+              <span className="text-sm text-gray-600 mr-2">{t('weatherPage.quickAccess')}</span>
               {['SBSP', 'SBBR', 'SBGR', 'SBGL', 'SBCF', 'SBRJ'].map((code) => (
                 <button
                   key={code}
@@ -174,7 +176,7 @@ export default function WeatherPage() {
                 onClick={useMyLocation}
                 className="px-3 py-1 text-sm bg-emerald-100 text-emerald-700 rounded-md hover:bg-emerald-200 transition-colors"
               >
-                📍 Localização
+                📍 {t('weatherPage.location')}
               </button>
             </div>
           </div>
@@ -199,7 +201,7 @@ export default function WeatherPage() {
                 </pre>
               </div>
               <p className="text-xs text-gray-500 mt-2">
-                Último reporte meteorológico do aeródromo
+                {t('weatherPage.metarReport')}
               </p>
             </div>
           )}
@@ -217,19 +219,19 @@ export default function WeatherPage() {
                 </pre>
               </div>
               <p className="text-xs text-gray-500 mt-2">
-                Previsão de condições meteorológicas para as próximas horas
+                {t('weatherPage.tafReport')}
               </p>
             </div>
           )}
 
           {/* Info Card */}
           <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
-            <h3 className="font-bold text-blue-900 mb-2">ℹ️ Sobre METAR & TAF</h3>
+            <h3 className="font-bold text-blue-900 mb-2">{t('weatherPage.infoTitle')}</h3>
             <ul className="text-sm text-blue-800 space-y-1">
-              <li>• <strong>METAR:</strong> Informação meteorológica atual do aeródromo</li>
-              <li>• <strong>TAF:</strong> Previsão meteorológica para as próximas horas</li>
-              <li>• Dados fornecidos pela REDEMET (DECEA/FAB)</li>
-              <li>• Informações atualizadas automaticamente pelos órgãos oficiais</li>
+              <li>• <strong>METAR:</strong> {t('weatherPage.infoMetar')}</li>
+              <li>• <strong>TAF:</strong> {t('weatherPage.infoTaf')}</li>
+              <li>• {t('weatherPage.infoSource')}</li>
+              <li>• {t('weatherPage.infoUpdated')}</li>
             </ul>
           </div>
         </div>

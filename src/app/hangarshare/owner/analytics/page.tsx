@@ -14,11 +14,41 @@ interface AnalyticsData {
   topClients: Array<{ name: string; bookings: number; spent: number }>;
 }
 
+interface UtilizationSummary {
+  averageOccupancy: number;
+  totalRevenue: number;
+  totalDays: number;
+  listingsCount: number;
+}
+
+interface UtilizationDaily {
+  date: string;
+  occupancyRate: number;
+  revenue: number;
+}
+
+interface UtilizationListing {
+  listingId: number;
+  icaoCode: string | null;
+  hangarNumber: string | null;
+  averageOccupancy: number;
+  totalRevenue: number;
+}
+
+interface UtilizationResponse {
+  summary: UtilizationSummary;
+  daily: UtilizationDaily[];
+  byListing: UtilizationListing[];
+  range?: { startDate: string; endDate: string };
+}
+
 export default function AnalyticsPage() {
   const router = useRouter();
   const { user } = useAuth();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [utilization, setUtilization] = useState<UtilizationResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [utilizationLoading, setUtilizationLoading] = useState(true);
   const [period, setPeriod] = useState<'month' | 'quarter' | 'year'>('month');
 
   useEffect(() => {
@@ -27,6 +57,7 @@ export default function AnalyticsPage() {
       return;
     }
     loadAnalytics();
+    loadUtilization();
   }, [user, router, period]);
 
   const loadAnalytics = async () => {
@@ -77,9 +108,153 @@ export default function AnalyticsPage() {
     }
   };
 
+  const loadUtilization = async () => {
+    try {
+      setUtilizationLoading(true);
+      const authToken = localStorage.getItem('token');
+      if (!authToken) {
+        setUtilization(null);
+        return;
+      }
+
+      const res = await fetch(`/api/hangarshare/owner/utilization?period=${period}`, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error('Erro ao carregar utilização');
+      }
+
+      const data = await res.json();
+      setUtilization(data);
+    } catch (error) {
+      console.error('Error loading utilization:', error);
+      setUtilization(null);
+    } finally {
+      setUtilizationLoading(false);
+    }
+  };
+
   const getMaxRevenue = () => {
     if (!analytics?.monthlyRevenue) return 0;
     return Math.max(...analytics.monthlyRevenue.map(m => m.revenue));
+  };
+
+  const getMaxUtilizationRevenue = () => {
+    if (!utilization?.daily?.length) return 0;
+    return Math.max(...utilization.daily.map(item => item.revenue));
+  };
+
+  const downloadFile = (filename: string, content: string, type: string) => {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportCSV = () => {
+    if (!analytics) return;
+
+    const rows: string[] = [];
+    rows.push('Resumo,Valor');
+    rows.push(`Receita Total,R$ ${analytics.totalRevenue}`);
+    rows.push(`Total de Reservas,${analytics.totalBookings}`);
+    rows.push(`Avaliação Média,${analytics.averageRating}`);
+    rows.push(`Taxa de Ocupação,${occupancyDisplay}`);
+    rows.push('');
+
+    rows.push('Receita Mensal');
+    rows.push('Mês,Receita');
+    analytics.monthlyRevenue.forEach((item) => {
+      rows.push(`${item.month},${item.revenue}`);
+    });
+    rows.push('');
+
+    rows.push('Reservas por Hangar');
+    rows.push('Hangar,Reservas,Receita');
+    analytics.bookingsByHangar.forEach((item) => {
+      rows.push(`${item.hangar},${item.bookings},${item.revenue}`);
+    });
+    rows.push('');
+
+    rows.push('Top Clientes');
+    rows.push('Cliente,Reservas,Gasto');
+    analytics.topClients.forEach((item) => {
+      rows.push(`${item.name},${item.bookings},${item.spent}`);
+    });
+
+    if (utilization?.daily?.length) {
+      rows.push('');
+      rows.push('Utilização Diária');
+      rows.push('Data,Ocupação,Receita');
+      utilization.daily.forEach((item) => {
+        rows.push(`${item.date},${item.occupancyRate},${item.revenue}`);
+      });
+    }
+
+    downloadFile(`hangarshare-analytics-${period}.csv`, rows.join('\n'), 'text/csv;charset=utf-8;');
+  };
+
+  const exportPDF = () => {
+    if (!analytics) return;
+
+    const html = `
+      <html>
+        <head>
+          <title>Relatório HangarShare</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 24px; color: #1f2937; }
+            h1 { margin-bottom: 8px; }
+            h2 { margin-top: 24px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+            th, td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; }
+            th { background: #f3f4f6; }
+          </style>
+        </head>
+        <body>
+          <h1>Relatório HangarShare</h1>
+          <p>Período: ${period}</p>
+          <h2>Resumo</h2>
+          <table>
+            <tr><th>Métrica</th><th>Valor</th></tr>
+            <tr><td>Receita Total</td><td>R$ ${analytics.totalRevenue}</td></tr>
+            <tr><td>Total de Reservas</td><td>${analytics.totalBookings}</td></tr>
+            <tr><td>Avaliação Média</td><td>${analytics.averageRating.toFixed(2)}</td></tr>
+            <tr><td>Taxa de Ocupação</td><td>${occupancyDisplay}%</td></tr>
+          </table>
+          <h2>Receita Mensal</h2>
+          <table>
+            <tr><th>Mês</th><th>Receita</th></tr>
+            ${analytics.monthlyRevenue.map(item => `<tr><td>${item.month}</td><td>R$ ${item.revenue}</td></tr>`).join('')}
+          </table>
+          <h2>Reservas por Hangar</h2>
+          <table>
+            <tr><th>Hangar</th><th>Reservas</th><th>Receita</th></tr>
+            ${analytics.bookingsByHangar.map(item => `<tr><td>${item.hangar}</td><td>${item.bookings}</td><td>R$ ${item.revenue}</td></tr>`).join('')}
+          </table>
+          <h2>Top Clientes</h2>
+          <table>
+            <tr><th>Cliente</th><th>Reservas</th><th>Gasto</th></tr>
+            ${analytics.topClients.map(item => `<tr><td>${item.name}</td><td>${item.bookings}</td><td>R$ ${item.spent}</td></tr>`).join('')}
+          </table>
+        </body>
+      </html>
+    `;
+
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    win.print();
   };
 
   if (!user) {
@@ -98,6 +273,8 @@ export default function AnalyticsPage() {
     );
   }
 
+  const occupancyDisplay = utilization?.summary?.averageOccupancy ?? analytics.occupancyRate;
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white py-8">
       <div className="max-w-6xl mx-auto px-4">
@@ -114,7 +291,19 @@ export default function AnalyticsPage() {
               <h1 className="text-3xl font-black text-blue-900">Análises e Relatórios</h1>
               <p className="text-slate-600 mt-2">Visualize suas métricas de desempenho</p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={exportCSV}
+                className="px-4 py-2 rounded-lg font-bold bg-emerald-600 text-white hover:bg-emerald-700"
+              >
+                Exportar CSV
+              </button>
+              <button
+                onClick={exportPDF}
+                className="px-4 py-2 rounded-lg font-bold bg-slate-700 text-white hover:bg-slate-800"
+              >
+                Exportar PDF
+              </button>
               {(['month', 'quarter', 'year'] as const).map((p) => (
                 <button
                   key={p}
@@ -152,7 +341,7 @@ export default function AnalyticsPage() {
           </div>
           <div className="bg-white rounded-lg shadow p-6">
             <p className="text-slate-500 text-sm font-bold">TAXA DE OCUPAÇÃO</p>
-            <p className="text-3xl font-black text-purple-600 mt-2">{analytics.occupancyRate}%</p>
+            <p className="text-3xl font-black text-purple-600 mt-2">{occupancyDisplay}%</p>
           </div>
         </div>
 
@@ -242,6 +431,136 @@ export default function AnalyticsPage() {
               </tbody>
             </table>
           </div>
+        </div>
+
+        {/* Utilization Analytics */}
+        <div className="mt-10">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold text-blue-900">Utilização dos Hangares</h2>
+            {utilization?.range && (
+              <p className="text-xs text-slate-500">
+                {utilization.range.startDate} → {utilization.range.endDate}
+              </p>
+            )}
+          </div>
+
+          {utilizationLoading ? (
+            <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+              <p className="text-slate-600">Carregando utilização...</p>
+            </div>
+          ) : utilization ? (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-white rounded-lg shadow p-5">
+                  <p className="text-xs font-bold text-slate-500">OCUPAÇÃO MÉDIA</p>
+                  <p className="text-2xl font-black text-purple-600 mt-2">
+                    {utilization.summary.averageOccupancy}%
+                  </p>
+                </div>
+                <div className="bg-white rounded-lg shadow p-5">
+                  <p className="text-xs font-bold text-slate-500">RECEITA NO PERÍODO</p>
+                  <p className="text-2xl font-black text-green-600 mt-2">
+                    R$ {utilization.summary.totalRevenue.toLocaleString('pt-BR')}
+                  </p>
+                </div>
+                <div className="bg-white rounded-lg shadow p-5">
+                  <p className="text-xs font-bold text-slate-500">DIAS REGISTRADOS</p>
+                  <p className="text-2xl font-black text-blue-600 mt-2">
+                    {utilization.summary.totalDays}
+                  </p>
+                </div>
+                <div className="bg-white rounded-lg shadow p-5">
+                  <p className="text-xs font-bold text-slate-500">HANGARES MONITORADOS</p>
+                  <p className="text-2xl font-black text-slate-800 mt-2">
+                    {utilization.summary.listingsCount}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="bg-white rounded-xl shadow-lg p-6">
+                  <h3 className="text-lg font-bold text-blue-900 mb-4">Ocupação diária</h3>
+                  {utilization.daily.length === 0 ? (
+                    <p className="text-sm text-slate-500">Sem dados de utilização no período.</p>
+                  ) : (
+                    <div className="h-48 flex items-end gap-2">
+                      {utilization.daily.map((item) => (
+                        <div key={item.date} className="flex-1 flex flex-col items-center gap-2">
+                          <div
+                            className="w-full bg-gradient-to-t from-purple-600 to-purple-400 rounded-t"
+                            style={{ height: `${Math.max(item.occupancyRate, 5)}%` }}
+                            title={`${item.date}: ${item.occupancyRate.toFixed(1)}%`}
+                          />
+                          <span className="text-[10px] text-slate-500">
+                            {new Date(item.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="bg-white rounded-xl shadow-lg p-6">
+                  <h3 className="text-lg font-bold text-blue-900 mb-4">Receita diária</h3>
+                  {utilization.daily.length === 0 ? (
+                    <p className="text-sm text-slate-500">Sem dados de receita no período.</p>
+                  ) : (
+                    <div className="h-48 flex items-end gap-2">
+                      {utilization.daily.map((item) => {
+                        const maxRevenue = getMaxUtilizationRevenue() || 1;
+                        const height = (item.revenue / maxRevenue) * 100;
+                        return (
+                          <div key={item.date} className="flex-1 flex flex-col items-center gap-2">
+                            <div
+                              className="w-full bg-gradient-to-t from-emerald-600 to-emerald-400 rounded-t"
+                              style={{ height: `${Math.max(height, 5)}%` }}
+                              title={`${item.date}: R$ ${item.revenue.toLocaleString('pt-BR')}`}
+                            />
+                            <span className="text-[10px] text-slate-500">
+                              {new Date(item.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <h3 className="text-lg font-bold text-blue-900 mb-4">Utilização por hangar</h3>
+                {utilization.byListing.length === 0 ? (
+                  <p className="text-sm text-slate-500">Sem dados por hangar no período.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {utilization.byListing.map((item) => (
+                      <div key={item.listingId}>
+                        <div className="flex justify-between text-sm font-semibold text-slate-700">
+                          <span>
+                            {item.icaoCode || 'ICAO'} - {item.hangarNumber || 'Hangar'}
+                          </span>
+                          <span>{item.averageOccupancy.toFixed(1)}%</span>
+                        </div>
+                        <div className="w-full bg-slate-200 rounded-full h-2 mt-2">
+                          <div
+                            className="bg-purple-600 h-2 rounded-full"
+                            style={{ width: `${Math.min(item.averageOccupancy, 100)}%` }}
+                          />
+                        </div>
+                        <p className="text-xs text-slate-500 mt-1">
+                          Receita: R$ {item.totalRevenue.toLocaleString('pt-BR')}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+              <p className="text-slate-600">Utilização indisponível no momento.</p>
+            </div>
+          )}
         </div>
 
         {/* Export Section */}

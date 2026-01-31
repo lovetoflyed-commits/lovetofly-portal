@@ -43,7 +43,7 @@ export async function POST(
 
     // Check if topic exists
     const topicResult = await pool.query(
-      `SELECT id FROM forum_topics WHERE id = $1 AND is_deleted = FALSE`,
+      `SELECT id, is_locked FROM forum_topics WHERE id = $1 AND is_deleted = FALSE`,
       [id]
     );
 
@@ -51,6 +51,13 @@ export async function POST(
       return NextResponse.json(
         { message: 'Topic not found' },
         { status: 404 }
+      );
+    }
+
+    if (topicResult.rows[0]?.is_locked) {
+      return NextResponse.json(
+        { message: 'Topic is locked' },
+        { status: 403 }
       );
     }
 

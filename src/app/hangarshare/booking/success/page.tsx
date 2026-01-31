@@ -64,12 +64,18 @@ function SuccessContent() {
             </p>
           </div>
 
-          <div className="flex gap-4 justify-center">
+          <div className="flex gap-4 justify-center flex-wrap">
             <button
               onClick={() => router.push('/hangarshare')}
               className="px-6 py-3 bg-slate-200 text-slate-900 font-bold rounded-lg hover:bg-slate-300"
             >
               Voltar para Busca
+            </button>
+            <button
+              onClick={() => router.push('/profile/bookings')}
+              className="px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700"
+            >
+              Ver Minhas Reservas
             </button>
             <button
               onClick={() => router.push('/')}

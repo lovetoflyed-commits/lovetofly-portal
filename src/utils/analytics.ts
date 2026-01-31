@@ -18,6 +18,11 @@ export const trackPageView = async (page?: string) => {
   }
 };
 
+export const trackEvent = async (eventName: string, pageOverride?: string) => {
+  const page = pageOverride ? pageOverride : `/event/${eventName}`;
+  await trackPageView(page);
+};
+
 // Track visit on component mount
 export const usePageTracking = () => {
   if (typeof window !== 'undefined') {

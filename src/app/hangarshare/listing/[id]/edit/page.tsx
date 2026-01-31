@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import Cropper from 'react-easy-crop';
+import { getCroppedImage } from '@/utils/imageCrop';
 
 interface Hangar {
   id: number;
@@ -29,6 +31,7 @@ interface Hangar {
   description: string;
   specialNotes: string;
   isAvailable: boolean;
+  status?: string;
   approvalStatus: string;
   createdAt: string;
   updatedAt: string;
@@ -38,6 +41,7 @@ interface Hangar {
   photos: Array<{
     id: number;
     url: string;
+    photoUrl?: string;
     isPrimary: boolean;
     displayOrder: number;
   }>;
@@ -75,14 +79,22 @@ export default function EditHangarListingPage() {
     description: '',
     specialNotes: '',
     isAvailable: true,
+    listingStatus: 'active',
   });
 
-  const [photos, setPhotos] = useState<Array<{ id: number; photoUrl: string; displayOrder: number }>>([]);
+  const [photos, setPhotos] = useState<Array<{ id: number; photoUrl: string; displayOrder: number; isPrimary: boolean }>>([]);
   const [newPhotos, setNewPhotos] = useState<File[]>([]);
   const [newPhotoPreviews, setNewPhotoPreviews] = useState<string[]>([]);
   const [photosToDelete, setPhotosToDelete] = useState<number[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [savingOrder, setSavingOrder] = useState(false);
+  const [cropQueue, setCropQueue] = useState<Array<{ file: File; preview: string }>>([]);
+  const [cropIndex, setCropIndex] = useState(0);
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<{ width: number; height: number; x: number; y: number } | null>(null);
 
   // Fetch listing on mount
   useEffect(() => {
@@ -116,14 +128,16 @@ export default function EditHangarListingPage() {
           description: listing.description || '',
           specialNotes: listing.specialNotes || '',
           isAvailable: listing.isAvailable ?? true,
+          listingStatus: listing.status || 'active',
         });
 
         // Load photos
         if (listing.photos && listing.photos.length > 0) {
           setPhotos(listing.photos.map(p => ({
             id: p.id,
-            photoUrl: p.url,
-            displayOrder: p.displayOrder
+            photoUrl: p.photoUrl || p.url,
+            displayOrder: p.displayOrder,
+            isPrimary: p.isPrimary
           })));
         }
       } catch (err) {
@@ -149,8 +163,88 @@ export default function EditHangarListingPage() {
 
   const handleNewPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
-    setNewPhotos(files);
-    setNewPhotoPreviews(files.map(file => URL.createObjectURL(file)));
+    if (files.length === 0) return;
+    const queue = files.map((file) => ({ file, preview: URL.createObjectURL(file) }));
+    setCropQueue(queue);
+    setCropIndex(0);
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    setCroppedAreaPixels(null);
+    setCropModalOpen(true);
+  };
+
+  const appendNewPhoto = (file: File, preview: string) => {
+    setNewPhotos((prev) => [...prev, file]);
+    setNewPhotoPreviews((prev) => [...prev, preview]);
+  };
+
+  const handleCropComplete = (_: any, croppedPixels: { width: number; height: number; x: number; y: number }) => {
+    setCroppedAreaPixels(croppedPixels);
+  };
+
+  const handleCropNext = async () => {
+    const current = cropQueue[cropIndex];
+    if (!current) return;
+
+    try {
+      if (croppedAreaPixels) {
+        const mimeType = current.file.type || 'image/jpeg';
+        const croppedFile = await getCroppedImage(
+          current.preview,
+          croppedAreaPixels,
+          `cropped-${current.file.name}`,
+          mimeType
+        );
+        const previewUrl = URL.createObjectURL(croppedFile);
+        appendNewPhoto(croppedFile, previewUrl);
+      } else {
+        appendNewPhoto(current.file, current.preview);
+      }
+    } catch (err) {
+      alert('Erro ao recortar a imagem.');
+      appendNewPhoto(current.file, current.preview);
+    }
+
+    const nextIndex = cropIndex + 1;
+    if (nextIndex >= cropQueue.length) {
+      setCropModalOpen(false);
+      setCropQueue([]);
+      setCropIndex(0);
+      setCroppedAreaPixels(null);
+      return;
+    }
+
+    setCropIndex(nextIndex);
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    setCroppedAreaPixels(null);
+  };
+
+  const handleSkipCrop = () => {
+    const current = cropQueue[cropIndex];
+    if (!current) return;
+    appendNewPhoto(current.file, current.preview);
+
+    const nextIndex = cropIndex + 1;
+    if (nextIndex >= cropQueue.length) {
+      setCropModalOpen(false);
+      setCropQueue([]);
+      setCropIndex(0);
+      setCroppedAreaPixels(null);
+      return;
+    }
+
+    setCropIndex(nextIndex);
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    setCroppedAreaPixels(null);
+  };
+
+  const handleCancelCrop = () => {
+    setCropModalOpen(false);
+    setCropQueue([]);
+    setCropIndex(0);
+    setCroppedAreaPixels(null);
   };
 
   const handleDeletePhoto = async (photoId: number) => {
@@ -190,6 +284,9 @@ export default function EditHangarListingPage() {
         return;
       }
 
+      const isPaused = formData.listingStatus === 'inactive';
+      const nextIsAvailable = isPaused ? false : formData.isAvailable;
+
       // Update listing
       const updateRes = await fetch(`/api/hangarshare/listings/${listingId}`, {
         method: 'PATCH',
@@ -216,7 +313,8 @@ export default function EditHangarListingPage() {
           hangarLocationDescription: formData.hangarLocationDescription,
           description: formData.description,
           specialNotes: formData.specialNotes,
-          isAvailable: formData.isAvailable,
+          isAvailable: nextIsAvailable,
+          status: formData.listingStatus,
         }),
       });
 
@@ -244,11 +342,15 @@ export default function EditHangarListingPage() {
 
             if (photoRes.ok) {
               const photoData = await photoRes.json();
-              setPhotos([...photos, {
-                id: photoData.photo.id,
-                photoUrl: photoData.photo.photoUrl,
-                displayOrder: photoData.photo.displayOrder
-              }]);
+              setPhotos((prev) => ([
+                ...prev,
+                {
+                  id: photoData.photo.id,
+                  photoUrl: photoData.photo.photoUrl,
+                  displayOrder: photoData.photo.displayOrder,
+                  isPrimary: photoData.photo.isPrimary ?? false,
+                },
+              ]));
             } else {
               const err = await photoRes.json();
               console.error('Erro ao enviar foto:', err.message);
@@ -271,6 +373,78 @@ export default function EditHangarListingPage() {
       alert(`Erro ao atualizar: ${err instanceof Error ? err.message : 'Tente novamente'}`);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const sortedPhotos = [...photos].sort((a, b) => a.displayOrder - b.displayOrder);
+
+  const handleMovePhoto = (photoId: number, direction: 'up' | 'down') => {
+    const current = [...sortedPhotos];
+    const index = current.findIndex((photo) => photo.id === photoId);
+    if (index === -1) return;
+    const swapIndex = direction === 'up' ? index - 1 : index + 1;
+    if (swapIndex < 0 || swapIndex >= current.length) return;
+    [current[index], current[swapIndex]] = [current[swapIndex], current[index]];
+    const reordered = current.map((photo, idx) => ({
+      ...photo,
+      displayOrder: idx,
+    }));
+    setPhotos(reordered);
+  };
+
+  const handleSetPrimary = (photoId: number) => {
+    setPhotos((prev) =>
+      prev.map((photo) => ({
+        ...photo,
+        isPrimary: photo.id === photoId,
+      }))
+    );
+  };
+
+  const handleSaveOrder = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+
+    try {
+      setSavingOrder(true);
+      const orderedIds = [...photos]
+        .sort((a, b) => a.displayOrder - b.displayOrder)
+        .map((photo) => photo.id);
+      const primaryPhoto = photos.find((photo) => photo.isPrimary);
+
+      const res = await fetch(`/api/hangarshare/listings/${listingId}/photos`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          order: orderedIds,
+          primaryPhotoId: primaryPhoto?.id || orderedIds[0],
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Erro ao reordenar fotos');
+      }
+
+      const data = await res.json();
+      const refreshed = (data.photos || []).map((photo: any) => ({
+        id: photo.id,
+        photoUrl: photo.photo_url,
+        displayOrder: photo.display_order,
+        isPrimary: photo.is_primary,
+      }));
+      setPhotos(refreshed);
+      alert('✓ Ordem das fotos atualizada!');
+    } catch (err) {
+      alert(`Erro ao atualizar ordem: ${err instanceof Error ? err.message : 'Tente novamente'}`);
+    } finally {
+      setSavingOrder(false);
     }
   };
 
@@ -348,8 +522,67 @@ export default function EditHangarListingPage() {
     );
   }
 
+  const currentCrop = cropQueue[cropIndex];
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white py-8">
+      {cropModalOpen && currentCrop && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Recortar foto</h3>
+                <p className="text-xs text-gray-500">{cropIndex + 1} de {cropQueue.length}</p>
+              </div>
+              <button
+                onClick={handleCancelCrop}
+                className="text-sm text-gray-500 hover:text-gray-700"
+              >
+                Fechar
+              </button>
+            </div>
+            <div className="relative h-[400px] bg-gray-100">
+              <Cropper
+                image={currentCrop.preview}
+                crop={crop}
+                zoom={zoom}
+                aspect={4 / 3}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={handleCropComplete}
+              />
+            </div>
+            <div className="px-6 py-4 space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-gray-600">Zoom</label>
+                <input
+                  type="range"
+                  min={1}
+                  max={3}
+                  step={0.1}
+                  value={zoom}
+                  onChange={(e) => setZoom(Number(e.target.value))}
+                  className="w-full"
+                />
+              </div>
+              <div className="flex flex-wrap justify-end gap-3">
+                <button
+                  onClick={handleSkipCrop}
+                  className="px-4 py-2 text-sm font-semibold text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50"
+                >
+                  Usar original
+                </button>
+                <button
+                  onClick={handleCropNext}
+                  className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+                >
+                  Aplicar recorte
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="max-w-4xl mx-auto px-4">
         {/* Header */}
         <div className="mb-8">
@@ -405,7 +638,7 @@ export default function EditHangarListingPage() {
                     {hangar.photos.map((photo) => (
                       <div key={photo.id} className="relative">
                         <img
-                          src={photo.url}
+                          src={photo.photoUrl || photo.url}
                           alt="Foto hangar"
                           className="w-32 h-32 object-cover rounded border-2 border-slate-300"
                         />
@@ -446,6 +679,25 @@ export default function EditHangarListingPage() {
                   onChange={handleNewPhotoChange}
                   className="mb-2"
                 />
+                {newPhotos.length > 0 && (
+                  <div className="text-sm text-slate-600">
+                    {newPhotos.length} foto{newPhotos.length !== 1 ? 's' : ''} selecionada{newPhotos.length !== 1 ? 's' : ''}
+                  </div>
+                )}
+                {uploading && newPhotos.length > 0 && (
+                  <div className="mt-3">
+                    <div className="flex items-center justify-between text-xs text-slate-600 mb-1">
+                      <span>Enviando fotos</span>
+                      <span>{uploadProgress}/{newPhotos.length}</span>
+                    </div>
+                    <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-blue-600 transition-all"
+                        style={{ width: `${Math.round((uploadProgress / newPhotos.length) * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
                 {newPhotoPreviews.length > 0 && (
                   <div className="flex gap-2 mt-2 flex-wrap">
                     {newPhotoPreviews.map((src, idx) => (
@@ -646,15 +898,35 @@ export default function EditHangarListingPage() {
 
               {/* Status Toggle */}
               <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                <label className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    checked={formData.isAvailable}
-                    onChange={(e) => setFormData({ ...formData, isAvailable: e.target.checked })}
-                    className="w-4 h-4"
-                  />
-                  <span className="text-sm text-slate-700 font-semibold">Hangar disponível para reservas</span>
-                </label>
+                <div className="flex flex-col gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Status do anúncio</label>
+                    <select
+                      value={formData.listingStatus}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          listingStatus: e.target.value,
+                          isAvailable: e.target.value === 'inactive' ? false : formData.isAvailable,
+                        })
+                      }
+                      className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
+                    >
+                      <option value="active">🟢 Ativo</option>
+                      <option value="inactive">⏸️ Pausado</option>
+                    </select>
+                  </div>
+                  <label className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={formData.isAvailable}
+                      onChange={(e) => setFormData({ ...formData, isAvailable: e.target.checked })}
+                      className="w-4 h-4"
+                      disabled={formData.listingStatus === 'inactive'}
+                    />
+                    <span className="text-sm text-slate-700 font-semibold">Hangar disponível para reservas</span>
+                  </label>
+                </div>
               </div>
             </div>
           </div>
@@ -668,22 +940,64 @@ export default function EditHangarListingPage() {
               <div className="mb-6">
                 <h3 className="text-sm font-bold text-slate-700 mb-3">Fotos Atuais ({photos.length})</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {photos.map((photo) => (
+                  {sortedPhotos.map((photo, index) => (
                     <div key={photo.id} className="relative group">
                       <img 
                         src={photo.photoUrl} 
                         alt={`Foto ${photo.displayOrder}`}
                         className="w-full h-48 object-cover rounded-lg border border-slate-300"
                       />
-                      <button
-                        type="button"
-                        onClick={() => handleDeletePhoto(photo.id)}
-                        className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        🗑️
-                      </button>
+                      {photo.isPrimary && (
+                        <span className="absolute top-2 left-2 bg-emerald-600 text-white text-xs font-bold px-2 py-1 rounded">
+                          Principal
+                        </span>
+                      )}
+                      <div className="absolute top-2 right-2 flex flex-col gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleMovePhoto(photo.id, 'up')}
+                          disabled={index === 0}
+                          className="bg-slate-800 text-white p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-40"
+                        >
+                          ↑
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleMovePhoto(photo.id, 'down')}
+                          disabled={index === sortedPhotos.length - 1}
+                          className="bg-slate-800 text-white p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-40"
+                        >
+                          ↓
+                        </button>
+                      </div>
+                      <div className="absolute bottom-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          type="button"
+                          onClick={() => handleSetPrimary(photo.id)}
+                          className="bg-emerald-600 text-white px-3 py-1 rounded text-xs font-bold"
+                        >
+                          Definir principal
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePhoto(photo.id)}
+                          className="bg-red-600 text-white px-3 py-1 rounded text-xs font-bold"
+                        >
+                          Remover
+                        </button>
+                      </div>
                     </div>
                   ))}
+                </div>
+                <div className="mt-4 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={handleSaveOrder}
+                    disabled={savingOrder}
+                    className="px-6 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 disabled:bg-slate-300"
+                  >
+                    {savingOrder ? 'Salvando ordem...' : 'Salvar ordem das fotos'}
+                  </button>
                 </div>
               </div>
             )}

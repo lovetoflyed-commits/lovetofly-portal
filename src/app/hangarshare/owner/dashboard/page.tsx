@@ -344,6 +344,18 @@ export default function AdvertiserDashboard() {
                 📋 Reservas
               </button>
               <button
+                onClick={() => router.push('/hangarshare/owner/waitlist')}
+                className="px-6 py-3 bg-slate-700 text-white font-bold rounded-lg hover:bg-slate-800"
+              >
+                ⏳ Lista de Espera
+              </button>
+              <button
+                onClick={() => router.push('/hangarshare/owner/leases')}
+                className="px-6 py-3 bg-teal-600 text-white font-bold rounded-lg hover:bg-teal-700"
+              >
+                📑 Contratos
+              </button>
+              <button
                 onClick={() => router.push('/hangarshare/owner/documents')}
                 className="px-6 py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700"
               >

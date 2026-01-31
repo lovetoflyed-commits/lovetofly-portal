@@ -19,7 +19,7 @@ export function FeatureFlagWrapper({ flag, children, fallback }: FeatureFlagWrap
   useEffect(() => {
     async function checkFlag() {
       try {
-        const response = await fetch(`/api/admin/feature-flags?flag=${flag}`);
+        const response = await fetch(`/api/admin/feature-flags/check?flag=${flag}`);
         if (response.ok) {
           const data = await response.json();
           setEnabled(data.enabled === true);

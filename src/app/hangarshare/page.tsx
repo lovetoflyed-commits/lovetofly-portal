@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
@@ -12,6 +12,11 @@ export default function HangarSharePage() {
   const [searchCity, setSearchCity] = useState('');
   const [minPrice, setMinPrice] = useState(0);
   const [maxPrice, setMaxPrice] = useState(20000);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const handleSearch = () => {
     const params = new URLSearchParams();
@@ -219,7 +224,7 @@ export default function HangarSharePage() {
             Cadastre seu hangar e comece a receber aeronaves visitantes. Processo 100% seguro e verificado.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
-            {user ? (
+            {isMounted && user ? (
               <button
                 onClick={() => router.push('/hangarshare/owner/register')}
                 className="px-8 py-4 bg-white text-emerald-600 font-bold rounded-lg shadow-lg hover:bg-emerald-50 text-lg"

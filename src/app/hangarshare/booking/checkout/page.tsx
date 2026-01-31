@@ -3,7 +3,7 @@
 // Disable prerendering for this page since it depends on URL query parameters
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useRef, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -86,9 +86,12 @@ function CheckoutContent() {
   const [clientSecret, setClientSecret] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const initializedRef = useRef(false);
 
   useEffect(() => {
     const initializeCheckout = async () => {
+      if (initializedRef.current) return;
+      initializedRef.current = true;
       if (!publishableKey) {
         setError('Stripe publishable key ausente. Adicione NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ao .env.local e reinicie o servidor.');
         setLoading(false);
@@ -132,6 +135,9 @@ function CheckoutContent() {
 
         if (!response.ok) {
           const data = await response.json();
+          if (response.status === 409) {
+            throw new Error('Datas indisponíveis para este hangar. Selecione outro período.');
+          }
           throw new Error(data.error || 'Erro ao inicializar checkout');
         }
 
@@ -171,7 +177,7 @@ function CheckoutContent() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="bg-white rounded-xl shadow-lg p-8 max-w-md text-center">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">Erro</h2>
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Aviso</h2>
           <p className="text-slate-600 mb-6">{error || 'Não foi possível carregar os dados da reserva'}</p>
           <button
             onClick={() => router.back()}

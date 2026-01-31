@@ -73,6 +73,8 @@ export default function HangarShareAdminPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'owners' | 'listings' | 'bookings'>('overview');
   const [selectedOwnerId, setSelectedOwnerId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [listingSearch, setListingSearch] = useState('');
+  const [listingStatus, setListingStatus] = useState('all');
   const hasFetchedRef = useRef(false);
   const inFlightRef = useRef(false);
 
@@ -246,12 +248,6 @@ export default function HangarShareAdminPage() {
               <h3 className="font-bold text-blue-900 mb-4">Ações Rápidas</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <Link
-                  href="/admin/verifications?status=pending"
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition font-semibold"
-                >
-                  ✓ Verificações Pendentes
-                </Link>
-                <Link
                   href="/admin/hangarshare/listings/pending"
                   className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition font-semibold"
                 >
@@ -269,6 +265,12 @@ export default function HangarShareAdminPage() {
                 >
                   📊 Relatórios
                 </Link>
+                <Link
+                  href="/admin/hangarshare/owner-documents"
+                  className="px-4 py-2 bg-slate-700 text-white rounded hover:bg-slate-800 transition font-semibold"
+                >
+                  📄 Documentos de Proprietários
+                </Link>
               </div>
             </div>
           </div>
@@ -281,7 +283,7 @@ export default function HangarShareAdminPage() {
               <h2 className="font-bold text-blue-900">Proprietários Aguardando Verificação</h2>
               <p className="text-sm text-blue-700 mt-1">Aprove ou rejeite novos anunciantes</p>
             </div>
-            {owners.filter(o => !o.is_verified).length === 0 ? (
+            {owners.filter(o => o.verification_status === 'pending').length === 0 ? (
               <div className="p-8 text-center text-slate-500">
                 <p className="font-semibold text-green-700">✓ Nenhuma verificação pendente</p>
                 <p className="text-sm mt-1">Todos os proprietários foram verificados</p>
@@ -300,7 +302,7 @@ export default function HangarShareAdminPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
-                    {owners.filter(o => !o.is_verified).map((owner) => (
+                    {owners.filter(o => o.verification_status === 'pending').map((owner) => (
                       <tr 
                         key={owner.id} 
                         className={`transition ${
@@ -356,10 +358,11 @@ export default function HangarShareAdminPage() {
                       <td className="px-6 py-4 text-sm font-mono text-slate-600">{owner.cnpj || '—'}</td>
                       <td className="px-6 py-4 text-sm">
                         <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                          owner.verification_status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
                           owner.is_verified ? 'bg-green-100 text-green-700' :
-                          'bg-yellow-100 text-yellow-700'
+                          'bg-slate-100 text-slate-500'
                         }`}>
-                          {owner.is_verified ? 'Verificado' : 'Pendente'}
+                          {owner.verification_status === 'pending' ? 'Pendente' : owner.is_verified ? 'Verificado' : 'Sem status'}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm">
@@ -384,12 +387,33 @@ export default function HangarShareAdminPage() {
         {/* Listings Tab */}
         {activeTab === 'listings' && (
           <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
+              <div className="flex flex-col md:flex-row gap-3">
+                <input
+                  value={listingSearch}
+                  onChange={(e) => setListingSearch(e.target.value)}
+                  placeholder="Buscar por título, proprietário, localização, ICAO ou ID"
+                  className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm"
+                />
+                <select
+                  value={listingStatus}
+                  onChange={(e) => setListingStatus(e.target.value)}
+                  className="w-full md:w-48 border border-slate-200 rounded-lg px-3 py-2 text-sm"
+                >
+                  <option value="all">Todos os status</option>
+                  <option value="active">Ativo</option>
+                  <option value="pending">Pendente</option>
+                  <option value="rejected">Rejeitado</option>
+                </select>
+              </div>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-slate-50 border-b border-slate-200">
                   <tr>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase">Título</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase">Proprietário</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase">ICAO</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase">Localização</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase">Preço/Mês</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase">Status</th>
@@ -397,10 +421,29 @@ export default function HangarShareAdminPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
-                  {listings.map((listing) => (
+                  {listings
+                    .filter((listing) => {
+                      const statusMatch = listingStatus === 'all' || listing.status === listingStatus;
+                      if (!statusMatch) return false;
+
+                      if (!listingSearch.trim()) return true;
+                      const haystack = [
+                        listing.icao_code,
+                        listing.title,
+                        listing.company_name,
+                        listing.location_city,
+                        listing.id,
+                      ]
+                        .filter(Boolean)
+                        .join(' ')
+                        .toLowerCase();
+                      return haystack.includes(listingSearch.trim().toLowerCase());
+                    })
+                    .map((listing) => (
                     <tr key={listing.id} className="hover:bg-slate-50 transition">
                       <td className="px-6 py-4 text-sm font-medium">{listing.title}</td>
                       <td className="px-6 py-4 text-sm text-slate-600">{listing.company_name}</td>
+                      <td className="px-6 py-4 text-sm text-slate-600">{listing.icao_code || '—'}</td>
                       <td className="px-6 py-4 text-sm text-slate-600">{listing.location_city}</td>
                       <td className="px-6 py-4 text-sm font-semibold">
                         R$ {listing.monthly_price?.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) || '—'}

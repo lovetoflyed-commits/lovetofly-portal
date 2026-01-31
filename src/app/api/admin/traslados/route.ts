@@ -10,9 +10,30 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') || 'new';
+    const query = searchParams.get('q')?.trim();
     const page = Number(searchParams.get('page') || '1');
     const limit = Number(searchParams.get('limit') || '20');
     const offset = (page - 1) * limit;
+
+    const whereClauses = ['tr.status = $1'];
+    const values: Array<string | number> = [status];
+    let paramIndex = 2;
+
+    if (query) {
+      values.push(`%${query}%`);
+      whereClauses.push(
+        `(tr.aircraft_model ILIKE $${paramIndex}
+          OR tr.aircraft_prefix ILIKE $${paramIndex}
+          OR tr.origin_city ILIKE $${paramIndex}
+          OR tr.destination_city ILIKE $${paramIndex}
+          OR tr.contact_name ILIKE $${paramIndex}
+          OR tr.contact_email ILIKE $${paramIndex}
+          OR CAST(tr.id as text) ILIKE $${paramIndex})`
+      );
+      paramIndex += 1;
+    }
+
+    const whereSql = whereClauses.join(' AND ');
 
     const result = await pool.query(
       `SELECT 
@@ -41,15 +62,15 @@ export async function GET(request: NextRequest) {
         ORDER BY created_at DESC
         LIMIT 1
       ) fee ON true
-      WHERE tr.status = $1
+      WHERE ${whereSql}
       ORDER BY tr.created_at DESC
-      LIMIT $2 OFFSET $3`,
-      [status, limit, offset]
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+      [...values, limit, offset]
     );
 
     const countResult = await pool.query(
-      'SELECT COUNT(*) FROM traslados_requests WHERE status = $1',
-      [status]
+      `SELECT COUNT(*) FROM traslados_requests tr WHERE ${whereSql}`,
+      values
     );
 
     return NextResponse.json({

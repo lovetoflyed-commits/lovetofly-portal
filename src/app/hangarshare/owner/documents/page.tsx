@@ -7,9 +7,9 @@ import { useAuth } from '@/context/AuthContext';
 interface Document {
   id: number;
   document_type: string;
-  file_name: string;
-  verification_status: string;
-  verification_notes: string | null;
+  document_name: string;
+  upload_status: string;
+  rejection_reason: string | null;
   uploaded_at: string;
   verified_at: string | null;
   file_path: string;
@@ -131,7 +131,8 @@ export default function DocumentsPage() {
   const getStatusBadge = (status: string) => {
     const badges: Record<string, { bg: string; text: string; label: string }> = {
       pending: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: '⏳ Aguardando Análise' },
-      approved: { bg: 'bg-green-100', text: 'text-green-800', label: '✓ Aprovado' },
+      uploaded: { bg: 'bg-blue-100', text: 'text-blue-800', label: '📤 Enviado' },
+      verified: { bg: 'bg-green-100', text: 'text-green-800', label: '✓ Verificado' },
       rejected: { bg: 'bg-red-100', text: 'text-red-800', label: '✗ Rejeitado' },
     };
     const badge = badges[status] || badges.pending;
@@ -305,10 +306,10 @@ export default function DocumentsPage() {
                         {getDocumentLabel(doc.document_type)}
                       </h3>
                       <p className="text-sm text-slate-600 mt-1">
-                        Arquivo: {doc.file_name}
+                        Arquivo: {doc.document_name}
                       </p>
                     </div>
-                    {getStatusBadge(doc.verification_status)}
+                    {getStatusBadge(doc.upload_status)}
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 text-sm mb-4">
@@ -328,10 +329,10 @@ export default function DocumentsPage() {
                     )}
                   </div>
 
-                  {doc.verification_notes && (
+                  {doc.rejection_reason && (
                     <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                       <p className="text-sm font-semibold text-yellow-800 mb-1">Observações do Admin:</p>
-                      <p className="text-sm text-yellow-700">{doc.verification_notes}</p>
+                      <p className="text-sm text-yellow-700">{doc.rejection_reason}</p>
                     </div>
                   )}
 

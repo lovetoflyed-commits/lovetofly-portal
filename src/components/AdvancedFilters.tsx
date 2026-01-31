@@ -15,6 +15,7 @@ interface SearchFilters {
   hasBathroom?: boolean;
   hasSecurity?: boolean;
   acceptsOnlinePayment?: boolean;
+  verifiedOnly?: boolean;
   sortBy?: string;
 }
 
@@ -230,6 +231,22 @@ export default function AdvancedFilters({ onApplyFilters, initialFilters = {} }:
                   className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
                 />
                 <span className="text-sm text-slate-700">💳 Pagamento Online</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Verification */}
+          <div className="mt-6 pt-6 border-t border-slate-200">
+            <h4 className="font-bold text-slate-700 mb-4">✅ Verificação</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={filters.verifiedOnly || false}
+                  onChange={(e) => handleFilterChange('verifiedOnly', e.target.checked)}
+                  className="w-4 h-4 text-emerald-600 rounded focus:ring-2 focus:ring-emerald-500"
+                />
+                <span className="text-sm text-slate-700">✅ Apenas verificados</span>
               </label>
             </div>
           </div>

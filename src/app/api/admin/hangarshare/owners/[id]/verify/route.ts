@@ -9,7 +9,7 @@ export async function POST(
 
   try {
     const result = await pool.query(
-      'UPDATE hangar_owners SET is_verified = true WHERE id = $1 RETURNING id, company_name',
+      "UPDATE hangar_owners SET is_verified = true, verification_status = 'verified' WHERE id = $1 RETURNING id, company_name",
       [id]
     );
 

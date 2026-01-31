@@ -6,6 +6,9 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
+    const searchQuery = searchParams.get('q') || searchParams.get('search');
+    const fromDate = searchParams.get('from');
+    const toDate = searchParams.get('to');
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
 
@@ -17,6 +20,25 @@ export async function GET(request: Request) {
     if (category) {
       whereClause += ` AND t.category = $${params.length + 1}`;
       params.push(category);
+    }
+
+    if (searchQuery) {
+      whereClause += ` AND (
+        t.title ILIKE $${params.length + 1}
+        OR t.content ILIKE $${params.length + 1}
+        OR CONCAT(u.first_name, ' ', u.last_name) ILIKE $${params.length + 1}
+      )`;
+      params.push(`%${searchQuery}%`);
+    }
+
+    if (fromDate) {
+      whereClause += ` AND t.created_at >= $${params.length + 1}`;
+      params.push(`${fromDate} 00:00:00`);
+    }
+
+    if (toDate) {
+      whereClause += ` AND t.created_at <= $${params.length + 1}`;
+      params.push(`${toDate} 23:59:59`);
     }
 
     // Combined query with window function for total count

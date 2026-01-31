@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import { useAuth } from '@/context/AuthContext';
@@ -20,6 +21,7 @@ interface Listing {
 }
 
 export default function ClassifiedsPreview() {
+  const router = useRouter();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'all' | 'aircraft' | 'parts' | 'avionics'>('all');
   const [listings, setListings] = useState<{ aircraft: Listing[]; parts: Listing[]; avionics: Listing[] }>({
@@ -28,6 +30,10 @@ export default function ClassifiedsPreview() {
     avionics: []
   });
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    router.replace('/classifieds/aircraft');
+  }, [router]);
 
   useEffect(() => {
     const fetchListings = async () => {

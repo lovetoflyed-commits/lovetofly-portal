@@ -1,50 +1,101 @@
-// Page: Financial Dashboard V2
-// File: src/app/admin/hangarshare/v2/financial/page.tsx
-// Purpose: Complete financial analytics dashboard with all metrics
-
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { useLanguage } from '@/context/LanguageContext';
 import { FeatureFlagWrapper } from '@/components/hangarshare-v2/FeatureFlagWrapper';
-import { MetricCard, MetricsGrid } from '@/components/hangarshare-v2/MetricCard';
 import { RevenueChart } from '@/components/hangarshare-v2/RevenueChart';
 import { CommissionChart } from '@/components/hangarshare-v2/CommissionChart';
-import { RevenueByAirportChart } from '@/components/hangarshare-v2/RevenueByAirportChart';
 import { PayoutStatusChart } from '@/components/hangarshare-v2/PayoutStatusChart';
+import { RevenueByAirportChart } from '@/components/hangarshare-v2/RevenueByAirportChart';
+import { RevenueForecastCard } from '@/components/hangarshare-v2/RevenueForecastCard';
+import { ComparisonMetricsCard } from '@/components/hangarshare-v2/ComparisonMetricsCard';
 
-interface FinancialData {
-  totalRevenue: number;
-  monthlyRevenue: Array<{ month: string; revenue: number; target: number; growth: number }>;
-  commissionMetrics: { collected: number; pending: number; rate: number };
-  payoutMetrics: { pending: number; processed: number; failed: number; totalProcessed: number };
-  revenueByAirport: Array<{ airport: string; revenue: number; bookings: number; occupancy: number }>;
-  topOwners: Array<{ id: string; name: string; revenue: number; bookings: number; commission: number }>;
-  payoutHistory: Array<{ id: string; ownerName: string; amount: number; date: string; status: string }>;
-  revenueMetrics: { trend: number; forecast: number; status: string };
+interface FinancialStatsResponse {
+  success: boolean;
+  data: {
+    totalRevenue: number;
+    monthlyRevenue: Array<{
+      month: string;
+      revenue: number;
+      target: number;
+      growth: number;
+    }>;
+    commissionMetrics: {
+      collected: number;
+      pending: number;
+      rate: number;
+    };
+    payoutMetrics: {
+      pending: number;
+      processed: number;
+      failed: number;
+      totalProcessed: number;
+    };
+    revenueByAirport: Array<{
+      airport: string;
+      revenue: number;
+      bookings: number;
+      occupancy: number;
+    }>;
+    topOwners: Array<{
+      id: string;
+      name: string;
+      revenue: number;
+      bookings: number;
+      commission: number;
+    }>;
+    payoutHistory: Array<{
+      id: string;
+      ownerName: string;
+      amount: number;
+      date: string;
+      status: 'processed' | 'pending' | 'failed';
+    }>;
+    revenueMetrics: {
+      trend: number;
+      forecast: number;
+      status: string;
+    };
+  };
+  meta: {
+    responseTime: number;
+    generatedAt: string;
+  };
 }
 
-interface DashboardState {
+interface FinancialState {
   loading: boolean;
   error: string | null;
-  data: FinancialData | null;
+  data: FinancialStatsResponse['data'] | null;
   lastRefresh: string;
 }
 
 function FallbackDashboard() {
   return (
     <div className="p-8 bg-gray-50">
-      <h1 className="text-2xl font-bold text-gray-900 mb-4">Financial Dashboard</h1>
-      <p className="text-gray-600">This feature is not yet available. Please enable the feature flag to access it.</p>
+      <h1 className="text-2xl font-bold text-gray-900 mb-4">Financeiro HangarShare V2</h1>
+      <p className="text-gray-600">Este painel ainda não está disponível. Use o painel clássico para finanças.</p>
+      <div className="mt-6">
+        <Link
+          href="/admin/finance"
+          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          Ir para finanças clássicas
+        </Link>
+      </div>
     </div>
   );
 }
 
 export default function FinancialDashboardPage() {
+  const router = useRouter();
   const { user } = useAuth();
-  const { t } = useLanguage();
-  const [state, setState] = useState<DashboardState>({
+  const hasFetchedRef = useRef(false);
+  const inFlightRef = useRef(false);
+
+  const [state, setState] = useState<FinancialState>({
     loading: true,
     error: null,
     data: null,
@@ -54,14 +105,11 @@ export default function FinancialDashboardPage() {
   const fetchData = async () => {
     try {
       setState((prev) => ({ ...prev, loading: true, error: null }));
+      const response = await fetch('/api/admin/hangarshare/v2/financial-stats');
+      if (!response.ok) throw new Error('Falha ao carregar métricas financeiras');
 
-      const response = await fetch('/api/admin/hangarshare/v2/financial-stats', {
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      if (!response.ok) throw new Error('Failed to fetch financial data');
-
-      const result = await response.json();
+      const result: FinancialStatsResponse = await response.json();
+      if (!result.success) throw new Error('Resposta inválida do servidor');
 
       setState({
         loading: false,
@@ -70,193 +118,193 @@ export default function FinancialDashboardPage() {
         lastRefresh: new Date().toLocaleTimeString(),
       });
     } catch (error) {
-      console.error('Financial dashboard error:', error);
       setState((prev) => ({
         ...prev,
         loading: false,
-        error: error instanceof Error ? error.message : 'An error occurred',
+        error: error instanceof Error ? error.message : 'Erro ao carregar dados',
       }));
     }
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (!user || (user.role !== 'master' && user.role !== 'admin' && user.email !== 'lovetofly.ed@gmail.com')) {
+      router.push('/');
+      return;
+    }
 
-  if (!user) return <FallbackDashboard />;
+    if (hasFetchedRef.current || inFlightRef.current) {
+      return;
+    }
+
+    inFlightRef.current = true;
+    fetchData().finally(() => {
+      inFlightRef.current = false;
+      hasFetchedRef.current = true;
+    });
+  }, [user, router]);
 
   return (
-    <FeatureFlagWrapper
-      flag="hangarshare_financial_dashboard"
-      fallback={<FallbackDashboard />}
-    >
+    <FeatureFlagWrapper flag="hangarshare_new_dashboard" fallback={<FallbackDashboard />}>
       <div className="min-h-screen bg-gray-50 p-8">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Financial Dashboard</h1>
-            <p className="text-sm text-gray-600 mt-1">
-              Last updated: {state.lastRefresh}
-            </p>
+            <h1 className="text-3xl font-bold text-gray-900">Financeiro HangarShare V2</h1>
+            <p className="text-sm text-gray-600 mt-1">Última atualização: {state.lastRefresh}</p>
           </div>
-          <button
-            onClick={fetchData}
-            disabled={state.loading}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-          >
-            {state.loading ? 'Refreshing...' : 'Refresh'}
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={fetchData}
+              disabled={state.loading}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            >
+              {state.loading ? 'Atualizando...' : 'Atualizar'}
+            </button>
+            <Link
+              href="/admin/finance"
+              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100"
+            >
+              Finanças clássicas
+            </Link>
+          </div>
         </div>
 
-        {/* Error State */}
         {state.error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
-            <p className="font-semibold">Error loading data</p>
+            <p className="font-semibold">Erro ao carregar dados</p>
             <p className="text-sm">{state.error}</p>
           </div>
         )}
 
-        {/* Loading State */}
         {state.loading && !state.data && (
           <div className="flex items-center justify-center py-12">
-            <div className="text-gray-600">Loading financial data...</div>
+            <div className="text-gray-600">Carregando métricas financeiras...</div>
           </div>
         )}
 
-        {/* Main Content */}
         {state.data && (
-          <>
-            {/* Hero Metrics Grid */}
-            <div className="mb-8">
-              <MetricsGrid
-                metrics={[
-                  {
-                    title: 'Total Revenue',
-                    value: state.data.totalRevenue,
-                    icon: 'dollar',
-                    status: state.data.revenueMetrics.status === 'healthy' ? 'healthy' : 'warning',
-                    unit: 'USD',
-                  },
-                  {
-                    title: 'Commission Collected',
-                    value: state.data.commissionMetrics.collected,
-                    icon: 'dollar',
-                    status: 'healthy',
-                  },
-                  {
-                    title: 'Pending Payouts',
-                    value: state.data.payoutMetrics.pending,
-                    icon: 'clock',
-                    status: state.data.payoutMetrics.pending > 0 ? 'warning' : 'healthy',
-                  },
-                  {
-                    title: 'Growth Rate',
-                    value: `${state.data.revenueMetrics.trend}%`,
-                    icon: 'trending',
-                    status: state.data.revenueMetrics.trend > 0 ? 'healthy' : 'critical',
-                  },
-                ]}
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+              <ComparisonMetricsCard
+                label="Receita Total"
+                current={state.data.totalRevenue}
+                formatAs="currency"
+                size="lg"
+              />
+              <ComparisonMetricsCard
+                label="Comissões Coletadas"
+                current={state.data.commissionMetrics.collected}
+                formatAs="currency"
+                size="lg"
+              />
+              <ComparisonMetricsCard
+                label="Payouts Processados"
+                current={state.data.payoutMetrics.processed}
+                formatAs="currency"
+                size="lg"
+              />
+              <ComparisonMetricsCard
+                label="Payouts Pendentes"
+                current={state.data.payoutMetrics.pending}
+                formatAs="currency"
+                size="lg"
               />
             </div>
 
-            {/* Financial Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-              {/* Revenue Chart */}
-              <div>
-                <RevenueChart
-                  data={state.data.monthlyRevenue}
-                  showLegend={true}
-                />
-              </div>
-
-              {/* Commission Chart */}
-              <div>
-                <CommissionChart
-                  collected={state.data.commissionMetrics.collected}
-                  pending={state.data.commissionMetrics.pending}
-                  rate={state.data.commissionMetrics.rate}
-                />
-              </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <RevenueChart
+                data={[...state.data.monthlyRevenue].reverse().map((row) => ({
+                  month: row.month,
+                  revenue: row.revenue,
+                  target: row.target,
+                }))}
+              />
+              <RevenueForecastCard
+                projectedMonthlyRevenue={state.data.monthlyRevenue[0]?.revenue || 0}
+                projectedAnnualRevenue={state.data.revenueMetrics.forecast}
+                confidence={state.data.revenueMetrics.trend > 0 ? 0.8 : 0.6}
+                currentMonthlyRevenue={state.data.monthlyRevenue[0]?.revenue}
+              />
             </div>
 
-            {/* Revenue by Airport & Payout Status */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-              <div className="lg:col-span-2">
-                <RevenueByAirportChart data={state.data.revenueByAirport} />
-              </div>
-              <div>
-                <PayoutStatusChart
-                  pending={state.data.payoutMetrics.pending}
-                  processed={state.data.payoutMetrics.processed}
-                  failed={state.data.payoutMetrics.failed}
-                />
-              </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <CommissionChart
+                collected={state.data.commissionMetrics.collected}
+                pending={state.data.commissionMetrics.pending}
+                rate={state.data.commissionMetrics.rate}
+              />
+              <PayoutStatusChart
+                pending={state.data.payoutMetrics.pending}
+                processed={state.data.payoutMetrics.processed}
+                failed={state.data.payoutMetrics.failed}
+              />
             </div>
 
-            {/* Top Owners Table */}
-            <div className="mb-8 bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Owners by Revenue</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Owner</th>
-                      <th className="text-right py-3 px-4 font-medium text-gray-600">Revenue</th>
-                      <th className="text-right py-3 px-4 font-medium text-gray-600">Bookings</th>
-                      <th className="text-right py-3 px-4 font-medium text-gray-600">Commission</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {state.data.topOwners.map((owner) => (
-                      <tr key={owner.id} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-3 px-4 font-medium text-gray-900">{owner.name}</td>
-                        <td className="text-right py-3 px-4 text-gray-900">
-                          ${owner.revenue.toLocaleString()}
-                        </td>
-                        <td className="text-right py-3 px-4 text-gray-600">{owner.bookings}</td>
-                        <td className="text-right py-3 px-4 text-gray-900">
-                          ${owner.commission.toLocaleString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <RevenueByAirportChart data={state.data.revenueByAirport} />
 
-            {/* Payout History */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Payouts</h3>
-              <div className="space-y-3">
-                {state.data.payoutHistory.length > 0 ? (
-                  state.data.payoutHistory.map((payout) => (
-                    <div key={payout.id} className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                      <div>
-                        <p className="font-medium text-gray-900">{payout.ownerName}</p>
-                        <p className="text-xs text-gray-600">{payout.date}</p>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <p className="font-semibold text-gray-900">${payout.amount.toLocaleString()}</p>
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                            payout.status === 'processed'
-                              ? 'bg-green-200 text-green-800'
-                              : payout.status === 'pending'
-                              ? 'bg-yellow-200 text-yellow-800'
-                              : 'bg-red-200 text-red-800'
-                          }`}
-                        >
-                          {payout.status.charAt(0).toUpperCase() + payout.status.slice(1)}
-                        </span>
-                      </div>
-                    </div>
-                  ))
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Proprietários</h3>
+                {state.data.topOwners.length === 0 ? (
+                  <p className="text-gray-600">Nenhum proprietário encontrado</p>
                 ) : (
-                  <p className="text-gray-600">No payout history available</p>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-gray-200">
+                          <th className="text-left py-2 px-3 font-medium text-gray-600">Proprietário</th>
+                          <th className="text-right py-2 px-3 font-medium text-gray-600">Receita</th>
+                          <th className="text-right py-2 px-3 font-medium text-gray-600">Reservas</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {state.data.topOwners.map((owner) => (
+                          <tr key={owner.id} className="border-b border-gray-100">
+                            <td className="py-2 px-3 text-gray-900 font-medium">{owner.name}</td>
+                            <td className="py-2 px-3 text-right text-gray-700">
+                              {owner.revenue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                            </td>
+                            <td className="py-2 px-3 text-right text-gray-600">{owner.bookings}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Histórico de Payouts</h3>
+                {state.data.payoutHistory.length === 0 ? (
+                  <p className="text-gray-600">Nenhum payout registrado</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-gray-200">
+                          <th className="text-left py-2 px-3 font-medium text-gray-600">Proprietário</th>
+                          <th className="text-right py-2 px-3 font-medium text-gray-600">Valor</th>
+                          <th className="text-left py-2 px-3 font-medium text-gray-600">Data</th>
+                          <th className="text-left py-2 px-3 font-medium text-gray-600">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {state.data.payoutHistory.map((payout) => (
+                          <tr key={payout.id} className="border-b border-gray-100">
+                            <td className="py-2 px-3 text-gray-900 font-medium">{payout.ownerName}</td>
+                            <td className="py-2 px-3 text-right text-gray-700">
+                              {payout.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                            </td>
+                            <td className="py-2 px-3 text-gray-600">{payout.date}</td>
+                            <td className="py-2 px-3 text-gray-600">{payout.status}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
               </div>
             </div>
-          </>
+          </div>
         )}
       </div>
     </FeatureFlagWrapper>

@@ -9,8 +9,11 @@ export async function POST(
 
   try {
     const result = await pool.query(
-      'UPDATE hangar_listings SET status = $1 WHERE id = $2 RETURNING id, hangar_number',
-      ['active', id]
+      `UPDATE hangar_listings
+       SET status = 'active', approval_status = 'approved'
+       WHERE id = $1
+       RETURNING id, hangar_number`,
+      [id]
     );
 
     if (result.rows.length === 0) {

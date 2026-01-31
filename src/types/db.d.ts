@@ -110,4 +110,118 @@ declare global {
     created_at: string;
     updated_at: string;
   }
+
+  type HangarOwnerDocumentStatus = 'pending' | 'uploaded' | 'verified' | 'rejected';
+
+  interface HangarOwnerDocument {
+    id: number;
+    owner_id: number;
+    listing_id: number | null;
+    document_type: string;
+    document_name: string;
+    file_path: string;
+    file_size: number | null;
+    mime_type: string | null;
+    upload_status: HangarOwnerDocumentStatus;
+    uploaded_at: string;
+    verified_by: number | null;
+    verified_at: string | null;
+    rejection_reason: string | null;
+    expires_at: string | null;
+    notes: string | null;
+    created_at: string;
+    updated_at: string;
+  }
+
+  type HangarWaitlistStatus = 'pending' | 'notified' | 'accepted' | 'cancelled';
+
+  interface HangarWaitlistEntry {
+    id: number;
+    listing_id: number;
+    user_id: number;
+    status: HangarWaitlistStatus;
+    desired_start_date: string | null;
+    desired_end_date: string | null;
+    created_at: string;
+    updated_at: string;
+  }
+
+  interface HangarLeaseTemplate {
+    id: number;
+    name: string;
+    version: string;
+    content_url: string;
+    created_at: string;
+  }
+
+  type HangarLeaseStatus = 'draft' | 'active' | 'expired' | 'cancelled';
+
+  interface HangarLease {
+    id: number;
+    listing_id: number;
+    owner_id: number;
+    lease_template_id: number | null;
+    status: HangarLeaseStatus;
+    start_date: string | null;
+    end_date: string | null;
+    signed_at: string | null;
+    created_at: string;
+    updated_at: string;
+  }
+
+  interface HangarUtilizationDaily {
+    id: number;
+    listing_id: number;
+    date: string;
+    occupancy_rate: string;
+    revenue: string;
+    created_at: string;
+  }
+
+  type ClassifiedsTransactionStatus = 'requires_payment' | 'paid' | 'released' | 'refunded' | 'cancelled';
+  type ClassifiedsEscrowStatus = 'holding' | 'released' | 'refunded';
+
+  interface ClassifiedsTransaction {
+    id: number;
+    listing_type: 'aircraft' | 'parts' | 'avionics';
+    listing_id: number;
+    buyer_user_id: number;
+    seller_user_id: number;
+    amount_cents: number;
+    currency: string;
+    platform_fee_cents: number | null;
+    status: ClassifiedsTransactionStatus;
+    escrow_status: ClassifiedsEscrowStatus;
+    stripe_payment_intent_id: string | null;
+    stripe_charge_id: string | null;
+    created_at: string;
+    updated_at: string;
+  }
+
+  interface HangarReview {
+    id: number;
+    listing_id: number;
+    reviewer_user_id: number;
+    owner_user_id: number;
+    booking_id: number | null;
+    rating: number;
+    comment: string | null;
+    is_verified: boolean;
+    created_at: string;
+    updated_at: string;
+  }
+
+  type MarketingLeadStatus = 'new' | 'contacted' | 'qualified' | 'converted' | 'disqualified';
+
+  interface MarketingLead {
+    id: number;
+    name: string;
+    email: string;
+    phone: string | null;
+    source: string | null;
+    status: MarketingLeadStatus;
+    campaign_id: number | null;
+    notes: string | null;
+    created_at: string;
+  }
 }

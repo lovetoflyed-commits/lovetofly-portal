@@ -13,6 +13,7 @@ interface PendingListing {
   daily_rate: number;
   monthly_rate?: number;
   status: string;
+  approval_status?: string;
   company_name: string;
   created_at: string;
 }
@@ -21,6 +22,7 @@ export default function PendingListingsPage() {
   const [listings, setListings] = useState<PendingListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [approving, setApproving] = useState<string | null>(null);
+  const [approvingAll, setApprovingAll] = useState(false);
 
   useEffect(() => {
     fetchPendingListings();
@@ -31,7 +33,14 @@ export default function PendingListingsPage() {
       const response = await fetch('/api/admin/hangarshare/listings');
       const data = await response.json();
       // Filter listings that are pending
-      setListings(data.filter((l: PendingListing) => l.status === 'pending'));
+      setListings(
+        data.filter(
+          (l: PendingListing) =>
+            l.status === 'pending' ||
+            l.approval_status === 'pending' ||
+            l.approval_status === 'pending_approval'
+        )
+      );
       setLoading(false);
     } catch (error) {
       console.error('Error fetching listings:', error);
@@ -71,6 +80,23 @@ export default function PendingListingsPage() {
     }
   };
 
+  const handleApproveAll = async () => {
+    if (!confirm('Aprovar todos os anúncios pendentes?')) return;
+    setApprovingAll(true);
+    try {
+      const response = await fetch('/api/admin/hangarshare/listings/approve-all', {
+        method: 'POST',
+      });
+      if (response.ok) {
+        setListings([]);
+      }
+    } catch (error) {
+      console.error('Error approving all listings:', error);
+    } finally {
+      setApprovingAll(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-6 bg-white min-h-screen">
@@ -87,6 +113,17 @@ export default function PendingListingsPage() {
         </Link>
         <h1 className="text-3xl font-bold text-slate-900 mt-3">Anúncios Pendentes</h1>
         <p className="text-slate-600 mt-1">Aprove ou rejeite novos hangares para aluguel</p>
+        {listings.length > 0 && (
+          <div className="mt-4">
+            <button
+              onClick={handleApproveAll}
+              disabled={approvingAll}
+              className="px-4 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 disabled:bg-slate-400"
+            >
+              {approvingAll ? 'Aprovando tudo...' : `Aprovar todos (${listings.length})`}
+            </button>
+          </div>
+        )}
       </div>
 
       {listings.length === 0 ? (

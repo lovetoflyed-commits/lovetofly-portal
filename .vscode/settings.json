@@ -75,5 +75,6 @@
         "*": true,
         "plaintext": false,
         "markdown": false
-    }
+    },
+    "python.analysis.typeCheckingMode": "basic"
 }

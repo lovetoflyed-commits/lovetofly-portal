@@ -1,120 +1,22 @@
--- Seed Companies for Job Postings
--- Creates diverse aviation companies for testing recruitment features
+-- Seed Companies Table (minimal schema)
 
-INSERT INTO companies (
-  name, industry, description, website, logo_url, 
-  location, country, size, founded_year, currency,
-  benefits, culture, verified, created_at, updated_at
-) VALUES
-('LATAM Airlines Group', 'Commercial Aviation', 
- 'Maior grupo de aviação da América Latina, operando voos domésticos e internacionais com foco em excelência operacional e segurança.',
- 'https://www.latamairlinesgroup.net', 
- 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/LATAM-Logo.svg/320px-LATAM-Logo.svg.png',
- 'São Paulo, SP', 'Brasil', '10000+', 1976, 'BRL',
- ARRAY['Plano de Saúde Premium', 'Vale Alimentação', 'Previdência Privada', 'Descontos em Passagens', 'Treinamento Constante'],
- 'Cultura de segurança em primeiro lugar, com foco em desenvolvimento profissional e trabalho em equipe.',
- true, NOW() - INTERVAL '2 years', NOW()),
+INSERT INTO companies (name, created_at)
+SELECT c.name, c.created_at
+FROM (
+  VALUES
+    ('LATAM Airlines', NOW() - INTERVAL '3 years'),
+    ('Azul Linhas Aéreas', NOW() - INTERVAL '2 years'),
+    ('GOL Linhas Aéreas', NOW() - INTERVAL '4 years'),
+    ('Embraer', NOW() - INTERVAL '5 years'),
+    ('TAM Aviação Executiva', NOW() - INTERVAL '1 year'),
+    ('Lider Aviação', NOW() - INTERVAL '18 months'),
+    ('Escola de Aviação EAN', NOW() - INTERVAL '2 years'),
+    ('Aeroclube de São Paulo', NOW() - INTERVAL '6 years'),
+    ('MRO Brasil', NOW() - INTERVAL '3 years'),
+    ('Helicópteros do Brasil', NOW() - INTERVAL '2 years'),
+    ('ABSA Cargo', NOW() - INTERVAL '4 years'),
+    ('Skylab Aviation', NOW() - INTERVAL '8 months')
+) AS c(name, created_at)
+WHERE NOT EXISTS (SELECT 1 FROM companies WHERE name = c.name);
 
-('Azul Linhas Aéreas', 'Commercial Aviation',
- 'Companhia aérea brasileira conhecida por inovação, atendimento de qualidade e rede de destinos abrangente.',
- 'https://www.voeazul.com.br',
- 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/Azul_Brazilian_Airlines_logo.svg/320px-Azul_Brazilian_Airlines_logo.svg.png',
- 'Barueri, SP', 'Brasil', '5000-10000', 2008, 'BRL',
- ARRAY['Assistência Médica', 'Seguro de Vida', 'Vale Refeição', 'Auxílio Educação', 'Programa de Wellness'],
- 'Ambiente colaborativo com ênfase em inovação e satisfação do cliente.',
- true, NOW() - INTERVAL '1 year', NOW()),
-
-('GOL Linhas Aéreas', 'Commercial Aviation',
- 'Principal companhia aérea de baixo custo do Brasil, com forte presença no mercado doméstico.',
- 'https://www.voegol.com.br',
- 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/GOL_Transportes_A%C3%A9reos_logo.svg/320px-GOL_Transportes_A%C3%A9reos_logo.svg.png',
- 'São Paulo, SP', 'Brasil', '5000-10000', 2001, 'BRL',
- ARRAY['Plano Médico', 'Dental', 'Vale Transporte', 'PPR', 'Descontos Corporativos'],
- 'Cultura de eficiência operacional e espírito empreendedor.',
- true, NOW() - INTERVAL '18 months', NOW()),
-
-('Executive Jets Brasil', 'Corporate Aviation',
- 'Líder em aviação executiva no Brasil, oferecendo serviços de charter, gestão de aeronaves e hangaragem.',
- 'https://www.executivejets.com.br',
- '/seed-assets/companies/executive-jets.svg',
- 'São Paulo, SP', 'Brasil', '100-500', 2005, 'BRL',
- ARRAY['Salário Competitivo', 'Bônus por Performance', 'Flexibilidade de Horários', 'Treinamento Internacional'],
- 'Ambiente profissional premium com foco em excelência e discrição.',
- true, NOW() - INTERVAL '8 months', NOW()),
-
-('Helibras Helicopters', 'Helicopter Operations',
- 'Principal fabricante e operadora de helicópteros do Brasil, com serviços de manutenção e treinamento.',
- 'https://www.helibras.com.br',
- '/seed-assets/companies/helibras.svg',
- 'Itajubá, MG', 'Brasil', '500-1000', 1978, 'BRL',
- ARRAY['Plano de Saúde', 'Seguro de Vida', 'Vale Alimentação', 'Transporte Fretado', 'Auxílio Educação'],
- 'Cultura de engenharia e inovação com forte compromisso com segurança.',
- true, NOW() - INTERVAL '6 months', NOW()),
-
-('AeroClube de São Paulo', 'Flight Training',
- 'Tradicional escola de aviação com mais de 90 anos de história, formando pilotos de excelência.',
- 'https://www.aeroclube.com.br',
- '/seed-assets/companies/aeroclube-sp.svg',
- 'São Paulo, SP', 'Brasil', '50-100', 1931, 'BRL',
- ARRAY['Desconto em Cursos', 'Certificações Internacionais', 'Networking', 'Eventos Exclusivos'],
- 'Tradição e excelência no ensino de aviação.',
- true, NOW() - INTERVAL '3 months', NOW()),
-
-('TAM Aviação Executiva', 'Corporate Aviation',
- 'Divisão de aviação executiva oferecendo gerenciamento de frota e serviços charter de alto nível.',
- 'https://www.tamaviacaoexecutiva.com.br',
- '/seed-assets/companies/tam-executiva.svg',
- 'São Paulo, SP', 'Brasil', '100-500', 2008, 'BRL',
- ARRAY['Plano de Saúde Premium', 'PPR', 'Bônus Anual', 'Viagens Internacionais', 'Desenvolvimento Profissional'],
- 'Ambiente corporativo sofisticado com padrões internacionais.',
- true, NOW() - INTERVAL '4 months', NOW()),
-
-('VASP Manutenção Aeronáutica', 'MRO',
- 'Centro de manutenção aeronáutica especializado em serviços de reparo e overhaul.',
- 'https://www.vaspmanutencao.com.br',
- '/seed-assets/companies/vasp-manutencao.svg',
- 'São Paulo, SP', 'Brasil', '500-1000', 1993, 'BRL',
- ARRAY['Plano de Saúde', 'Vale Refeição', 'PLR', 'Treinamento Técnico', 'Seguro de Vida'],
- 'Cultura de precisão técnica e trabalho em equipe.',
- true, NOW() - INTERVAL '5 months', NOW()),
-
-('Embraer Executive Jets', 'Aircraft Manufacturing',
- 'Divisão de jatos executivos da Embraer, líder mundial em aviação regional e executiva.',
- 'https://www.embraerexecutivejets.com',
- '/seed-assets/companies/embraer.svg',
- 'São José dos Campos, SP', 'Brasil', '10000+', 1969, 'BRL',
- ARRAY['Plano de Saúde Diferenciado', 'Previdência Privada', 'PPR', 'Ginástica Laboral', 'Restaurante Subsidiado'],
- 'Inovação, tecnologia e orgulho de fazer parte da indústria aeroespacial brasileira.',
- true, NOW() - INTERVAL '1 year', NOW()),
-
-('SkyDive Brasil', 'Sport Aviation',
- 'Operadora de paraquedismo e atividades de aviação esportiva.',
- 'https://www.skydivebrasil.com.br',
- '/seed-assets/companies/skydive.svg',
- 'Boituva, SP', 'Brasil', '10-50', 2010, 'BRL',
- ARRAY['Ambiente Descontraído', 'Flexibilidade', 'Equipamentos de Qualidade', 'Eventos e Competições'],
- 'Paixão por aviação e esportes radicais em ambiente jovem e dinâmico.',
- false, NOW() - INTERVAL '2 months', NOW()),
-
-('Helisul Táxi Aéreo', 'Air Taxi',
- 'Serviços de táxi aéreo e transporte corporativo com helicópteros e aviões leves.',
- 'https://www.helisul.com.br',
- '/seed-assets/companies/helisul.svg',
- 'Porto Alegre, RS', 'Brasil', '50-100', 1995, 'BRL',
- ARRAY['Salário Variável', 'Comissões', 'Flexibilidade de Horário', 'Treinamento'],
- 'Ambiente ágil e focado em atendimento ao cliente.',
- true, NOW() - INTERVAL '7 months', NOW()),
-
-('Aeromot Aircraft', 'Aircraft Manufacturing',
- 'Fabricante brasileira de aeronaves leves e treinadores, com foco em qualidade e segurança.',
- 'https://www.aeromot.com.br',
- '/seed-assets/companies/aeromot.svg',
- 'Porto Alegre, RS', 'Brasil', '100-500', 1965, 'BRL',
- ARRAY['Vale Alimentação', 'Plano de Saúde', 'Seguro de Vida', 'PLR', 'Estacionamento'],
- 'Tradição na indústria aeronáutica com foco em manufatura de qualidade.',
- true, NOW() - INTERVAL '9 months', NOW())
-
-ON CONFLICT DO NOTHING;
-
--- Output summary
 SELECT 'Companies seeded successfully!' as message, COUNT(*) as total_companies FROM companies;

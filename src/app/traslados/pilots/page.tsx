@@ -5,8 +5,10 @@ import { useState } from 'react';
 import AuthGuard from '@/components/AuthGuard';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function TransfersPilotsPage() {
+  const { t } = useLanguage();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState('');
@@ -36,12 +38,12 @@ export default function TransfersPilotsPage() {
     setSubmitted(false);
 
     if (!formData.fullName || !formData.contactEmail || !formData.licenseType || !formData.licenseNumber) {
-      setSubmitError('Preencha os campos obrigatórios.');
+      setSubmitError(t('transfersPilots.formErrors.requiredFields'));
       return;
     }
 
     if (!licenseDocument || !medicalDocument) {
-      setSubmitError('Envie a licença e o certificado médico.');
+      setSubmitError(t('transfersPilots.formErrors.requiredDocuments'));
       return;
     }
 
@@ -81,12 +83,12 @@ export default function TransfersPilotsPage() {
 
       if (!response.ok) {
         const data = await response.json().catch(() => null);
-        throw new Error(data?.message || 'Falha ao enviar cadastro');
+        throw new Error(data?.message || t('transfersPilots.formErrors.submitFailed'));
       }
 
       setSubmitted(true);
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : 'Falha ao enviar cadastro');
+      setSubmitError(error instanceof Error ? error.message : t('transfersPilots.formErrors.submitFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -101,28 +103,24 @@ export default function TransfersPilotsPage() {
           <main className="flex-1 p-8">
             <div className="max-w-5xl mx-auto space-y-10">
               <section className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-                <h1 className="text-3xl font-bold text-gray-900">Traslados para pilotos</h1>
-                <p className="mt-3 text-lg text-gray-600">
-                  Cadastre-se para atuar em traslados com foco em segurança, pontualidade e conformidade.
-                </p>
-                <p className="mt-3 text-sm text-gray-500">
-                  O portal conecta pilotos e contratantes. A operação é responsabilidade das partes envolvidas.
-                </p>
+                <h1 className="text-3xl font-bold text-gray-900">{t('transfersPilots.heroTitle')}</h1>
+                <p className="mt-3 text-lg text-gray-600">{t('transfersPilots.heroSubtitle')}</p>
+                <p className="mt-3 text-sm text-gray-500">{t('transfersPilots.heroDisclaimer')}</p>
               </section>
 
               <section className="grid gap-6 md:grid-cols-3">
                 {[
                   {
-                    title: 'Requisitos claros',
-                    description: 'Licenças e habilitações compatíveis com o tipo de aeronave.',
+                    title: t('transfersPilots.cards.requirementsTitle'),
+                    description: t('transfersPilots.cards.requirementsDescription'),
                   },
                   {
-                    title: 'Processos padronizados',
-                    description: 'Briefings, checklists e comunicação estruturada.',
+                    title: t('transfersPilots.cards.processTitle'),
+                    description: t('transfersPilots.cards.processDescription'),
                   },
                   {
-                    title: 'Operação monitorada',
-                    description: 'Acompanhamento em tempo real e reporte pós-voo.',
+                    title: t('transfersPilots.cards.monitoringTitle'),
+                    description: t('transfersPilots.cards.monitoringDescription'),
                   },
                 ].map((item) => (
                   <div key={item.title} className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -133,37 +131,33 @@ export default function TransfersPilotsPage() {
               </section>
 
               <section className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-                <h2 className="text-2xl font-semibold text-gray-900">Pré-requisitos</h2>
+                <h2 className="text-2xl font-semibold text-gray-900">{t('transfersPilots.prereqTitle')}</h2>
                 <ul className="mt-4 space-y-3 text-sm text-gray-600">
-                  <li>Licenças e habilitações válidas para o perfil de operação.</li>
-                  <li>Experiência compatível com a categoria de aeronave.</li>
-                  <li>Disponibilidade para deslocamento conforme missão.</li>
-                  <li>Compromisso com checklists e procedimentos.</li>
+                  <li>{t('transfersPilots.prereqItem1')}</li>
+                  <li>{t('transfersPilots.prereqItem2')}</li>
+                  <li>{t('transfersPilots.prereqItem3')}</li>
+                  <li>{t('transfersPilots.prereqItem4')}</li>
                 </ul>
               </section>
 
               <section className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-                <h2 className="text-2xl font-semibold text-gray-900">Mensagens no portal</h2>
-                <p className="mt-2 text-sm text-gray-600">
-                  Toda comunicação com o contratante acontece no portal. Contatos externos são removidos automaticamente.
-                </p>
+                <h2 className="text-2xl font-semibold text-gray-900">{t('transfersPilots.messagesTitle')}</h2>
+                <p className="mt-2 text-sm text-gray-600">{t('transfersPilots.messagesBody')}</p>
                 <a
                   href="/traslados/messages"
                   className="mt-4 inline-flex items-center justify-center rounded-lg bg-blue-900 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800"
                 >
-                  Abrir mensagens
+                  {t('transfersPilots.messagesCta')}
                 </a>
               </section>
 
               <section className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-                <h2 className="text-2xl font-semibold text-gray-900">Cadastro de piloto</h2>
-                <p className="mt-2 text-sm text-gray-600">
-                  Preencha os dados e envie a documentação para validação. Campos com * são obrigatórios.
-                </p>
+                <h2 className="text-2xl font-semibold text-gray-900">{t('transfersPilots.formTitle')}</h2>
+                <p className="mt-2 text-sm text-gray-600">{t('transfersPilots.formSubtitle')}</p>
 
                 {submitted && (
                   <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
-                    Cadastro enviado. Nossa equipe irá validar seus documentos.
+                    {t('transfersPilots.formSuccess')}
                   </div>
                 )}
 
@@ -177,7 +171,7 @@ export default function TransfersPilotsPage() {
                   <div className="grid gap-4 md:grid-cols-2">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700" htmlFor="full-name">
-                        Nome completo *
+                        {t('transfersPilots.form.fullName')} *
                       </label>
                       <input
                         id="full-name"
@@ -190,7 +184,7 @@ export default function TransfersPilotsPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700" htmlFor="contact-email">
-                        E-mail *
+                        {t('transfersPilots.form.contactEmail')} *
                       </label>
                       <input
                         id="contact-email"
@@ -206,7 +200,7 @@ export default function TransfersPilotsPage() {
                   <div className="grid gap-4 md:grid-cols-3">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700" htmlFor="contact-phone">
-                        Telefone
+                        {t('transfersPilots.form.contactPhone')}
                       </label>
                       <input
                         id="contact-phone"
@@ -218,7 +212,7 @@ export default function TransfersPilotsPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700" htmlFor="license-type">
-                        Tipo de licença *
+                        {t('transfersPilots.form.licenseType')} *
                       </label>
                       <input
                         id="license-type"
@@ -226,13 +220,13 @@ export default function TransfersPilotsPage() {
                         value={formData.licenseType}
                         onChange={(event) => setFormData({ ...formData, licenseType: event.target.value })}
                         className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2 text-sm"
-                        placeholder="PC/CHT/ATP"
+                        placeholder={t('transfersPilots.form.licenseTypePlaceholder')}
                         required
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700" htmlFor="license-number">
-                        Número da licença *
+                        {t('transfersPilots.form.licenseNumber')} *
                       </label>
                       <input
                         id="license-number"
@@ -248,7 +242,7 @@ export default function TransfersPilotsPage() {
                   <div className="grid gap-4 md:grid-cols-3">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700" htmlFor="medical-expiry">
-                        Validade CMA
+                        {t('transfersPilots.form.medicalExpiry')}
                       </label>
                       <input
                         id="medical-expiry"
@@ -260,7 +254,7 @@ export default function TransfersPilotsPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700" htmlFor="total-hours">
-                        Total de horas
+                        {t('transfersPilots.form.totalHours')}
                       </label>
                       <input
                         id="total-hours"
@@ -272,7 +266,7 @@ export default function TransfersPilotsPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700" htmlFor="base-city">
-                        Cidade base
+                        {t('transfersPilots.form.baseCity')}
                       </label>
                       <input
                         id="base-city"
@@ -287,7 +281,7 @@ export default function TransfersPilotsPage() {
                   <div className="grid gap-4 md:grid-cols-2">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700" htmlFor="ratings">
-                        Habilitações / Ratings
+                        {t('transfersPilots.form.ratings')}
                       </label>
                       <input
                         id="ratings"
@@ -295,12 +289,12 @@ export default function TransfersPilotsPage() {
                         value={formData.ratings}
                         onChange={(event) => setFormData({ ...formData, ratings: event.target.value })}
                         className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2 text-sm"
-                        placeholder="IFR, MLTE, etc."
+                        placeholder={t('transfersPilots.form.ratingsPlaceholder')}
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700" htmlFor="categories">
-                        Categorias de aeronave
+                        {t('transfersPilots.form.categories')}
                       </label>
                       <input
                         id="categories"
@@ -308,14 +302,14 @@ export default function TransfersPilotsPage() {
                         value={formData.categories}
                         onChange={(event) => setFormData({ ...formData, categories: event.target.value })}
                         className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2 text-sm"
-                        placeholder="Pistão, Turboélice, Jato"
+                        placeholder={t('transfersPilots.form.categoriesPlaceholder')}
                       />
                     </div>
                   </div>
 
                   <div>
                     <label className="block text-sm font-semibold text-gray-700" htmlFor="availability">
-                      Disponibilidade
+                      {t('transfersPilots.form.availability')}
                     </label>
                     <input
                       id="availability"
@@ -323,13 +317,13 @@ export default function TransfersPilotsPage() {
                       value={formData.availability}
                       onChange={(event) => setFormData({ ...formData, availability: event.target.value })}
                       className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2 text-sm"
-                      placeholder="Ex.: imediato, 15 dias"
+                      placeholder={t('transfersPilots.form.availabilityPlaceholder')}
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-semibold text-gray-700" htmlFor="notes">
-                      Observações
+                      {t('transfersPilots.form.notes')}
                     </label>
                     <textarea
                       id="notes"
@@ -343,7 +337,7 @@ export default function TransfersPilotsPage() {
                   <div className="grid gap-4 md:grid-cols-3">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700" htmlFor="license-document">
-                        Licença * (PDF/JPG/PNG)
+                        {t('transfersPilots.form.licenseDocument')} *
                       </label>
                       <input
                         id="license-document"
@@ -356,7 +350,7 @@ export default function TransfersPilotsPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700" htmlFor="medical-document">
-                        Certificado médico *
+                        {t('transfersPilots.form.medicalDocument')} *
                       </label>
                       <input
                         id="medical-document"
@@ -369,7 +363,7 @@ export default function TransfersPilotsPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700" htmlFor="logbook-document">
-                        Logbook (opcional)
+                        {t('transfersPilots.form.logbookDocument')}
                       </label>
                       <input
                         id="logbook-document"
@@ -383,7 +377,7 @@ export default function TransfersPilotsPage() {
 
                   <div>
                     <label className="block text-sm font-semibold text-gray-700" htmlFor="additional-documents">
-                      Documentos adicionais
+                      {t('transfersPilots.form.additionalDocuments')}
                     </label>
                     <input
                       id="additional-documents"
@@ -401,7 +395,7 @@ export default function TransfersPilotsPage() {
                       disabled={isSubmitting}
                       className="rounded-lg bg-sky-600 px-5 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:bg-sky-300"
                     >
-                      {isSubmitting ? 'Enviando...' : 'Enviar cadastro'}
+                      {isSubmitting ? t('transfersPilots.form.submitting') : t('transfersPilots.form.submit')}
                     </button>
                   </div>
                 </form>
@@ -410,16 +404,14 @@ export default function TransfersPilotsPage() {
               <section className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
                 <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                   <div>
-                    <h2 className="text-2xl font-semibold text-gray-900">Quer participar da rede?</h2>
-                    <p className="mt-2 text-sm text-gray-600">
-                      Envie seu interesse e receba instruções para cadastro completo.
-                    </p>
+                    <h2 className="text-2xl font-semibold text-gray-900">{t('transfersPilots.ctaTitle')}</h2>
+                    <p className="mt-2 text-sm text-gray-600">{t('transfersPilots.ctaSubtitle')}</p>
                   </div>
                   <a
                     href="mailto:suporte@lovetofly.com.br"
                     className="inline-flex items-center justify-center rounded-lg bg-sky-600 px-5 py-3 text-sm font-semibold text-white shadow hover:bg-sky-700"
                   >
-                    Enviar interesse
+                    {t('transfersPilots.ctaButton')}
                   </a>
                 </div>
               </section>

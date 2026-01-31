@@ -24,13 +24,20 @@ export default function ForumPage() {
   const [showNewTopicModal, setShowNewTopicModal] = useState(false);
   const [newTopic, setNewTopic] = useState({
     title: '',
-    category: 'Regulamentos',
+    category: 'regulations',
     content: ''
   });
   const [topics, setTopics] = useState<ForumTopic[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [filters, setFilters] = useState({
+    query: '',
+    category: '',
+    from: '',
+    to: '',
+  });
+  const [appliedFilters, setAppliedFilters] = useState(filters);
 
   const getPreview = (text: string) => {
     const cleaned = text?.trim() || '';
@@ -50,14 +57,56 @@ export default function ForumPage() {
     return map[value] || value;
   };
 
-  const categories = ['Regulamentos', 'Formação', 'Segurança', 'Classificados', 'Estudos', 'Manutenção', 'Meteorologia', 'Outros'];
+  const categories = [
+    {
+      value: 'regulations',
+      label: 'Regulamentos',
+      description: 'Discussões sobre RBAC/RBHA, IS/IAC e conformidade regulatória.',
+    },
+    {
+      value: 'technical',
+      label: 'Segurança',
+      description: 'Boas práticas operacionais, segurança de voo e prevenção de incidentes.',
+    },
+    {
+      value: 'events',
+      label: 'Eventos',
+      description: 'Cursos, workshops, feiras e encontros do setor aeronáutico.',
+    },
+    {
+      value: 'classifieds',
+      label: 'Classificados',
+      description: 'Compra, venda e anúncios relacionados a aeronaves e equipamentos.',
+    },
+    {
+      value: 'questions',
+      label: 'Estudos',
+      description: 'Dúvidas sobre formação, provas teóricas e progressão de carreira.',
+    },
+    {
+      value: 'general',
+      label: 'Outros',
+      description: 'Assuntos gerais da comunidade de aviação.',
+    },
+  ];
+
+  const getCategoryDescription = (value: string) =>
+    categories.find((cat) => cat.value === value)?.description || '';
 
   useEffect(() => {
     const fetchTopics = async () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await fetch('/api/forum/topics?limit=50');
+
+        const params = new URLSearchParams();
+        params.set('limit', '50');
+        if (appliedFilters.query.trim()) params.set('q', appliedFilters.query.trim());
+        if (appliedFilters.category) params.set('category', appliedFilters.category);
+        if (appliedFilters.from) params.set('from', appliedFilters.from);
+        if (appliedFilters.to) params.set('to', appliedFilters.to);
+
+        const response = await fetch(`/api/forum/topics?${params.toString()}`);
         if (!response.ok) {
           throw new Error('Erro ao carregar tópicos');
         }
@@ -72,7 +121,18 @@ export default function ForumPage() {
     };
 
     fetchTopics();
-  }, []);
+  }, [appliedFilters]);
+
+  const handleApplyFilters = (event: React.FormEvent) => {
+    event.preventDefault();
+    setAppliedFilters(filters);
+  };
+
+  const handleClearFilters = () => {
+    const cleared = { query: '', category: '', from: '', to: '' };
+    setFilters(cleared);
+    setAppliedFilters(cleared);
+  };
 
   const handleSubmitTopic = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,7 +179,7 @@ export default function ForumPage() {
       }
 
       setShowNewTopicModal(false);
-      setNewTopic({ title: '', category: 'Regulamentos', content: '' });
+      setNewTopic({ title: '', category: 'regulations', content: '' });
     } catch (err) {
       console.error('Failed to create topic:', err);
       alert('Erro ao publicar tópico. Tente novamente.');
@@ -169,6 +229,77 @@ export default function ForumPage() {
 
           {/* Content */}
           <div className="max-w-6xl mx-auto p-8">
+            {/* Search + Filters */}
+            <form
+              onSubmit={handleApplyFilters}
+              className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="md:col-span-2">
+                  <label className="text-sm font-semibold text-gray-700">Buscar</label>
+                  <input
+                    type="text"
+                    value={filters.query}
+                    onChange={(e) => setFilters((prev) => ({ ...prev, query: e.target.value }))}
+                    placeholder="Título, conteúdo ou autor"
+                    className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-gray-700">Categoria</label>
+                  <select
+                    value={filters.category}
+                    onChange={(e) => setFilters((prev) => ({ ...prev, category: e.target.value }))}
+                    className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  >
+                    <option value="">Todas</option>
+                    {categories.map((cat) => (
+                      <option key={cat.value} value={cat.value}>
+                        {cat.label}
+                      </option>
+                    ))}
+                  </select>
+                  {filters.category && (
+                    <p className="mt-2 text-xs text-gray-500">
+                      {getCategoryDescription(filters.category)}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-gray-700">Período</label>
+                  <div className="mt-2 flex gap-2">
+                    <input
+                      type="date"
+                      value={filters.from}
+                      onChange={(e) => setFilters((prev) => ({ ...prev, from: e.target.value }))}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                    />
+                    <input
+                      type="date"
+                      value={filters.to}
+                      onChange={(e) => setFilters((prev) => ({ ...prev, to: e.target.value }))}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700"
+                >
+                  Aplicar filtros
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClearFilters}
+                  className="px-5 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-200"
+                >
+                  Limpar
+                </button>
+              </div>
+            </form>
+
             {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
               <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
@@ -310,9 +441,14 @@ export default function ForumPage() {
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                 >
                   {categories.map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
+                    <option key={cat.value} value={cat.value}>
+                      {cat.label}
+                    </option>
                   ))}
                 </select>
+                <p className="mt-2 text-xs text-gray-500">
+                  {getCategoryDescription(newTopic.category)}
+                </p>
               </div>
 
               {/* Content */}

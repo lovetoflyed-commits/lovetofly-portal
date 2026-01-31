@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { DayPicker, DateRange } from 'react-day-picker';
+import { addDays, format, startOfDay } from 'date-fns';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -26,6 +28,10 @@ export default function BookingModal({ isOpen, onClose, listing }: BookingModalP
   const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [availabilityRanges, setAvailabilityRanges] = useState<Array<{ checkIn: string; checkOut: string }>>([]);
+  const [availabilityError, setAvailabilityError] = useState('');
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
+  const [selectedRange, setSelectedRange] = useState<DateRange | undefined>(undefined);
 
   const [bookingData, setBookingData] = useState({
     // Aircraft Details
@@ -68,6 +74,66 @@ export default function BookingModal({ isOpen, onClose, listing }: BookingModalP
       calculatePricing();
     }
   }, [bookingData.checkInDate, bookingData.checkOutDate]);
+
+  useEffect(() => {
+    if (!selectedRange?.from) return;
+
+    setBookingData((prev) => ({
+      ...prev,
+      checkInDate: format(selectedRange.from as Date, 'yyyy-MM-dd'),
+      checkOutDate: selectedRange.to ? format(selectedRange.to, 'yyyy-MM-dd') : '',
+    }));
+  }, [selectedRange]);
+
+  useEffect(() => {
+    if (!isOpen || !listing?.id) return;
+
+    const loadAvailability = async () => {
+      setAvailabilityLoading(true);
+      setAvailabilityError('');
+      try {
+        const response = await fetch(`/api/hangarshare/booking/availability?hangarId=${listing.id}`);
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Erro ao carregar disponibilidade');
+        }
+        const data = await response.json();
+        setAvailabilityRanges(data.ranges || []);
+      } catch (error: any) {
+        setAvailabilityError(error.message || 'Erro ao carregar disponibilidade');
+      } finally {
+        setAvailabilityLoading(false);
+      }
+    };
+
+    loadAvailability();
+  }, [isOpen, listing?.id]);
+
+  const disabledDays = useMemo(() => {
+    const today = startOfDay(new Date());
+    const blockedRanges = availabilityRanges.map((range) => {
+      const from = startOfDay(new Date(range.checkIn));
+      const to = addDays(startOfDay(new Date(range.checkOut)), -1);
+      return { from, to: to < from ? from : to };
+    });
+
+    return [{ before: today }, ...blockedRanges];
+  }, [availabilityRanges]);
+
+  const hasDateConflict = () => {
+    if (!bookingData.checkInDate || !bookingData.checkOutDate) return false;
+
+    const selectedStart = new Date(bookingData.checkInDate);
+    const selectedEnd = new Date(bookingData.checkOutDate);
+
+    if (Number.isNaN(selectedStart.getTime()) || Number.isNaN(selectedEnd.getTime())) return false;
+
+    return availabilityRanges.some((range) => {
+      const rangeStart = new Date(range.checkIn);
+      const rangeEnd = new Date(range.checkOut);
+      return selectedStart < rangeEnd && selectedEnd > rangeStart;
+    });
+  };
 
   const calculatePricing = () => {
     const checkIn = new Date(bookingData.checkInDate);
@@ -343,22 +409,36 @@ export default function BookingModal({ isOpen, onClose, listing }: BookingModalP
             <div className="space-y-4">
               <h3 className="text-xl font-bold text-blue-900 mb-4">Datas e Horários</h3>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="check-in-date" className="block text-sm font-bold text-slate-700 mb-2">
-                    Data de Entrada *
-                  </label>
-                  <input
-                    id="check-in-date"
-                    type="date"
-                    value={bookingData.checkInDate}
-                    onChange={(e) => setBookingData({ ...bookingData, checkInDate: e.target.value })}
-                    min={new Date().toISOString().split('T')[0]}
-                    className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
-                    required
-                    aria-required="true"
-                  />
+              {availabilityLoading && (
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm text-slate-600">
+                  Verificando disponibilidade...
                 </div>
+              )}
+
+              {availabilityError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+                  {availabilityError}
+                </div>
+              )}
+
+              <div className="bg-white border border-slate-200 rounded-lg p-4">
+                <label className="block text-sm font-bold text-slate-700 mb-3">
+                  Período da Reserva *
+                </label>
+                <DayPicker
+                  mode="range"
+                  selected={selectedRange}
+                  onSelect={setSelectedRange}
+                  disabled={disabledDays}
+                  numberOfMonths={2}
+                  showOutsideDays
+                />
+                <p className="mt-2 text-xs text-slate-500">
+                  Dias indisponíveis aparecem desabilitados no calendário.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="check-in-time" className="block text-sm font-bold text-slate-700 mb-2">
                     Horário de Entrada
@@ -369,24 +449,6 @@ export default function BookingModal({ isOpen, onClose, listing }: BookingModalP
                     value={bookingData.checkInTime}
                     onChange={(e) => setBookingData({ ...bookingData, checkInTime: e.target.value })}
                     className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="check-out-date" className="block text-sm font-bold text-slate-700 mb-2">
-                    Data de Saída *
-                  </label>
-                  <input
-                    id="check-out-date"
-                    type="date"
-                    value={bookingData.checkOutDate}
-                    onChange={(e) => setBookingData({ ...bookingData, checkOutDate: e.target.value })}
-                    min={bookingData.checkInDate || new Date().toISOString().split('T')[0]}
-                    className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
-                    required
-                    aria-required="true"
                   />
                 </div>
                 <div>
@@ -415,6 +477,12 @@ export default function BookingModal({ isOpen, onClose, listing }: BookingModalP
                 </div>
               )}
 
+              {hasDateConflict() && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-4 text-sm text-red-700">
+                  Datas indisponíveis para este hangar. Selecione outro período.
+                </div>
+              )}
+
               <div>
                 <label htmlFor="special-requests" className="block text-sm font-bold text-slate-700 mb-2">
                   Solicitações Especiais (opcional)
@@ -438,7 +506,7 @@ export default function BookingModal({ isOpen, onClose, listing }: BookingModalP
                 </button>
                 <button
                   onClick={() => setStep(3)}
-                  disabled={!bookingData.checkInDate || !bookingData.checkOutDate || pricing.days === 0}
+                  disabled={!bookingData.checkInDate || !bookingData.checkOutDate || pricing.days === 0 || hasDateConflict()}
                   className="px-6 py-3 bg-blue-900 text-white font-bold rounded-lg hover:bg-blue-800 disabled:bg-slate-300"
                 >
                   Próximo →

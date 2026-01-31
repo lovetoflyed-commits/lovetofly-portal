@@ -33,7 +33,7 @@ export default function ReviewList({
 
     setDeletingId(reviewId);
     try {
-      const response = await fetch(`/api/hangarshare/reviews/[id]?id=${reviewId}`, {
+      const response = await fetch(`/api/hangarshare/reviews?id=${reviewId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`

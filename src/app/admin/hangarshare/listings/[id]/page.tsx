@@ -82,6 +82,8 @@ export default function HangarListingDetailsPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editListing, setEditListing] = useState<Partial<ListingDetails> | null>(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const [photoRemoving, setPhotoRemoving] = useState<string | null>(null);
   const hasFetchedRef = useRef<string | null>(null);
   const inFlightRef = useRef<string | null>(null);
 
@@ -217,6 +219,67 @@ export default function HangarListingDetailsPage() {
       alert('Erro ao salvar alterações');
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handlePhotoUpload = async (file: File | null) => {
+    if (!file || !listingId) return;
+    try {
+      setPhotoUploading(true);
+      const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('photo', file);
+
+      const res = await fetch(`/api/admin/hangarshare/listings/${listingId}/photos`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || 'Erro ao fazer upload da foto');
+      }
+
+      const data = await res.json();
+      setListing((prev) => (prev ? { ...prev, photos: data.photos } : prev));
+      setEditListing((prev) => (prev ? { ...prev, photos: data.photos } : prev));
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Erro ao fazer upload da foto');
+    } finally {
+      setPhotoUploading(false);
+    }
+  };
+
+  const handlePhotoRemove = async (photoUrl: string) => {
+    if (!listingId) return;
+    const confirmRemove = window.confirm('Remover esta foto?');
+    if (!confirmRemove) return;
+
+    try {
+      setPhotoRemoving(photoUrl);
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/admin/hangarshare/listings/${listingId}/photos`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ photoUrl }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || 'Erro ao remover foto');
+      }
+
+      const data = await res.json();
+      setListing((prev) => (prev ? { ...prev, photos: data.photos } : prev));
+      setEditListing((prev) => (prev ? { ...prev, photos: data.photos } : prev));
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Erro ao remover foto');
+    } finally {
+      setPhotoRemoving(null);
     }
   };
 
@@ -646,13 +709,38 @@ export default function HangarListingDetailsPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {photos.map((photo, index) => (
-                <img
-                  key={`${photo}-${index}`}
-                  src={photo}
-                  alt={`Foto ${index + 1}`}
-                  className="w-full h-48 object-cover rounded border"
-                />
+                <div key={`${photo}-${index}`} className="relative">
+                  <img
+                    src={photo}
+                    alt={`Foto ${index + 1}`}
+                    className="w-full h-48 object-cover rounded border"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handlePhotoRemove(photo)}
+                    disabled={photoRemoving === photo}
+                    className="absolute top-2 right-2 px-2 py-1 text-xs font-semibold bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-slate-300"
+                  >
+                    Remover
+                  </button>
+                </div>
               ))}
+            </div>
+          )}
+
+          {!isEditing && (
+            <div className="mt-4 flex items-center gap-3">
+              <label className="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer">
+                {photoUploading ? 'Enviando...' : 'Enviar foto'}
+                <input
+                  type="file"
+                  className="hidden"
+                  accept="image/jpeg,image/png,image/webp"
+                  disabled={photoUploading}
+                  onChange={(event) => handlePhotoUpload(event.target.files?.[0] || null)}
+                />
+              </label>
+              <span className="text-xs text-slate-500">JPG, PNG ou WebP até 10MB.</span>
             </div>
           )}
         </section>

@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import AuthGuard from '@/components/AuthGuard';
 import Image from 'next/image';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function RadarPage() {
+  const { t, language } = useLanguage();
   const [selectedRegion, setSelectedRegion] = useState<string>('brasil');
   const [radarLayer, setRadarLayer] = useState<string>('satellite');
   const [radarSource, setRadarSource] = useState<string>('inpe'); // 'inpe' or 'openweather'
@@ -14,24 +16,24 @@ export default function RadarPage() {
   const [imageError, setImageError] = useState(false);
 
   const regions = [
-    { id: 'brasil', name: 'Brasil', center: [-15.7801, -47.9292], zoom: 4 },
-    { id: 'sudeste', name: 'Sudeste', center: [-23.5505, -46.6333], zoom: 6 },
-    { id: 'sul', name: 'Sul', center: [-29.6833, -51.1833], zoom: 6 },
-    { id: 'nordeste', name: 'Nordeste', center: [-12.9714, -38.5014], zoom: 6 },
-    { id: 'norte', name: 'Norte', center: [-3.1190, -60.0217], zoom: 6 },
-    { id: 'centro-oeste', name: 'Centro-Oeste', center: [-15.8267, -47.9218], zoom: 6 },
+    { id: 'brasil', name: t('radarPage.regionBrasil'), center: [-15.7801, -47.9292], zoom: 4 },
+    { id: 'sudeste', name: t('radarPage.regionSudeste'), center: [-23.5505, -46.6333], zoom: 6 },
+    { id: 'sul', name: t('radarPage.regionSul'), center: [-29.6833, -51.1833], zoom: 6 },
+    { id: 'nordeste', name: t('radarPage.regionNordeste'), center: [-12.9714, -38.5014], zoom: 6 },
+    { id: 'norte', name: t('radarPage.regionNorte'), center: [-3.1190, -60.0217], zoom: 6 },
+    { id: 'centro-oeste', name: t('radarPage.regionCentroOeste'), center: [-15.8267, -47.9218], zoom: 6 },
   ];
 
   const layers = [
-    { id: 'satellite', name: 'Satélite', icon: '🛰️' },
-    { id: 'precipitation', name: 'Precipitação', icon: '🌧️' },
-    { id: 'clouds', name: 'Nuvens', icon: '☁️' },
-    { id: 'temperature', name: 'Temperatura', icon: '🌡️' },
+    { id: 'satellite', name: t('radarPage.layerSatellite'), icon: '🛰️' },
+    { id: 'precipitation', name: t('radarPage.layerPrecipitation'), icon: '🌧️' },
+    { id: 'clouds', name: t('radarPage.layerClouds'), icon: '☁️' },
+    { id: 'temperature', name: t('radarPage.layerTemperature'), icon: '🌡️' },
   ];
 
   const sources = [
-    { id: 'inpe', name: 'NOAA GOES-16', flag: '🇧🇷', description: 'Satélite América do Sul' },
-    { id: 'openweather', name: 'OpenWeatherMap', flag: '🌍', description: 'Fonte Internacional' },
+    { id: 'inpe', name: 'NOAA GOES-16', flag: '🇧🇷', description: t('radarPage.sourceInpeDesc') },
+    { id: 'openweather', name: 'OpenWeatherMap', flag: '🌍', description: t('radarPage.sourceOpenWeatherDesc') },
   ];
 
   // Auto-refresh every 15 minutes
@@ -55,15 +57,15 @@ export default function RadarPage() {
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-            <h1 className="text-3xl font-bold text-blue-900 mb-2">🌦️ Radar Meteorológico</h1>
-            <p className="text-gray-600">Visualize condições meteorológicas em tempo real</p>
+            <h1 className="text-3xl font-bold text-blue-900 mb-2">🌦️ {t('radarPage.title')}</h1>
+            <p className="text-gray-600">{t('radarPage.subtitle')}</p>
             <div className="mt-4">
               <Link
                 href="/"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors"
               >
                 <span className="text-lg">←</span>
-                Voltar ao Dashboard
+                {t('radarPage.backDashboard')}
               </Link>
             </div>
           </div>
@@ -71,14 +73,14 @@ export default function RadarPage() {
           {/* Source Selector */}
           <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-800">Fonte de Dados</h2>
+              <h2 className="text-lg font-semibold text-gray-800">{t('radarPage.dataSource')}</h2>
               <button
                 onClick={handleRefresh}
                 disabled={loading}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors flex items-center gap-2"
               >
                 <span className={loading ? 'animate-spin' : ''}>🔄</span>
-                {loading ? 'Atualizando...' : 'Atualizar'}
+                {loading ? t('radarPage.refreshing') : t('radarPage.refresh')}
               </button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -104,7 +106,7 @@ export default function RadarPage() {
 
           {/* Layer Selector */}
           <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">Tipo de Visualização</h2>
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">{t('radarPage.layerType')}</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {layers.map((layer) => {
                 // INPE only supports satellite layer
@@ -131,13 +133,13 @@ export default function RadarPage() {
             {radarSource === 'inpe' && (
               <div className="mt-3 text-xs text-amber-700 bg-amber-50 px-3 py-2 rounded flex items-start gap-2">
                 <span>ℹ️</span>
-                <span>NOAA GOES-16 fornece apenas imagens de satélite. Para outras camadas, selecione a fonte internacional.</span>
+                <span>{t('radarPage.inpeOnly')}</span>
               </div>
             )}
           </div>
 
           <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">Selecione a Região</h2>
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">{t('radarPage.selectRegion')}</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
               {regions.map((region) => (
                 <button
@@ -162,7 +164,9 @@ export default function RadarPage() {
                 {layers.find((l) => l.id === radarLayer)?.icon} {currentRegion.name} - {layers.find((l) => l.id === radarLayer)?.name}
               </h2>
               <div className="text-sm text-gray-500">
-                Última atualização: {lastUpdate.toLocaleTimeString('pt-BR')}
+                {t('radarPage.lastUpdate')}: {lastUpdate.toLocaleTimeString(
+                  language === 'en' ? 'en-US' : language === 'es' ? 'es-ES' : 'pt-BR'
+                )}
               </div>
             </div>
 
@@ -175,8 +179,8 @@ export default function RadarPage() {
                     <div className="text-center space-y-4">
                       <div className="text-6xl">🛰️</div>
                       <div className="text-white space-y-2">
-                        <p className="text-xl font-bold">Imagem de satélite temporariamente indisponível</p>
-                        <p className="text-sm text-gray-300">O servidor INPE/CPTEC pode estar em manutenção ou atualização.</p>
+                        <p className="text-xl font-bold">{t('radarPage.satelliteUnavailableTitle')}</p>
+                        <p className="text-sm text-gray-300">{t('radarPage.satelliteUnavailableBody')}</p>
                       </div>
                       <button
                         onClick={() => {
@@ -185,15 +189,15 @@ export default function RadarPage() {
                         }}
                         className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                       >
-                        🔄 Tentar Novamente
+                        🔄 {t('radarPage.tryAgain')}
                       </button>
                       <div className="pt-4 border-t border-gray-600">
-                        <p className="text-sm text-gray-400 mb-3">Ou use a fonte internacional:</p>
+                        <p className="text-sm text-gray-400 mb-3">{t('radarPage.useInternational')}</p>
                         <button
                           onClick={() => setRadarSource('openweather')}
                           className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                         >
-                          🌍 Trocar para OpenWeatherMap
+                          🌍 {t('radarPage.switchToOpenWeather')}
                         </button>
                       </div>
                     </div>
@@ -207,11 +211,11 @@ export default function RadarPage() {
                       />
                       <div className="absolute bottom-4 left-4 bg-black/70 text-white px-3 py-2 rounded text-xs flex items-center gap-2">
                         <span>🇧🇷</span>
-                        <span>Fonte: NOAA GOES-16 - América do Sul</span>
+                        <span>{t('radarPage.sourceLabel')}: {t('radarPage.sourceInpeLabel')}</span>
                       </div>
                       <div className="absolute top-4 right-4 bg-blue-600/90 text-white px-3 py-2 rounded text-xs flex items-center gap-2">
                         <span>✓</span>
-                        <span>Atualização automática a cada 15 min</span>
+                        <span>{t('radarPage.autoUpdate')}</span>
                       </div>
                     </>
                   )}
@@ -222,11 +226,11 @@ export default function RadarPage() {
                   <iframe
                     src={`https://openweathermap.org/weathermap?basemap=map&cities=true&layer=${radarLayer === 'satellite' ? 'satellite' : radarLayer === 'precipitation' ? 'precipitation' : radarLayer === 'clouds' ? 'clouds' : 'temp'}&lat=${currentRegion.center[0]}&lon=${currentRegion.center[1]}&zoom=${currentRegion.zoom}`}
                     className="w-full h-full border-0"
-                    title={`Mapa Meteorológico - ${layers.find((l) => l.id === radarLayer)?.name}`}
+                    title={`${t('radarPage.weatherMapTitle')} - ${layers.find((l) => l.id === radarLayer)?.name}`}
                   />
                   <div className="absolute bottom-4 left-4 bg-black/70 text-white px-3 py-2 rounded text-xs flex items-center gap-2">
                     <span>🌍</span>
-                    <span>Fonte: OpenWeatherMap</span>
+                    <span>{t('radarPage.sourceLabel')}: OpenWeatherMap</span>
                   </div>
                 </div>
               )}
@@ -236,23 +240,23 @@ export default function RadarPage() {
             <div className="mt-4 flex flex-wrap gap-4 text-sm">
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-green-500 rounded"></div>
-                <span className="text-gray-700">Céu limpo</span>
+                <span className="text-gray-700">{t('radarPage.legendClear')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-yellow-500 rounded"></div>
-                <span className="text-gray-700">Nuvens esparsas</span>
+                <span className="text-gray-700">{t('radarPage.legendScattered')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-orange-500 rounded"></div>
-                <span className="text-gray-700">Chuva moderada</span>
+                <span className="text-gray-700">{t('radarPage.legendModerateRain')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-red-500 rounded"></div>
-                <span className="text-gray-700">Chuva forte</span>
+                <span className="text-gray-700">{t('radarPage.legendHeavyRain')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-purple-500 rounded"></div>
-                <span className="text-gray-700">Tempestade</span>
+                <span className="text-gray-700">{t('radarPage.legendStorm')}</span>
               </div>
             </div>
           </div>
@@ -260,7 +264,7 @@ export default function RadarPage() {
           {/* Quick Links */}
           <div className="grid md:grid-cols-2 gap-6">
             <div className="bg-white rounded-lg shadow-lg p-6">
-              <h3 className="text-lg font-bold text-gray-800 mb-3">🔗 Links Úteis</h3>
+              <h3 className="text-lg font-bold text-gray-800 mb-3">🔗 {t('radarPage.usefulLinks')}</h3>
               <ul className="space-y-2 text-sm">
                 <li>
                   <a
@@ -269,7 +273,7 @@ export default function RadarPage() {
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:text-blue-800 hover:underline"
                   >
-                    REDEMET - Portal Oficial
+                    {t('radarPage.redemet')}
                   </a>
                 </li>
                 <li>
@@ -279,7 +283,7 @@ export default function RadarPage() {
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:text-blue-800 hover:underline"
                   >
-                    CPTEC/INPE - Previsão Meteorológica
+                    {t('radarPage.cptec')}
                   </a>
                 </li>
                 <li>
@@ -289,19 +293,19 @@ export default function RadarPage() {
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:text-blue-800 hover:underline"
                   >
-                    INMET - Instituto Nacional de Meteorologia
+                    {t('radarPage.inmet')}
                   </a>
                 </li>
               </ul>
             </div>
 
             <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
-              <h3 className="font-bold text-blue-900 mb-2">ℹ️ Sobre o Radar</h3>
+              <h3 className="font-bold text-blue-900 mb-2">{t('radarPage.aboutRadar')}</h3>
               <ul className="text-sm text-blue-800 space-y-1">
-                <li>• 🇧🇷 NOAA GOES-16: Satélite geoestacionário sobre América do Sul</li>
-                <li>• 🌍 OpenWeatherMap: Dados globais com múltiplas camadas</li>
-                <li>• Atualização automática a cada 15 minutos</li>
-                <li>• Cobertura de todo território nacional e internacional</li>
+                <li>• {t('radarPage.aboutInpe')}</li>
+                <li>• {t('radarPage.aboutOpenWeather')}</li>
+                <li>• {t('radarPage.aboutUpdate')}</li>
+                <li>• {t('radarPage.aboutCoverage')}</li>
               </ul>
             </div>
           </div>

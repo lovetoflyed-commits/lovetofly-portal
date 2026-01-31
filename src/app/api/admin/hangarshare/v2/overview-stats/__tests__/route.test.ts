@@ -1,12 +1,57 @@
+/** @jest-environment node */
 // Unit Tests for Overview Stats API
 // File: src/app/api/admin/hangarshare/v2/overview-stats/__tests__/route.test.ts
 // Purpose: Test API endpoint data structure and response format
 
+import pool from '@/config/db';
 import { GET } from '../route';
+
+jest.mock('@/config/db', () => ({
+  __esModule: true,
+  default: {
+    query: jest.fn(),
+  },
+}));
+
+const mockQuerySequence = () => {
+  const mock = (pool as { query: jest.Mock }).query;
+  mock.mockReset();
+
+  mock
+    .mockResolvedValueOnce({ rows: [{ count: 40 }] }) // users
+    .mockResolvedValueOnce({ rows: [{ count: 8 }] }) // owners
+    .mockResolvedValueOnce({ rows: [{ count: 22 }] }) // listings
+    .mockResolvedValueOnce({ rows: [{ count: 12 }] }) // active listings
+    .mockResolvedValueOnce({ rows: [{ count: 18 }] }) // bookings
+    .mockResolvedValueOnce({ rows: [{ count: 3 }] }) // pending bookings
+    .mockResolvedValueOnce({ rows: [{ count: 9 }] }) // completed bookings
+    .mockResolvedValueOnce({ rows: [{ count: 55 }] }) // photos
+    .mockResolvedValueOnce({ rows: [{ total_revenue: 125000, monthly_revenue: 24000 }] }) // revenue
+    .mockResolvedValueOnce({ rows: [{ count: 2 }] }) // alerts
+    .mockResolvedValueOnce({
+      rows: [
+        { id: '1', name: 'Hangar Alpha', booking_count: 6, revenue: 5600 },
+        { id: '2', name: 'Hangar Beta', booking_count: 4, revenue: 4200 },
+      ],
+    }) // top listings
+    .mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'bk-1',
+          listing_name: 'Hangar Alpha',
+          owner_name: 'Ana Silva',
+          booking_status: 'confirmed',
+          check_in_date: new Date().toISOString(),
+        },
+      ],
+    }) // recent bookings
+    .mockResolvedValueOnce({ rows: [{ total_listings: 10, occupied: 6 }] }); // occupancy
+};
 
 describe('Overview Stats API (/api/admin/hangarshare/v2/overview-stats)', () => {
   describe('Response Structure', () => {
     it('should return a valid response structure', async () => {
+      mockQuerySequence();
       const request = new Request('http://localhost:3000/api/admin/hangarshare/v2/overview-stats');
       const response = await GET(request);
 
@@ -19,6 +64,7 @@ describe('Overview Stats API (/api/admin/hangarshare/v2/overview-stats)', () => 
     });
 
     it('should have correct data properties', async () => {
+      mockQuerySequence();
       const request = new Request('http://localhost:3000/api/admin/hangarshare/v2/overview-stats');
       const response = await GET(request);
       const data = await response.json();
@@ -35,6 +81,7 @@ describe('Overview Stats API (/api/admin/hangarshare/v2/overview-stats)', () => 
     });
 
     it('should have valid meta information', async () => {
+      mockQuerySequence();
       const request = new Request('http://localhost:3000/api/admin/hangarshare/v2/overview-stats');
       const response = await GET(request);
       const data = await response.json();
@@ -48,6 +95,7 @@ describe('Overview Stats API (/api/admin/hangarshare/v2/overview-stats)', () => 
 
   describe('Hero Metrics', () => {
     it('should return hero metrics with required fields', async () => {
+      mockQuerySequence();
       const request = new Request('http://localhost:3000/api/admin/hangarshare/v2/overview-stats');
       const response = await GET(request);
       const data = await response.json();
@@ -64,6 +112,7 @@ describe('Overview Stats API (/api/admin/hangarshare/v2/overview-stats)', () => 
 
   describe('Financial Metrics', () => {
     it('should return financial metrics with revenue data', async () => {
+      mockQuerySequence();
       const request = new Request('http://localhost:3000/api/admin/hangarshare/v2/overview-stats');
       const response = await GET(request);
       const data = await response.json();
@@ -77,6 +126,7 @@ describe('Overview Stats API (/api/admin/hangarshare/v2/overview-stats)', () => 
 
   describe('Alerts', () => {
     it('should return alerts with valid structure', async () => {
+      mockQuerySequence();
       const request = new Request('http://localhost:3000/api/admin/hangarshare/v2/overview-stats');
       const response = await GET(request);
       const data = await response.json();

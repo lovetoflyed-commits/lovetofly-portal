@@ -8,8 +8,11 @@
  */
 
 import { put, del, head } from '@vercel/blob';
+import path from 'path';
+import { mkdir, writeFile, unlink } from 'fs/promises';
 
 const STORAGE_TYPE = process.env.NEXT_PUBLIC_STORAGE_TYPE || 'vercel-blob';
+const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
@@ -25,19 +28,26 @@ export interface StorageResult {
  * @param folder - Folder path (e.g., 'hangar-photos', 'user-avatars')
  * @returns Storage result with URL
  */
-export async function uploadFile(file: File, folder: string): Promise<StorageResult> {
+export async function uploadFile(
+  file: File,
+  folder: string,
+  options?: { maxSize?: number; allowedTypes?: string[] }
+): Promise<StorageResult> {
   try {
     // Validate file
     if (!file) {
       throw new Error('No file provided');
     }
 
-    if (file.size > MAX_FILE_SIZE) {
-      throw new Error(`File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`);
+    const maxSize = options?.maxSize ?? MAX_FILE_SIZE;
+    const allowedTypes = options?.allowedTypes ?? ALLOWED_TYPES;
+
+    if (file.size > maxSize) {
+      throw new Error(`File too large. Maximum size is ${maxSize / 1024 / 1024}MB`);
     }
 
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      throw new Error('Invalid file type. Only JPEG, PNG, and WebP are allowed');
+    if (!allowedTypes.includes(file.type)) {
+      throw new Error(`Invalid file type. Allowed: ${allowedTypes.join(', ')}`);
     }
 
     // Generate unique filename
@@ -47,6 +57,10 @@ export async function uploadFile(file: File, folder: string): Promise<StorageRes
     const filePath = `${folder}/${fileName}`;
 
     if (STORAGE_TYPE === 'vercel-blob') {
+      if (!BLOB_TOKEN) {
+        console.warn('BLOB_READ_WRITE_TOKEN not set; falling back to local storage');
+        return await uploadToLocal(file, filePath);
+      }
       return await uploadToVercelBlob(file, filePath);
     } else if (STORAGE_TYPE === 'local') {
       return await uploadToLocal(file, filePath);
@@ -72,9 +86,10 @@ export async function deleteFile(url: string): Promise<void> {
     if (STORAGE_TYPE === 'vercel-blob') {
       await del(url);
     } else if (STORAGE_TYPE === 'local') {
-      // Local deletion would require file system access
-      // For now, just log it
-      console.log('Local file deletion not implemented:', url);
+      const cleanUrl = url.split('?')[0].split('#')[0];
+      const localPath = cleanUrl.startsWith('/') ? cleanUrl.slice(1) : cleanUrl;
+      const diskPath = path.join(process.cwd(), 'public', localPath);
+      await unlink(diskPath);
     }
   } catch (error) {
     console.error('Error deleting file:', error);
@@ -122,11 +137,13 @@ async function uploadToVercelBlob(file: File, filePath: string): Promise<Storage
  * Upload to local file system (development)
  */
 async function uploadToLocal(file: File, filePath: string): Promise<StorageResult> {
-  // For development, we simulate storage by returning a data URL
-  // In production, use Vercel Blob
-  const buffer = await file.arrayBuffer();
-  const base64 = Buffer.from(buffer).toString('base64');
-  const url = `data:${file.type};base64,${base64}`;
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const publicRoot = path.join(process.cwd(), 'public');
+  const diskPath = path.join(publicRoot, filePath);
+  const folder = path.dirname(diskPath);
+  await mkdir(folder, { recursive: true });
+  await writeFile(diskPath, buffer);
+  const url = `/${filePath}`;
 
   return {
     url,

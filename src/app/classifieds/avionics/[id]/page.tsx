@@ -21,6 +21,7 @@ interface Photo {
 
 interface Avionics {
   id: number;
+  user_id: number;
   title: string;
   manufacturer?: string;
   model?: string;
@@ -59,7 +60,7 @@ const conditions: Record<string, string> = {
 export default function AvionicsDetail() {
   const params = useParams();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const id = params.id as string;
 
   const [avionics, setAvionics] = useState<Avionics | null>(null);
@@ -74,6 +75,44 @@ export default function AvionicsDetail() {
   });
   const [inquiryLoading, setInquiryLoading] = useState(false);
   const [inquirySuccess, setInquirySuccess] = useState(false);
+
+  const handleReport = async () => {
+    if (!token) {
+      router.push(`/login?redirect=${encodeURIComponent(`/classifieds/avionics/${id}`)}`);
+      return;
+    }
+
+    const reason = window.prompt('Descreva o motivo da denúncia');
+    if (!reason) return;
+
+    const details = window.prompt('Detalhes adicionais (opcional)') || null;
+
+    try {
+      const response = await fetch('/api/moderation/reports', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          contentType: 'classified_avionics',
+          contentId: Number(id),
+          reason,
+          details,
+        }),
+      });
+
+      if (response.ok) {
+        alert('Denúncia enviada. Obrigado por ajudar a manter a comunidade segura.');
+      } else {
+        const data = await response.json();
+        alert(data.message || 'Não foi possível enviar a denúncia.');
+      }
+    } catch (error) {
+      console.error('Error reporting listing:', error);
+      alert('Não foi possível enviar a denúncia.');
+    }
+  };
 
   useEffect(() => {
     fetchAvionicsDetail();
@@ -149,6 +188,14 @@ export default function AvionicsDetail() {
     }).format(price);
   };
 
+  const handleBuyNow = () => {
+    if (!user) {
+      router.push(`/login?redirect=${encodeURIComponent(`/classifieds/checkout?type=avionics&id=${id}`)}`);
+      return;
+    }
+    router.push(`/classifieds/checkout?type=avionics&id=${id}`);
+  };
+
   if (loading) {
     return (
       <AuthGuard>
@@ -192,6 +239,21 @@ export default function AvionicsDetail() {
     );
   }
 
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: avionics.title,
+    description: avionics.description,
+    brand: avionics.manufacturer || undefined,
+    sku: avionics.model || String(avionics.id),
+    offers: {
+      '@type': 'Offer',
+      priceCurrency: 'BRL',
+      price: avionics.price,
+      availability: 'https://schema.org/InStock',
+    },
+  };
+
   return (
     <AuthGuard>
       <div className="flex h-screen bg-gray-50">
@@ -199,6 +261,10 @@ export default function AvionicsDetail() {
         <div className="flex-1 flex flex-col overflow-hidden">
           <Header />
           <main className="flex-1 overflow-y-auto p-6">
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+            />
             <Link
               href="/classifieds/avionics"
               className="text-blue-600 hover:text-blue-800 font-medium mb-6 inline-block"
@@ -330,6 +396,15 @@ export default function AvionicsDetail() {
                     <p className="text-4xl font-bold text-blue-600">{formatPrice(avionics.price)}</p>
                   </div>
 
+                  {user?.id !== avionics.user_id && (
+                    <button
+                      onClick={handleBuyNow}
+                      className="w-full py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium"
+                    >
+                      🛡️ Comprar com Escrow
+                    </button>
+                  )}
+
                   {/* Seller Info */}
                   <div className="border-t pt-6">
                     <h3 className="font-semibold text-gray-900 mb-3">Informações do Anunciante</h3>
@@ -339,6 +414,16 @@ export default function AvionicsDetail() {
                       <p><strong>Publicado em:</strong> {new Date(avionics.created_at).toLocaleDateString('pt-BR')}</p>
                       <p className="text-xs">👁️ {avionics.views} visualizações</p>
                     </div>
+                    {user && user.id !== avionics.user_id && (
+                      <div className="mt-4 pt-4 border-t">
+                        <button
+                          onClick={handleReport}
+                          className="w-full py-2 bg-red-50 text-red-700 border border-red-200 rounded-lg hover:bg-red-100 transition"
+                        >
+                          ⚠️ Reportar anúncio
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Inquiry Form */}

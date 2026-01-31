@@ -205,6 +205,13 @@ export default function HangarOwnerRegisterPage() {
           <p className="text-slate-600 mt-2">
             Complete o cadastro para começar a anunciar seu hangar
           </p>
+          <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <p className="font-semibold">Política antifraude</p>
+            <p className="mt-1">
+              Este processo possui validações automatizadas e revisão manual. Suspeitas de fraude podem resultar em
+              bloqueio do cadastro e outras providências conforme nossos termos. Ao continuar, você concorda com essas regras.
+            </p>
+          </div>
           {profile && (
             <div className="mt-4 bg-slate-50 border border-slate-200 rounded-lg p-4">
               <p className="text-sm text-slate-700">

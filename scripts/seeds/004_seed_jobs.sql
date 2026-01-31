@@ -19,116 +19,47 @@ SELECT
   job_data.salary_max,
   job_data.currency,
   job_data.benefits,
-  job_data.application_deadline,
-  job_data.status,
-  job_data.posted_at,
-  job_data.created_at,
-  job_data.updated_at
-FROM companies c
-CROSS JOIN LATERAL (
-  VALUES
-    -- LATAM Airlines Jobs
-    (
-      'LATAM Airlines Group',
-      'First Officer - Airbus A320',
-      'Procuramos Primeiro Oficial experiente para operar aeronaves A320 em voos domésticos e internacionais. Responsabilidades incluem operação segura da aeronave, comunicação com ATC, e trabalho em equipe com comandante.',
-      ARRAY['CPL/ATPL válido', 'Type Rating A320', 'Mínimo 1500 horas totais', '500 horas em Multi-Engine', 'Inglês ICAO nível 4+', 'CMA Classe 1 válido'],
-      'São Paulo, SP - Base GRU',
-      'full-time',
-      'mid-level',
-      18000.00,
-      25000.00,
-      'BRL',
-      ARRAY['Plano de Saúde Premium', 'Vale Alimentação R$1200', 'Previdência Privada', '30 dias de férias', 'Descontos em passagens para família'],
-      CURRENT_DATE + INTERVAL '45 days',
-      'active',
-      NOW() - INTERVAL '15 days',
-      NOW() - INTERVAL '15 days',
-      NOW()
-    ),
-    (
-      'LATAM Airlines Group',
-      'Captain - Boeing 777',
-      'Buscamos Comandante experiente em widebody para liderar operações internacionais de longo curso. Experiência em gestão de tripulação e tomada de decisões críticas essencial.',
-      ARRAY['ATPL válido', 'Type Rating B777', 'Mínimo 5000 horas totais', '1000 horas como PIC em widebody', 'Inglês ICAO nível 5+', 'CMA Classe 1 válido', 'Experiência em voos intercontinentais'],
-      'São Paulo, SP - Base GRU',
-      'full-time',
-      'senior',
-      35000.00,
-      50000.00,
-      'BRL',
-      ARRAY['Plano de Saúde Premium', 'Bônus por Performance', 'Previdência Privada', 'Auxílio Moradia', 'Passagens ilimitadas para família'],
-      CURRENT_DATE + INTERVAL '60 days',
-      'active',
-      NOW() - INTERVAL '10 days',
-      NOW() - INTERVAL '10 days',
-      NOW()
-    ),
-    
-    -- Azul Airlines Jobs
-    (
-      'Azul Linhas Aéreas',
-      'Pilot Trainee Program',
-      'Programa de formação de pilotos para cadetes com PPL/CPL. Treinamento completo em A320neo com possibilidade de efetivação após conclusão.',
-      ARRAY['CPL válido', 'Mínimo 200 horas totais', 'Inglês ICAO nível 4+', 'CMA Classe 1 válido', 'Menos de 30 anos', 'Disponibilidade para relocação'],
-      'Campinas, SP - Base VCP',
-      'full-time',
-      'entry-level',
-      8000.00,
-      12000.00,
-      'BRL',
-      ARRAY['Treinamento pago pela empresa', 'Type Rating incluído', 'Assistência Médica', 'Vale Refeição', 'Progressão de carreira garantida'],
-      CURRENT_DATE + INTERVAL '30 days',
-      'active',
-      NOW() - INTERVAL '5 days',
-      NOW() - INTERVAL '5 days',
-      NOW()
-    ),
-    (
-      'Azul Linhas Aéreas',
-      'Flight Dispatcher',
-      'Responsável pelo planejamento e acompanhamento de voos, incluindo cálculos de combustível, rotas alternativas, e coordenação com tripulações.',
-      ARRAY['Certificado de Despachante Operacional de Voo', 'Experiência mínima de 2 anos', 'Conhecimento em sistemas de planejamento de voo', 'Inglês intermediário', 'Disponibilidade para turnos'],
-      'Campinas, SP - Centro de Operações',
-      'full-time',
-      'mid-level',
-      6000.00,
-      9000.00,
-      'BRL',
-      ARRAY['Assistência Médica', 'Vale Refeição R$800', 'PLR', 'Treinamento continuado'],
-      CURRENT_DATE + INTERVAL '40 days',
-      'active',
-      NOW() - INTERVAL '20 days',
-      NOW() - INTERVAL '20 days',
-      NOW()
-    ),
-    
-    -- GOL Airlines Jobs
-    (
-      'GOL Linhas Aéreas',
-      'First Officer - Boeing 737-800',
-      'Primeiro Oficial para B737-800 em voos domésticos. Ambiente dinâmico com foco em eficiência operacional.',
-      ARRAY['CPL/ATPL válido', 'Type Rating B737', 'Mínimo 1500 horas totais', 'Inglês ICAO nível 4+', 'CMA Classe 1 válido'],
-      'São Paulo, SP - Base CGH',
-      'full-time',
-      'mid-level',
-      16000.00,
-      22000.00,
-      'BRL',
-      ARRAY['Plano Médico e Dental', 'Vale Transporte', 'PPR', 'Descontos em passagens'],
-      CURRENT_DATE + INTERVAL '50 days',
-      'active',
-      NOW() - INTERVAL '8 days',
-      NOW() - INTERVAL '8 days',
-      NOW()
-    ),
-    
-    -- Executive Jets Brasil
-    (
-      'Executive Jets Brasil',
-      'Corporate Pilot - Citation Latitude',
-      'Piloto executivo para jatos Citation, atendendo clientes corporativos premium. Flexibilidade e discrição essenciais.',
-      ARRAY['CPL/ATPL válido', 'Type Rating Citation (qualquer modelo)', 'Mínimo 2000 horas totais', '500 horas em jatos executivos', 'Inglês fluente', 'Apresentação impecável', 'Disponibilidade 24/7'],
+  -- Seed Job Postings for Recruitment Features
+  -- Minimal insert aligned to current jobs schema (if present)
+
+  DO $$
+  BEGIN
+    IF to_regclass('public.jobs') IS NOT NULL THEN
+      INSERT INTO jobs (
+        company_id,
+        title,
+        category,
+        status,
+        posted_at,
+        created_at,
+        updated_at
+      )
+      SELECT 
+        c.id as company_id,
+        job_data.title,
+        job_data.category,
+        job_data.status,
+        job_data.posted_at,
+        job_data.created_at,
+        job_data.updated_at
+      FROM companies c
+      CROSS JOIN LATERAL (
+        VALUES
+          ('LATAM Airlines', 'First Officer - Airbus A320', 'pilot', 'open', NOW() - INTERVAL '15 days', NOW() - INTERVAL '15 days', NOW()),
+          ('Azul Linhas Aéreas', 'Captain - Embraer 190', 'pilot', 'open', NOW() - INTERVAL '10 days', NOW() - INTERVAL '10 days', NOW()),
+          ('GOL Linhas Aéreas', 'First Officer - Boeing 737', 'pilot', 'open', NOW() - INTERVAL '12 days', NOW() - INTERVAL '12 days', NOW()),
+          ('Embraer', 'Aerospace Engineer', 'engineering', 'open', NOW() - INTERVAL '20 days', NOW() - INTERVAL '20 days', NOW())
+      ) AS job_data(company_name, title, category, status, posted_at, created_at, updated_at)
+      WHERE c.name = job_data.company_name
+        AND NOT EXISTS (
+          SELECT 1 FROM jobs j WHERE j.company_id = c.id AND j.title = job_data.title
+        );
+    END IF;
+  END $$;
+
+  SELECT
+    'Jobs seeded successfully!' as message,
+    CASE WHEN to_regclass('public.jobs') IS NOT NULL THEN (SELECT COUNT(*) FROM jobs) ELSE 0 END as total_jobs;
       'São Paulo, SP - SBMT',
       'full-time',
       'mid-level',

@@ -47,7 +47,7 @@ export async function DELETE(
 
     // Get photo URL from database
     const photoRes = await pool.query(
-      `SELECT photo_url FROM hangar_photos WHERE id = $1 AND hangar_listing_id = $2`,
+      `SELECT photo_url FROM hangar_photos WHERE id = $1 AND listing_id = $2`,
       [photoId, listingId]
     );
 
@@ -62,7 +62,7 @@ export async function DELETE(
 
     // Delete from database
     const deleteRes = await pool.query(
-      `DELETE FROM hangar_photos WHERE id = $1 AND hangar_listing_id = $2 RETURNING id`,
+      `DELETE FROM hangar_photos WHERE id = $1 AND listing_id = $2 RETURNING id`,
       [photoId, listingId]
     );
 

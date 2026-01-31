@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 
 type Booking = {
@@ -28,6 +29,7 @@ export const dynamic = 'force-dynamic';
 
 export default function UserBookingsPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +38,7 @@ export default function UserBookingsPage() {
   const [cancelReason, setCancelReason] = useState('');
   const [cancelLoading, setCancelLoading] = useState(false);
   const [cancelMessage, setCancelMessage] = useState('');
+  const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
     async function fetchBookings() {
@@ -71,9 +74,13 @@ export default function UserBookingsPage() {
     setCancelMessage('');
 
     try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       const response = await fetch('/api/hangarshare/booking/cancel', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           bookingId: selectedBooking.id,
           reason: cancelReason,
@@ -113,18 +120,78 @@ export default function UserBookingsPage() {
     return ['pending', 'confirmed'].includes(booking.status);
   };
 
+  const currentBookings = bookings.filter((b) => b.status === 'confirmed' || b.status === 'pending');
+  const historyBookings = bookings.filter((b) => b.status !== 'confirmed' && b.status !== 'pending');
+  const visibleBookings = showHistory ? historyBookings : currentBookings;
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-semibold mb-4">Minhas Reservas</h1>
+      <div className="flex items-center gap-4 mb-4">
+        <button
+          onClick={() => router.back()}
+          className="px-3 py-2 bg-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-300"
+        >
+          ← Voltar
+        </button>
+        <h1 className="text-2xl font-semibold">Minhas Reservas</h1>
+      </div>
       {loading && <p>Carregando...</p>}
       {error && <p className="text-red-600">{error}</p>}
-      {!loading && bookings.length === 0 && (
+
+      {!loading && !showHistory && currentBookings.length === 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded p-6">
+          <p className="text-blue-900 font-semibold">Você não possui nenhuma reserva atualmente.</p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              onClick={() => setShowHistory(true)}
+              className="px-4 py-2 bg-white border border-blue-300 text-blue-900 font-bold rounded-lg hover:bg-blue-100"
+            >
+              Ver Reservas Anteriores
+            </button>
+            <button
+              onClick={() => router.push('/hangarshare')}
+              className="px-4 py-2 bg-blue-900 text-white font-bold rounded-lg hover:bg-blue-800"
+            >
+              Fazer Nova Reserva
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!loading && showHistory && bookings.length === 0 && (
         <div className="bg-yellow-50 border border-yellow-200 rounded p-4">
           <p>Nenhuma reserva encontrada.</p>
         </div>
       )}
+
+      {!loading && (showHistory || currentBookings.length > 0) && (
+        <div className="mb-4 flex items-center gap-3">
+          {!showHistory ? (
+            <button
+              onClick={() => setShowHistory(true)}
+              className="px-3 py-2 bg-white border border-slate-300 text-slate-700 font-bold rounded-lg hover:bg-slate-100"
+            >
+              Ver Reservas Anteriores
+            </button>
+          ) : (
+            <button
+              onClick={() => setShowHistory(false)}
+              className="px-3 py-2 bg-white border border-slate-300 text-slate-700 font-bold rounded-lg hover:bg-slate-100"
+            >
+              Ver Reservas Atuais
+            </button>
+          )}
+          <button
+            onClick={() => router.push('/hangarshare')}
+            className="px-3 py-2 bg-blue-900 text-white font-bold rounded-lg hover:bg-blue-800"
+          >
+            Fazer Nova Reserva
+          </button>
+        </div>
+      )}
+
       <div className="space-y-4">
-        {bookings.map((b) => (
+        {visibleBookings.map((b) => (
           <div key={b.id} className="border rounded p-4 bg-white shadow-sm">
             <div className="flex justify-between items-start">
               <div className="flex-1">

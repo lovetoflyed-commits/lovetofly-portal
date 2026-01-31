@@ -53,7 +53,7 @@ interface Photo {
 export default function AircraftDetail() {
   const params = useParams();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [aircraft, setAircraft] = useState<Aircraft | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,6 +66,44 @@ export default function AircraftDetail() {
     message: ''
   });
   const [submitting, setSubmitting] = useState(false);
+
+  const handleReport = async () => {
+    if (!token) {
+      router.push(`/login?redirect=${encodeURIComponent(`/classifieds/aircraft/${params.id}`)}`);
+      return;
+    }
+
+    const reason = window.prompt('Descreva o motivo da denúncia');
+    if (!reason) return;
+
+    const details = window.prompt('Detalhes adicionais (opcional)') || null;
+
+    try {
+      const response = await fetch('/api/moderation/reports', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          contentType: 'classified_aircraft',
+          contentId: Number(params.id),
+          reason,
+          details,
+        }),
+      });
+
+      if (response.ok) {
+        alert('Denúncia enviada. Obrigado por ajudar a manter a comunidade segura.');
+      } else {
+        const data = await response.json();
+        alert(data.message || 'Não foi possível enviar a denúncia.');
+      }
+    } catch (error) {
+      console.error('Error reporting listing:', error);
+      alert('Não foi possível enviar a denúncia.');
+    }
+  };
 
   useEffect(() => {
     fetchAircraft();
@@ -146,6 +184,14 @@ export default function AircraftDetail() {
     }).format(price);
   };
 
+  const handleBuyNow = () => {
+    if (!user) {
+      router.push(`/login?redirect=${encodeURIComponent(`/classifieds/checkout?type=aircraft&id=${params.id}`)}`);
+      return;
+    }
+    router.push(`/classifieds/checkout?type=aircraft&id=${params.id}`);
+  };
+
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -156,12 +202,31 @@ export default function AircraftDetail() {
 
   if (!aircraft) return null;
 
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: aircraft.title,
+    description: aircraft.description || `${aircraft.manufacturer} ${aircraft.model}`,
+    brand: aircraft.manufacturer,
+    sku: aircraft.registration || aircraft.serial_number || String(aircraft.id),
+    offers: {
+      '@type': 'Offer',
+      priceCurrency: 'BRL',
+      price: aircraft.price,
+      availability: 'https://schema.org/InStock',
+    },
+  };
+
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
         <main className="flex-1 overflow-y-auto">
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+          />
             {/* Back button */}
             <div className="bg-white border-b px-6 py-4">
               <Link
@@ -213,7 +278,6 @@ export default function AircraftDetail() {
                       </div>
                     )}
                   </div>
-
                   {/* Description */}
                   <div className="bg-white rounded-lg shadow-sm p-6">
                     <h2 className="text-2xl font-bold text-gray-900 mb-4">Descrição</h2>
@@ -316,7 +380,7 @@ export default function AircraftDetail() {
                     </p>
 
                     {/* Owner Actions */}
-                    {user?.id === aircraft.user_id && (
+                    {user?.id === Number(aircraft.user_id) && (
                       <div className="mb-4 space-y-2 pb-4 border-b">
                         <button
                           onClick={() => router.push(`/classifieds/aircraft/${params.id}/edit`)}
@@ -334,6 +398,15 @@ export default function AircraftDetail() {
                           📸 Adicionar Fotos
                         </button>
                       </div>
+                    )}
+
+                    {user?.id !== Number(aircraft.user_id) && (
+                      <button
+                        onClick={handleBuyNow}
+                        className="w-full px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium mb-3"
+                      >
+                        🛡️ Comprar com Escrow
+                      </button>
                     )}
 
                     <button
@@ -396,6 +469,17 @@ export default function AircraftDetail() {
                       <p className="text-sm font-medium text-gray-700 mb-2">Anunciante</p>
                       <p className="text-gray-900">{aircraft.seller_name}</p>
                     </div>
+
+                    {user && user.id !== Number(aircraft.user_id) && (
+                      <div className="mt-4 pt-4 border-t">
+                        <button
+                          onClick={handleReport}
+                          className="w-full py-2 bg-red-50 text-red-700 border border-red-200 rounded-lg hover:bg-red-100 transition"
+                        >
+                          ⚠️ Reportar anúncio
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

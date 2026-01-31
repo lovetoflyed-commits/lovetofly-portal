@@ -88,10 +88,12 @@ function determineBookingType(params: { checkIn: string; timeZone: string }): 'r
 
 export async function POST(request: NextRequest) {
   const startTime = performance.now();
+  const client = await pool.connect();
+  let parsedBody: any = null;
   try {
     const stripe = await getStripe();
-    const body = await request.json();
-    const { hangarId, userId, checkIn, checkOut, totalPrice, subtotal, fees } = body;
+    parsedBody = await request.json();
+    const { hangarId, userId, checkIn, checkOut, totalPrice, subtotal, fees } = parsedBody;
 
     const timeZone = process.env.BOOKING_TIMEZONE || 'America/Sao_Paulo';
 
@@ -112,8 +114,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    await client.query('BEGIN');
+    await client.query('SELECT pg_advisory_xact_lock($1)', [hangarId]);
+
+    // Release expired pending holds so dates become available again
+    await client.query(
+      `UPDATE hangar_bookings
+       SET status = 'cancelled', updated_at = NOW()
+       WHERE status = 'pending'
+         AND created_at < NOW() - INTERVAL '30 minutes'`
+    );
+
     // Verify hangar exists and is available
-    const hangarResult = await pool.query(
+    const hangarResult = await client.query(
       'SELECT id, hangar_number, icao_code, monthly_rate FROM hangar_listings WHERE id = $1 AND is_available = true',
       [hangarId]
     );
@@ -126,7 +139,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user exists
-    const userResult = await pool.query(
+    const userResult = await client.query(
       'SELECT id, email, first_name FROM users WHERE id = $1',
       [userId]
     );
@@ -155,9 +168,78 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Prevent overlapping bookings (confirmed or active pending)
+    const overlapResult = await client.query(
+      `SELECT id
+       FROM hangar_bookings
+       WHERE hangar_id = $1
+         AND status IN ('confirmed', 'pending')
+         AND (status <> 'pending' OR created_at >= NOW() - INTERVAL '30 minutes')
+         AND check_in < $3
+         AND check_out > $2
+       LIMIT 1`,
+      [hangarId, checkIn, checkOut]
+    );
+
+    if (overlapResult.rows.length > 0) {
+      await client.query('ROLLBACK');
+      return NextResponse.json(
+        { error: 'Hangar indisponível para as datas selecionadas' },
+        { status: 409 }
+      );
+    }
+
     // Determine booking type (refundable vs non_refundable)
     const bookingType = determineBookingType({ checkIn, timeZone });
     const refundPolicyApplied = 'moderate_v1';
+
+    // Idempotency guard: reuse recent booking/payment intent for same user + hangar + dates
+    const existingResult = await client.query(
+      `SELECT id, status, stripe_payment_intent_id, booking_type
+       FROM hangar_bookings
+       WHERE hangar_id = $1
+         AND user_id = $2
+         AND check_in = $3
+         AND check_out = $4
+         AND status IN ('pending', 'confirmed')
+         AND created_at >= NOW() - INTERVAL '15 minutes'
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [hangarId, userId, checkIn, checkOut]
+    );
+
+    if (existingResult.rows.length > 0) {
+      const existing = existingResult.rows[0];
+      await client.query('COMMIT');
+
+      if (!existing.stripe_payment_intent_id) {
+        return NextResponse.json(
+          { error: 'Reserva existente sem pagamento associado' },
+          { status: 409 }
+        );
+      }
+
+      const paymentIntent = await stripe.paymentIntents.retrieve(existing.stripe_payment_intent_id);
+
+      return NextResponse.json({
+        success: true,
+        booking: {
+          id: existing.id,
+          status: existing.status,
+          hangarNumber: hangar.hangar_number,
+          checkIn,
+          checkOut,
+          nights,
+          totalPrice,
+          bookingType: existing.booking_type || bookingType,
+        },
+        payment: {
+          clientSecret: paymentIntent.client_secret,
+          paymentIntentId: paymentIntent.id,
+          publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+        },
+      });
+    }
 
     // Create Stripe Payment Intent
     const paymentIntent = await stripe.paymentIntents.create({
@@ -177,8 +259,8 @@ export async function POST(request: NextRequest) {
       description: `Reserva de hangar ${hangar.hangar_number} (${hangar.icao_code}) - ${nights} noite(s)`,
     });
 
-    // Create booking record with pending status
-    const bookingResult = await pool.query(
+    // Create booking record with confirmed status
+    const bookingResult = await client.query(
       `INSERT INTO hangar_bookings 
         (hangar_id, user_id, check_in, check_out, nights, subtotal, fees, total_price, status, payment_method, stripe_payment_intent_id, booking_type, refund_policy_applied)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
@@ -192,7 +274,7 @@ export async function POST(request: NextRequest) {
         subtotal,
         fees,
         totalPrice,
-        'pending',
+        'confirmed',
         'stripe',
         paymentIntent.id,
         bookingType,
@@ -200,13 +282,15 @@ export async function POST(request: NextRequest) {
       ]
     );
 
+    await client.query('COMMIT');
+
     const booking = bookingResult.rows[0];
 
     return NextResponse.json({
       success: true,
       booking: {
         id: booking.id,
-        status: 'pending',
+        status: 'confirmed',
         hangarNumber: hangar.hangar_number,
         checkIn,
         checkOut,
@@ -233,6 +317,11 @@ export async function POST(request: NextRequest) {
       200
     );
   } catch (error) {
+    try {
+      await client.query('ROLLBACK');
+    } catch {
+      // ignore rollback errors
+    }
     const duration = performance.now() - startTime;
     MonitoringService.trackApiPerformance(
       '/api/hangarshare/booking/confirm',
@@ -240,8 +329,8 @@ export async function POST(request: NextRequest) {
       500,
       false
     );
-    const totalPrice = parseFloat(JSON.stringify((await request.json()).totalPrice || '0'));
-    MonitoringService.trackPaymentEvent('failed', totalPrice, 'BRL');
+    const failedTotal = Number(parsedBody?.totalPrice || 0);
+    MonitoringService.trackPaymentEvent('failed', failedTotal, 'BRL');
     MonitoringService.captureException(error as Error, { endpoint: '/api/hangarshare/booking/confirm' });
     console.error('Booking confirmation error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Erro ao confirmar reserva';
@@ -249,5 +338,7 @@ export async function POST(request: NextRequest) {
       { error: errorMessage },
       { status: 500 }
     );
+  } finally {
+    client.release();
   }
 }

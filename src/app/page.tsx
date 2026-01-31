@@ -377,10 +377,15 @@ function Modal({ open, onClose, title, children }: { open: boolean; onClose: () 
 
 export default function Home() {
   const { user, logout } = useAuth();
+  const [isMounted, setIsMounted] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Debug: log user state
   useEffect(() => {
@@ -793,7 +798,7 @@ export default function Home() {
   };
 
   // If user is logged in, show modular dashboard
-  if (user) {
+  if (isMounted && user) {
     return (
       <div className="min-h-screen bg-slate-50 text-slate-900 flex">
         <Sidebar />
@@ -841,9 +846,6 @@ export default function Home() {
               </div>
             </div>
           </section>
-
-          {/* Carrossel de ofertas de hangares */}
-          <HangarCarousel />
 
           {/* Widgets Row: Weather | Classifieds | News | HangarShare - with stacked Income Widgets in News column */}
           <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

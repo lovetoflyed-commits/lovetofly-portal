@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -27,6 +27,9 @@ const maskPhone = (value: string) => {
 
 export default function RegisterPage() {
   const router = useRouter();
+  useEffect(() => {
+    router.replace('/tools/e6b');
+  }, [router]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 

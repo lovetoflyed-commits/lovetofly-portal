@@ -1,14 +1,12 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/config/db';
+import { requireAdmin } from '@/utils/adminAuth';
 
 // GET: List compliance records
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-    // TODO: JWT validation
+    const authError = await requireAdmin(request);
+    if (authError) return authError;
     const result = await pool.query('SELECT * FROM compliance_records ORDER BY created_at DESC LIMIT 100');
     return NextResponse.json({ records: result.rows }, { status: 200 });
   } catch (error) {
@@ -18,13 +16,10 @@ export async function GET(request: Request) {
 }
 
 // POST: Add new compliance record
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-    // TODO: JWT validation
+    const authError = await requireAdmin(request);
+    if (authError) return authError;
     const body = await request.json();
     const insert = await pool.query(
       'INSERT INTO compliance_records (type, description, status, created_by) VALUES ($1, $2, $3, $4) RETURNING *',

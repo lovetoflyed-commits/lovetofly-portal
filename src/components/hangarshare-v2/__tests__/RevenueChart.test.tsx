@@ -6,6 +6,30 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { RevenueChart } from '../RevenueChart';
 
+jest.mock('recharts', () => ({
+  ResponsiveContainer: ({ children, width, height }: any) => (
+    <div className="recharts-responsive-container" style={{ width: width || '100%', height: height || 300 }}>
+      {children}
+    </div>
+  ),
+  LineChart: ({ children, width, height }: any) => (
+    <svg className="recharts-surface" width={width || 400} height={height || 300}>
+      {children}
+    </svg>
+  ),
+  CartesianGrid: () => <g className="recharts-cartesian-grid" />,
+  XAxis: () => <g className="recharts-xaxis" />,
+  YAxis: () => <g className="recharts-yaxis" />,
+  Tooltip: () => <g className="recharts-tooltip" />,
+  Legend: () => (
+    <div className="recharts-legend">
+      <span>Actual Revenue</span>
+      <span>Target</span>
+    </div>
+  ),
+  Line: () => <g className="recharts-line" />,
+}));
+
 describe('RevenueChart Component', () => {
   const mockData = [
     { month: 'Jan', revenue: 5000, target: 4000, growth: 25 },
@@ -22,7 +46,7 @@ describe('RevenueChart Component', () => {
 
     it('should render the chart title', () => {
       render(<RevenueChart data={mockData} />);
-      expect(screen.getByText('Monthly Revenue')).toBeInTheDocument();
+      expect(screen.getByText('Revenue Trend')).toBeInTheDocument();
     });
 
     it('should render with legend by default', () => {
@@ -44,7 +68,7 @@ describe('RevenueChart Component', () => {
 
     it('should handle empty data gracefully', () => {
       render(<RevenueChart data={[]} />);
-      expect(screen.getByText('Monthly Revenue')).toBeInTheDocument();
+      expect(screen.getByText('Revenue Trend')).toBeInTheDocument();
     });
   });
 
@@ -66,7 +90,7 @@ describe('RevenueChart Component', () => {
 
     it('should render legend items', () => {
       render(<RevenueChart data={mockData} />);
-      expect(screen.getByText('Revenue')).toBeInTheDocument();
+      expect(screen.getByText('Actual Revenue')).toBeInTheDocument();
       expect(screen.getByText('Target')).toBeInTheDocument();
     });
   });

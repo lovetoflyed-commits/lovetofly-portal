@@ -230,7 +230,13 @@ export default function EditProfilePage() {
           <div className="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-900 rounded">
             <b>Você é anunciante ativo no HangarShare.</b><br />
             Para alterar dados sensíveis (nome, CPF, contato, endereço), solicite ao administrador do portal.<br />
-            <button className="mt-3 px-4 py-2 bg-yellow-400 text-white rounded font-bold hover:bg-yellow-500">Solicitar alteração ao administrador</button>
+            <button
+              type="button"
+              onClick={() => router.push('/support')}
+              className="mt-3 px-4 py-2 bg-yellow-400 text-white rounded font-bold hover:bg-yellow-500"
+            >
+              Solicitar alteração ao administrador
+            </button>
           </div>
         )}
         <form className="space-y-5" onSubmit={handleSubmit}>

@@ -18,7 +18,22 @@ export async function GET(
         ho.cnpj,
         ho.phone,
         ho.address,
+        ho.address_country,
+        ho.address_zip,
+        ho.address_street,
+        ho.address_number,
+        ho.address_complement,
+        ho.address_neighborhood,
+        ho.address_city,
+        ho.address_state,
+        ho.phone_country_code,
+        ho.phone_mobile,
+        ho.phone_landline,
         ho.website,
+        ho.social_instagram,
+        ho.social_facebook,
+        ho.social_linkedin,
+        ho.social_youtube,
         ho.description,
         ho.owner_type,
         ho.cpf,
@@ -54,7 +69,16 @@ export async function GET(
     let verification: any = null;
     const documents: Array<{ id: string; label: string; url: string; status?: string; type?: string }> = [];
 
-    if (hasHov) {
+    const OWNER_DOC_TYPES = [
+      { id: 'cnpj_certificate', label: 'Certificado de CNPJ' },
+      { id: 'business_license', label: 'Alvará de Funcionamento' },
+      { id: 'insurance', label: 'Seguro da Propriedade' },
+      { id: 'property_deed', label: 'Documento de Propriedade' },
+      { id: 'id_owner', label: 'Identidade do Proprietário' },
+      { id: 'bank_account', label: 'Comprovante Bancário' },
+    ];
+
+    if (hasHov && !hasOwnerDocs) {
       const columnsResult = await pool.query(
         "SELECT column_name FROM information_schema.columns WHERE table_name = 'hangar_owner_verification'"
       );
@@ -138,20 +162,41 @@ export async function GET(
 
     if (hasOwnerDocs) {
       const ownerDocs = await pool.query(`
-        SELECT id, document_type, file_path, upload_status
+        SELECT id, document_type, document_name, file_path, upload_status,
+               ai_check_status, ai_check_notes, reupload_deadline, reupload_reason
         FROM owner_documents
         WHERE owner_id = $1
         ORDER BY uploaded_at DESC
       `, [ownerId]);
 
+      const existingTypes = new Set<string>();
       ownerDocs.rows.forEach((row: any) => {
-        if (row.file_path) {
+        if (row.document_type) {
+          existingTypes.add(String(row.document_type));
+        }
+        documents.push({
+          id: `owner-doc-${row.id}`,
+          label: row.document_type || 'Documento',
+          url: row.file_path || '',
+          status: row.upload_status || 'pending',
+          type: row.document_type,
+          name: row.document_name,
+          aiStatus: row.ai_check_status,
+          aiNotes: row.ai_check_notes,
+          reuploadDeadline: row.reupload_deadline,
+          reuploadReason: row.reupload_reason
+        });
+      });
+
+      OWNER_DOC_TYPES.forEach((docType) => {
+        if (!existingTypes.has(docType.id)) {
           documents.push({
-            id: `owner-doc-${row.id}`,
-            label: row.document_type || 'Documento',
-            url: row.file_path,
-            status: row.upload_status,
-            type: row.document_type
+            id: `owner-doc-missing-${ownerId}-${docType.id}`,
+            label: docType.label,
+            url: '',
+            status: 'missing',
+            type: docType.id,
+            name: ''
           });
         }
       });

@@ -10,13 +10,14 @@ export async function GET(
     const { id } = await params;
     
     const result = await pool.query(
-      `SELECT id, owner_id, title, price, description, status, icao_code, 
+      `SELECT id, owner_id, status, icao_code,
               hangar_number, hangar_location_description, hangar_size_sqm,
               max_wingspan_meters, max_length_meters, max_height_meters,
               hourly_rate, daily_rate, weekly_rate, monthly_rate,
               available_from, available_until, special_notes,
               accepts_online_payment, accepts_payment_on_arrival, accepts_payment_on_departure,
-              cancellation_policy, created_at, updated_at
+              cancellation_policy, is_available, description,
+              created_at, updated_at
        FROM hangar_listings WHERE id = $1`,
       [id]
     );
@@ -62,47 +63,75 @@ export async function PATCH(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Validate required fields
-    const { 
-      title, price, description, status,
+    const {
+      status,
       icaoCode, hangarNumber, hangarLocationDescription, hangarSizeSqm,
       maxWingspanMeters, maxLengthMeters, maxHeightMeters,
       hourlyRate, dailyRate, weeklyRate, monthlyRate,
       availableFrom, availableUntil, specialNotes,
       acceptsOnlinePayment, acceptsPaymentOnArrival, acceptsPaymentOnDeparture,
-      cancellationPolicy
+      cancellationPolicy, isAvailable, description
     } = body;
 
-    if (!title || !price || !description) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-    }
+    const normalizedStatus = typeof status === 'string' ? status : null;
+    const normalizedIsAvailable = typeof isAvailable === 'boolean' ? isAvailable : null;
 
     // Update listing with all fields
     const updateRes = await pool.query(
       `UPDATE hangar_listings SET 
-        title = $1, price = $2, description = $3, status = $4,
-        icao_code = $5, hangar_number = $6, hangar_location_description = $7, hangar_size_sqm = $8,
-        max_wingspan_meters = $9, max_length_meters = $10, max_height_meters = $11,
-        hourly_rate = $12, daily_rate = $13, weekly_rate = $14, monthly_rate = $15,
-        available_from = $16, available_until = $17, special_notes = $18,
-        accepts_online_payment = $19, accepts_payment_on_arrival = $20, accepts_payment_on_departure = $21,
-        cancellation_policy = $22, updated_at = NOW()
-       WHERE id = $23 
-       RETURNING id, owner_id, title, price, description, status, icao_code, 
+        status = COALESCE($1, status),
+        icao_code = COALESCE($2, icao_code),
+        hangar_number = COALESCE($3, hangar_number),
+        hangar_location_description = COALESCE($4, hangar_location_description),
+        hangar_size_sqm = COALESCE($5, hangar_size_sqm),
+        max_wingspan_meters = COALESCE($6, max_wingspan_meters),
+        max_length_meters = COALESCE($7, max_length_meters),
+        max_height_meters = COALESCE($8, max_height_meters),
+        hourly_rate = COALESCE($9, hourly_rate),
+        daily_rate = COALESCE($10, daily_rate),
+        weekly_rate = COALESCE($11, weekly_rate),
+        monthly_rate = COALESCE($12, monthly_rate),
+        available_from = COALESCE($13, available_from),
+        available_until = COALESCE($14, available_until),
+        special_notes = COALESCE($15, special_notes),
+        accepts_online_payment = COALESCE($16, accepts_online_payment),
+        accepts_payment_on_arrival = COALESCE($17, accepts_payment_on_arrival),
+        accepts_payment_on_departure = COALESCE($18, accepts_payment_on_departure),
+        cancellation_policy = COALESCE($19, cancellation_policy),
+        is_available = COALESCE($20, is_available),
+        description = COALESCE($21, description),
+        updated_at = NOW()
+       WHERE id = $22 
+       RETURNING id, owner_id, status, icao_code, 
                  hangar_number, hangar_location_description, hangar_size_sqm,
                  max_wingspan_meters, max_length_meters, max_height_meters,
                  hourly_rate, daily_rate, weekly_rate, monthly_rate,
                  available_from, available_until, special_notes,
                  accepts_online_payment, accepts_payment_on_arrival, accepts_payment_on_departure,
-                 cancellation_policy, created_at, updated_at`,
+                 cancellation_policy, is_available, description, created_at, updated_at`,
       [
-        title, price, description, status || 'active',
-        icaoCode, hangarNumber || null, hangarLocationDescription || null, hangarSizeSqm || null,
-        maxWingspanMeters || null, maxLengthMeters || null, maxHeightMeters || null,
-        hourlyRate || null, dailyRate || null, weeklyRate || null, monthlyRate || null,
-        availableFrom || null, availableUntil || null, specialNotes || null,
-        acceptsOnlinePayment ?? true, acceptsPaymentOnArrival ?? true, acceptsPaymentOnDeparture ?? false,
-        cancellationPolicy || 'flexible', id
+        normalizedStatus,
+        icaoCode ?? null,
+        hangarNumber ?? null,
+        hangarLocationDescription ?? null,
+        hangarSizeSqm ?? null,
+        maxWingspanMeters ?? null,
+        maxLengthMeters ?? null,
+        maxHeightMeters ?? null,
+        hourlyRate ?? null,
+        dailyRate ?? null,
+        weeklyRate ?? null,
+        monthlyRate ?? null,
+        availableFrom ?? null,
+        availableUntil ?? null,
+        specialNotes ?? null,
+        acceptsOnlinePayment ?? null,
+        acceptsPaymentOnArrival ?? null,
+        acceptsPaymentOnDeparture ?? null,
+        cancellationPolicy ?? null,
+        normalizedIsAvailable,
+        description ?? null,
+        id
       ]
     );
 

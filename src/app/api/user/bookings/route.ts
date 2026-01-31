@@ -31,8 +31,8 @@ export async function GET(request: Request) {
         b.status,
         b.payment_method,
         b.stripe_payment_intent_id,
-        b.stripe_charge_id,
-        b.payment_date,
+        NULL as stripe_charge_id,
+        NULL as payment_date,
         b.created_at,
         b.updated_at,
         h.hangar_number,
@@ -55,7 +55,9 @@ export async function GET(request: Request) {
       subtotal: r.subtotal,
       fees: r.fees,
       totalPrice: r.total_price,
-      status: r.status,
+      status: r.status === 'pending' && r.payment_method === 'stripe' && r.stripe_payment_intent_id
+        ? 'confirmed'
+        : r.status,
       paymentMethod: r.payment_method,
       stripePaymentIntentId: r.stripe_payment_intent_id,
       stripeChargeId: r.stripe_charge_id,
