@@ -669,3 +669,25 @@
 - Investigação: Necessidade de gestão manual de fotos no admin.
 - Correção: Endpoint de fotos e botões de upload/remoção.
 - Verificação: src/app/api/admin/hangarshare/listings/[id]/photos/route.ts, src/app/admin/hangarshare/listings/[id]/page.tsx.
+
+## 2026-01-31
+- Ação: Leitura dos arquivos de instruções e registros de deploy.
+- Resultado: Instruções e restrições de charts confirmadas.
+- Erros: Sem erros.
+- Investigação: Leitura de documentation/DEPLOYMENT.md, DEPLOYMENT_JANUARY_15_2026.md e NEXT_DEPLOY_REPORT.md.
+- Correção: Não aplicável.
+- Verificação: Arquivos mencionados acima.
+
+- Ação: Preparação do deploy via GitHub com exclusão de charts.
+- Resultado: Commit 8496b6a criado e enviado para origin/main; charts excluídos do conteúdo do deploy.
+- Erros: Sem erros.
+- Investigação: git status e verificação dos padrões de exclusão para charts.
+- Correção: Reset dos caminhos de charts no índice.
+- Verificação: git log (commit 8496b6a) e push para origin/main.
+
+- Ação: Registro do conteúdo do deploy em arquivo de records.
+- Resultado: Registro criado em docs/records/deployment/DEPLOYMENT_RECORD_2026-01-31.md.
+- Erros: Sem erros.
+- Investigação: Lista de mudanças do commit e escopo solicitado pelo usuário.
+- Correção: Não aplicável.
+- Verificação: docs/records/deployment/DEPLOYMENT_RECORD_2026-01-31.md.

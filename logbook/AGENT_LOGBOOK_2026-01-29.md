@@ -23,3 +23,7 @@
 ## Pendências imediatas
 - Revisar rotas protegidas (admin/staff/owner) com login válido.
 - Verificar páginas não públicas via navegação automática (crawler interno).
+
+## 2026-01-31 — Deploy
+- Deploy preparado e enviado via GitHub (commit 8496b6a), com exclusão explícita de charts.
+- Registro de deploy criado em docs/records/deployment/DEPLOYMENT_RECORD_2026-01-31.md.
