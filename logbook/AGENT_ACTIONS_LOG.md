@@ -359,8 +359,6 @@
 - Verificação: docs/records/active/DB_NAV_ORDER_DUMP_CHECK_2026-01-30.md.
 
 ## 2026-01-30
-
-## 2026-01-30
 - Ação: Correção de filtros e parâmetros no relatório de desempenho por aeródromo.
 - Resultado: Query do relatório passou a usar parâmetros consistentes para filtros e mínimos.
 - Erros: Sem erros.
@@ -670,7 +668,6 @@
 - Correção: Endpoint de fotos e botões de upload/remoção.
 - Verificação: src/app/api/admin/hangarshare/listings/[id]/photos/route.ts, src/app/admin/hangarshare/listings/[id]/page.tsx.
 
-## 2026-01-31
 - Ação: Leitura dos arquivos de instruções e registros de deploy.
 - Resultado: Instruções e restrições de charts confirmadas.
 - Erros: Sem erros.
@@ -698,6 +695,42 @@
 - Investigação: Identificação do componente LandingPage como página pré-login.
 - Correção: Remoção do import `HangarCarousel` e da seção correspondente.
 - Verificação: src/components/LandingPage.tsx.
+
+## 2026-02-01
+- Ação: Correção de logging administrativo para tolerar ausência da coluna details.
+- Resultado: Log tenta inserir em details e faz fallback usando new_value quando coluna não existe.
+- Erros: Sem erros.
+- Investigação: Erros 42703 ao inserir em admin_activity_log.
+- Correção: Fallback no logAdminAction.
+- Verificação: src/utils/adminAuth.ts.
+
+- Ação: Validação de documentId nas rotas de aprovação/rejeição de documentos.
+- Resultado: IDs inválidos retornam 400 e não geram erro 500.
+- Erros: Sem erros.
+- Investigação: Erro NaN na aprovação de documentos.
+- Correção: Validação numérica e uso do id real do documento no log.
+- Verificação: src/app/api/admin/hangarshare/owner-documents/[documentId]/approve/route.ts, src/app/api/admin/hangarshare/owner-documents/[documentId]/reject/route.ts.
+
+- Ação: Criação de migração para adicionar coluna details em admin_activity_log.
+- Resultado: Migração 092 criada para suporte a metadados estruturados.
+- Erros: Sem erros.
+- Investigação: Schema sem coluna details.
+- Correção: ALTER TABLE com ADD COLUMN IF NOT EXISTS.
+- Verificação: src/migrations/092_add_admin_activity_log_details.sql.
+
+- Ação: Correção do fallback de log admin para usar ipAddress/userAgent no escopo correto.
+- Resultado: Fallback não gera ReferenceError.
+- Erros: Sem erros.
+- Investigação: Erro ReferenceError: ipAddress is not defined no fallback.
+- Correção: Moveu ipAddress e userAgent para o escopo da função.
+- Verificação: src/utils/adminAuth.ts.
+
+- Ação: Execução das migrações do banco.
+- Resultado: Migrations complete; nenhuma nova migração aplicada.
+- Erros: Avisos de timestamp e warning de module type em migrações .js.
+- Investigação: Execução de npm run migrate:up -- --no-check-order.
+- Correção: Não aplicável.
+- Verificação: Saída do comando de migração.
 
 - Ação: Remoção apenas do carrossel HangarShare na landing page pré-login.
 - Resultado: Apenas o componente do carrossel foi removido; seção e layout mantidos.

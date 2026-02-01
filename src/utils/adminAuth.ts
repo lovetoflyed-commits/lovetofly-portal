@@ -105,19 +105,36 @@ export async function logAdminAction(
   details: any,
   request: NextRequest
 ): Promise<void> {
-  try {
-    const ipAddress = request.headers.get('x-forwarded-for') || 
-                     request.headers.get('x-real-ip') || 
-                     'unknown';
-    const userAgent = request.headers.get('user-agent') || 'unknown';
+  const ipAddress = request.headers.get('x-forwarded-for') || 
+                   request.headers.get('x-real-ip') || 
+                   'unknown';
+  const userAgent = request.headers.get('user-agent') || 'unknown';
 
+  try {
     await pool.query(
       `INSERT INTO admin_activity_log 
        (admin_id, action_type, target_type, target_id, details, ip_address, user_agent) 
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [adminId, actionType, targetType, targetId, JSON.stringify(details), ipAddress, userAgent]
     );
-  } catch (error) {
+  } catch (error: any) {
+    const errorCode = typeof error?.code === 'string' ? error.code : null;
+
+    if (errorCode === '42703') {
+      try {
+        await pool.query(
+          `INSERT INTO admin_activity_log 
+           (admin_id, action_type, target_type, target_id, new_value, notes, ip_address, user_agent) 
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          [adminId, actionType, targetType, targetId, JSON.stringify(details), null, ipAddress, userAgent]
+        );
+        return;
+      } catch (fallbackError) {
+        console.error('Failed to log admin action (fallback):', fallbackError);
+        return;
+      }
+    }
+
     console.error('Failed to log admin action:', error);
     // Don't throw - logging failure shouldn't break the main operation
   }

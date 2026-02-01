@@ -16,6 +16,10 @@ export async function POST(
 
   try {
     const { documentId } = await params;
+    const documentIdNumber = Number(documentId);
+    if (!Number.isFinite(documentIdNumber)) {
+      return NextResponse.json({ message: 'Invalid document id' }, { status: 400 });
+    }
     const body = await request.json().catch(() => ({}));
     const notes = typeof body?.notes === 'string' ? body.notes : null;
 
@@ -28,7 +32,7 @@ export async function POST(
            notes = COALESCE($2, notes)
        WHERE id = $3
        RETURNING id, owner_id, document_type, upload_status`,
-      [admin.id, notes, Number(documentId)]
+      [admin.id, notes, documentIdNumber]
     );
 
     if (result.rows.length === 0) {
@@ -69,7 +73,7 @@ export async function POST(
       admin.id,
       'approve',
       'owner_document',
-      String(documentId),
+      String(doc.id),
       { notes },
       request
     );
