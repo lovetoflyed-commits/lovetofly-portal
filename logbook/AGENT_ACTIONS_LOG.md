@@ -1,5 +1,142 @@
 # Agent Actions Log (Atualização obrigatória)
 
+## 2026-02-11 (Continuação - Correção de Documentação)
+
+- Ação: Criação do sistema de continuidade de tarefas para handoff de agentes.
+- Resultado: Sistema completo implementado com CURRENT_TASK_STATUS.md como arquivo central de tracking. Novo agente agora pode ver exatamente onde o último agente parou e continuar do ponto certo sem repetir ou pular tarefas.
+- Erros: Sem erros.
+- Investigação: Análise do novo requisito do usuário sobre continuidade de agentes e necessidade de não repetir ou pular tarefas.
+- Correção: Não aplicável (feature nova).
+- Verificação: Conferir CURRENT_TASK_STATUS.md, AGENT_START_HERE.md atualizado, .github/copilot-instructions.md com workflow de handoff, TASK_STATUS_TEMPLATE.md criado, e AGENT_MANDATORY_UPDATE_RULES atualizado.
+
+- Ação: Criação de CURRENT_TASK_STATUS.md no diretório raiz.
+- Resultado: Arquivo criado com seções para: tarefas completadas, tarefa atual em progresso, subtarefas restantes, bloqueios, próxima ação, e protocolo de handoff. Inclui histórico de todas as tarefas da sessão 2026-02-11.
+- Erros: Sem erros.
+- Investigação: Definição da estrutura ideal para tracking de tarefas e continuidade.
+- Correção: Não aplicável.
+- Verificação: Conferir CURRENT_TASK_STATUS.md no root.
+
+- Ação: Atualização de AGENT_START_HERE.md para priorizar CURRENT_TASK_STATUS.md.
+- Resultado: Adicionada seção de "Agent Continuity" no topo com aviso destacado para ler CURRENT_TASK_STATUS.md PRIMEIRO. Ordem de leitura reorganizada com CURRENT_TASK_STATUS.md como prioridade #1.
+- Erros: Sem erros.
+- Investigação: Revisão da estrutura do arquivo para melhor destaque.
+- Correção: Não aplicável.
+- Verificação: Conferir AGENT_START_HERE.md seções iniciais.
+
+- Ação: Atualização de .github/copilot-instructions.md com workflow completo de handoff.
+- Resultado: Seção "MANDATORY" atualizada com CURRENT_TASK_STATUS.md como STEP 1. Instruções de "After EVERY action" expandidas para incluir atualização do task status. Nova seção "Before finishing your session (Agent Handoff)" adicionada. Checklist de workflow atualizado com 3 fases: antes de iniciar, após ação, antes de handoff. Common pitfalls atualizado incluindo "Incomplete Task Tracking".
+- Erros: Sem erros.
+- Investigação: Análise de onde inserir instruções de continuidade.
+- Correção: Não aplicável.
+- Verificação: Conferir .github/copilot-instructions.md seções atualizadas.
+
+- Ação: Criação de TASK_STATUS_TEMPLATE.md em docs/records/active/.
+- Resultado: Template completo criado com seções para: overview da tarefa, descrição, critérios de sucesso, subtarefas completadas/restantes, bloqueios, detalhes técnicos, testes, documentação, notas de handoff, e checklist de conclusão. Template reutilizável para futuras tarefas complexas.
+- Erros: Sem erros.
+- Investigação: Análise de elementos necessários para tracking completo de tarefas.
+- Correção: Não aplicável.
+- Verificação: Conferir docs/records/active/TASK_STATUS_TEMPLATE.md.
+
+- Ação: Atualização de AGENT_MANDATORY_UPDATE_RULES_2026-01-29.md com regras de task tracking.
+- Resultado: Ordem de leitura atualizada com CURRENT_TASK_STATUS.md como prioridade #1. Regra máxima expandida com 3 seções: após cada ação, e antes de finalizar sessão (handoff). Instruções detalhadas sobre o que atualizar em cada fase.
+- Erros: Sem erros.
+- Investigação: Revisão das regras existentes e integração das novas.
+- Correção: Não aplicável.
+- Verificação: Conferir docs/records/active/AGENT_MANDATORY_UPDATE_RULES_2026-01-29.md.
+
+- Ação: Identificação de erro crítico na documentação anterior sobre configuração de banco de dados.
+- Resultado: Descoberto que a documentação recém-criada estava INCORRETA ao afirmar "APENAS um banco de dados (Neon)". O projeto suporta DOIS bancos: Neon (produção) e PostgreSQL local (desenvolvimento).
+- Erros: Documentação anterior muito restritiva, impedindo desenvolvimento local. Código em src/config/db.ts claramente suporta fallback para banco local com nome 'lovetofly-portal'.
+- Investigação: Revisão de src/config/db.ts linhas 7-13 mostrando configuração de fallback. Busca em arquivos encontrou múltiplas referências ao banco local 'lovetofly-portal'. .env.example tinha nome ERRADO ('lovetofly_portal' com underscore ao invés de hífen).
+- Correção: Atualizada documentação em .github/copilot-instructions.md, docs/records/active/DATABASE_GUIDE_2026-02-11.md, AGENT_START_HERE.md, e .env.example para refletir configuração dual correta.
+- Verificação: Conferir arquivos modificados mostrando configuração dual (produção: Neon, desenvolvimento: local PostgreSQL com nome 'lovetofly-portal').
+
+- Ação: Correção de .env.example com nome de banco incorreto.
+- Resultado: Mudado DB_NAME de 'lovetofly_portal' (underscore) para 'lovetofly-portal' (hífen). Adicionada nota explicativa sobre obrigatoriedade do hífen.
+- Erros: Sem erros.
+- Investigação: Comparação com src/config/db.ts linha 10 que usa 'lovetofly-portal'.
+- Correção: Editado .env.example para usar nome correto.
+- Verificação: Conferir .env.example linha 26.
+
+- Ação: Atualização completa de .github/copilot-instructions.md para documentar configuração dual.
+- Resultado: Seção de banco de dados reescrita para clarificar: (1) Produção usa Neon PostgreSQL via DATABASE_URL, (2) Desenvolvimento local usa PostgreSQL com banco 'lovetofly-portal'. Removidas declarações incorretas sobre "apenas um banco". Adicionados exemplos de configuração para ambos os ambientes.
+- Erros: Sem erros.
+- Investigação: Análise de como desenvolvedores realmente usam o projeto localmente.
+- Correção: Reescrita de 5 seções no arquivo de instruções.
+- Verificação: Conferir .github/copilot-instructions.md seções "DATABASE CONFIGURATION" e "Database Usage Rules".
+
+- Ação: Atualização de docs/records/active/DATABASE_GUIDE_2026-02-11.md com configuração dual.
+- Resultado: Guia de banco reescrito para documentar ambas configurações (Neon e local). Adicionadas seções separadas para cada ambiente. Corrigidos exemplos de connection strings e comandos psql.
+- Erros: Sem erros.
+- Investigação: Revisão do guia criado anteriormente que estava incorreto.
+- Correção: Editadas 6 seções do DATABASE_GUIDE.
+- Verificação: Conferir DATABASE_GUIDE seções "Database Connection Details" e "Connection String Format".
+
+- Ação: Atualização de AGENT_START_HERE.md para refletir configuração dual.
+- Resultado: Seção "Contexto correto do projeto" atualizada para mencionar ambos os bancos. Regras para agentes atualizadas com instruções corretas sobre quando usar cada banco.
+- Erros: Sem erros.
+- Investigação: Garantir consistência com outras documentações.
+- Correção: Editadas 2 seções em AGENT_START_HERE.md.
+- Verificação: Conferir AGENT_START_HERE.md seções "Contexto correto do projeto" e "Regra para novos agentes".
+
+## 2026-02-11
+
+- Ação: Análise do problema de agentes usando banco de dados errado e não seguindo instruções.
+- Resultado: Identificadas 4 causas principais: documentação dispersa (366 .md na raiz), configuração de DB em múltiplos lugares, instruções incompletas no copilot-instructions.md, e ausência de fluxo de onboarding claro.
+- Erros: Sem erros.
+- Investigação: Revisão de .github/copilot-instructions.md, AGENT_START_HERE.md, documentação em /docs e /documentation, src/config/db.ts, e contagem de arquivos .md na raiz.
+- Correção: Não aplicável.
+- Verificação: Diagnóstico completo documentado no PR.
+
+- Ação: Atualização completa de .github/copilot-instructions.md com contexto abrangente.
+- Resultado: Arquivo expandido de 33 para 340+ linhas incluindo: seção obrigatória de leitura, guia completo de configuração do banco de dados, organização de documentação, estrutura do projeto, workflows, armadilhas comuns, e checklist de workflow do agente.
+- Erros: Sem erros.
+- Investigação: Análise de problemas reportados e documentação existente.
+- Correção: Não aplicável.
+- Verificação: Conferir .github/copilot-instructions.md com as novas seções adicionadas.
+
+- Ação: Criação de DATABASE_GUIDE_2026-02-11.md como fonte única de verdade para configuração do banco.
+- Resultado: Guia abrangente de 400+ linhas criado em docs/records/active/ incluindo: política de banco único, detalhes de conexão, configuração de código, esquema do banco, gerenciamento de migrações, melhores práticas de queries, testes, e troubleshooting.
+- Erros: Sem erros.
+- Investigação: Consolidação de informações de NEON_SETUP.md, SETUP_AND_CONNECTIONS.md, src/config/db.ts, e .env.example.
+- Correção: Não aplicável.
+- Verificação: Conferir docs/records/active/DATABASE_GUIDE_2026-02-11.md.
+
+- Ação: Atualização de AGENT_START_HERE.md com cross-references e avisos críticos.
+- Resultado: Adicionada referência proeminente a copilot-instructions.md, aviso sobre não usar banco local, ordem de leitura atualizada incluindo copilot-instructions.md como primeiro item, e regras expandidas incluindo cross-reference para instruções técnicas.
+- Erros: Sem erros.
+- Investigação: Revisão da ordem de leitura existente e integração com novo conteúdo.
+- Correção: Não aplicável.
+- Verificação: Conferir AGENT_START_HERE.md linhas 1-30.
+
+- Ação: Atualização de README.md com seção proeminente para agentes AI.
+- Resultado: Adicionado aviso destacado para agentes AI no topo do README e seção expandida "AI Development" com links para AGENT_START_HERE.md, copilot-instructions.md, e DATABASE_GUIDE.
+- Erros: Sem erros.
+- Investigação: Análise da estrutura do README existente.
+- Correção: Não aplicável.
+- Verificação: Conferir README.md seção "AI Development".
+
+- Ação: Atualização de documentation/README.md com referências ao novo guia do banco.
+- Resultado: Adicionado link destacado para DATABASE_GUIDE_2026-02-11.md na seção "Setup & Configuration" e nota expandida no rodapé referenciando os 3 documentos principais para agentes.
+- Erros: Sem erros.
+- Investigação: Revisão da estrutura de documentação existente.
+- Correção: Não aplicável.
+- Verificação: Conferir documentation/README.md seção "Setup & Configuration" e nota final.
+
+- Ação: Adição de comentário em .vscode/settings.json referenciando instruções do Copilot.
+- Resultado: Comentário "AI CODING AGENTS" adicionado no topo do arquivo apontando para .github/copilot-instructions.md e AGENT_START_HERE.md.
+- Erros: Sem erros.
+- Investigação: Verificação de configurações existentes do VS Code.
+- Correção: Não aplicável.
+- Verificação: Conferir .vscode/settings.json linha 2.
+
+- Ação: Armazenamento de 5 fatos críticos na memória do agente para sessões futuras.
+- Resultado: Armazenados fatos sobre: configuração do banco de dados (usar apenas Neon via db.ts), organização de documentação (não criar arquivos na raiz), onboarding de agentes (ordem de leitura obrigatória), contexto do HangarShare (é feature, não projeto separado), e regras de migrations (nunca editar existentes).
+- Erros: Sem erros.
+- Investigação: Identificação dos fatos mais críticos para evitar erros futuros.
+- Correção: Não aplicável.
+- Verificação: Memórias armazenadas via tool store_memory confirmadas como bem-sucedidas.
+
 ## 2026-01-29
 - Ação: Remoção de registro indevido em public/ads.txt (arquivo de Google AdSense).
 - Resultado: ads.txt restaurado ao conteúdo original.
