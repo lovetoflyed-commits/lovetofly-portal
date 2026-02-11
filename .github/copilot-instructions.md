@@ -3,20 +3,36 @@
 ## 🚨 MANDATORY: Read These Files FIRST (In Order)
 **STOP! Before making ANY changes, read these files in this exact order:**
 
-1. **AGENT_START_HERE.md** (root) - Critical project context and onboarding
-2. **logbook/AGENT_ACTIONS_LOG.md** - History of all agent actions, errors, and resolutions
-3. **docs/records/active/PROJECT_SNAPSHOT_2026-01-29.md** - Current project state
-4. **docs/records/active/PROJECT_ROUTE_INVENTORY_2026-01-29.md** - All routes and APIs
-5. **docs/records/active/DB_REORG_TASKS_2026-01-29.md** - Database reorganization tasks
-6. **docs/records/active/AGENT_MANDATORY_UPDATE_RULES_2026-01-29.md** - Agent workflow rules
+**🎯 STEP 1 - Current Task (Read FIRST!)**
+1. **CURRENT_TASK_STATUS.md** (root) - ⚠️ **CRITICAL**: Shows what the last agent was working on. Pick up from here!
 
-**After EVERY action you complete, you MUST update logbook/AGENT_ACTIONS_LOG.md with:**
-- What was done
-- Result achieved
-- Errors encountered (or "No errors")
-- Investigation steps
-- How it was fixed
-- How to verify the fix
+**📚 STEP 2 - Context & Guidelines**
+2. **AGENT_START_HERE.md** (root) - Critical project context and onboarding
+3. **logbook/AGENT_ACTIONS_LOG.md** - History of all agent actions, errors, and resolutions
+4. **docs/records/active/PROJECT_SNAPSHOT_2026-01-29.md** - Current project state
+5. **docs/records/active/DATABASE_GUIDE_2026-02-11.md** - Database configuration (dual setup)
+6. **docs/records/active/PROJECT_ROUTE_INVENTORY_2026-01-29.md** - All routes and APIs
+7. **docs/records/active/DB_REORG_TASKS_2026-01-29.md** - Database reorganization tasks
+8. **docs/records/active/AGENT_MANDATORY_UPDATE_RULES_2026-01-29.md** - Agent workflow rules
+
+**After EVERY action you complete, you MUST:**
+1. Update `CURRENT_TASK_STATUS.md` with progress (mark completed subtasks with [x])
+2. Update `logbook/AGENT_ACTIONS_LOG.md` with:
+   - What was done
+   - Result achieved
+   - Errors encountered (or "No errors")
+   - Investigation steps
+   - How it was fixed
+   - How to verify the fix
+
+**Before finishing your session (Agent Handoff):**
+1. Update `CURRENT_TASK_STATUS.md` with:
+   - Mark all completed tasks with [x]
+   - Update "CURRENT TASK" section with status
+   - Set "Next Action" for the next agent
+   - Add timestamp
+2. Commit all changes
+3. Update `logbook/AGENT_ACTIONS_LOG.md` with final session summary
 
 ## 🗄️ DATABASE CONFIGURATION (Critical - Read Carefully)
 
@@ -210,11 +226,15 @@ npm run seed:dev       # Seed development data
 ❌ **DON'T**: Edit existing migration files  
 ✅ **DO**: Create a new migration file with the changes
 
-### 4. Incomplete Action Logs
+### 4. Incomplete Task Tracking
+❌ **DON'T**: Skip updating `CURRENT_TASK_STATUS.md` with your progress  
+✅ **DO**: Update task status after completing each subtask so next agent knows where to continue
+
+### 5. Incomplete Action Logs
 ❌ **DON'T**: Skip updating `logbook/AGENT_ACTIONS_LOG.md`  
 ✅ **DO**: Update the log after EVERY action with full details
 
-### 5. Wrong Project Context
+### 6. Wrong Project Context
 ❌ **DON'T**: Treat HangarShare as a separate domain/project  
 ✅ **DO**: Understand HangarShare is a feature within Love to Fly Portal
 
@@ -287,19 +307,32 @@ npm run seed:dev       # Seed development data
 
 ## 🎯 AGENT WORKFLOW CHECKLIST
 
-Before starting any task:
-- [ ] Read AGENT_START_HERE.md
-- [ ] Review logbook/AGENT_ACTIONS_LOG.md for recent context
-- [ ] Check docs/records/active/ for relevant documentation
-- [ ] Understand which database to use (Neon PostgreSQL only)
-- [ ] Know where to create new documentation files
+### Before starting any task:
+- [ ] Read **CURRENT_TASK_STATUS.md** ← #1 Priority! See what last agent was working on
+- [ ] Read **AGENT_START_HERE.md** for project context
+- [ ] Review **logbook/AGENT_ACTIONS_LOG.md** for recent actions and errors
+- [ ] Check **docs/records/active/** for relevant documentation
+- [ ] Understand database configuration (Neon for production, local PostgreSQL for dev)
+- [ ] Know where to create new documentation files (docs/records/active/)
 
-After completing any action:
-- [ ] Update logbook/AGENT_ACTIONS_LOG.md with full details
-- [ ] Create/update relevant docs in docs/records/active/
+### After completing any action:
+- [ ] Update **CURRENT_TASK_STATUS.md** - Mark completed subtasks with [x]
+- [ ] Update **logbook/AGENT_ACTIONS_LOG.md** with full details
+- [ ] Create/update relevant docs in **docs/records/active/**
 - [ ] Test changes thoroughly
 - [ ] Verify database connections use correct source
 - [ ] Check for any unintended file creation in root
+
+### Before finishing your session (Agent Handoff):
+- [ ] Update **CURRENT_TASK_STATUS.md** with:
+  - All completed tasks marked [x]
+  - Current task status updated
+  - "Next Action" set for next agent
+  - Timestamp updated
+  - Any blockers noted
+- [ ] Final update to **logbook/AGENT_ACTIONS_LOG.md**
+- [ ] Commit all changes with clear message
+- [ ] Push to remote branch
 
 ## 💡 QUICK TIPS
 

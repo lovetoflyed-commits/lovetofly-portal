@@ -1,6 +1,22 @@
-# Agent Start Here (2026-01-29)
+# Agent Start Here (2026-01-29, Updated 2026-02-11)
 
-> **🤖 AI Coding Agents**: Also read `.github/copilot-instructions.md` for comprehensive technical guidelines, database configuration, and workflow patterns.
+> **🚨 NEW AGENTS: READ THIS FIRST!**  
+> **📍 STEP 1**: Read `CURRENT_TASK_STATUS.md` to see what the last agent was working on and pick up from there!  
+> **📍 STEP 2**: Then read `.github/copilot-instructions.md` for comprehensive technical guidelines.
+
+## 🔄 Agent Continuity (CRITICAL)
+
+**Before doing ANYTHING else, check the current task status:**
+
+👉 **[CURRENT_TASK_STATUS.md](./CURRENT_TASK_STATUS.md)** ← Read this FIRST!
+
+This file shows:
+- ✅ What tasks are already completed (don't repeat!)
+- 🎯 What task is currently in progress
+- 📋 What the next action should be
+- 🔔 Any blockers or important notes
+
+**After finishing your work, update CURRENT_TASK_STATUS.md before handing off!**
 
 ## Contexto correto do projeto
 - HangarShare é uma funcionalidade dentro do portal Love to Fly (não é um domínio separado).
@@ -10,14 +26,18 @@
   - **Desenvolvimento Local**: PostgreSQL local com nome do banco `lovetofly-portal` (com hífen, não pode ser alterado)
 
 ## Ordem de leitura obrigatória (prioridade)
-1. **.github/copilot-instructions.md** - Technical guidelines and critical context
-2. **logbook/AGENT_ACTIONS_LOG.md** - Action history and error resolutions
-3. **docs/records/active/PROJECT_SNAPSHOT_2026-01-29.md** - Current state overview
-4. **docs/records/active/PROJECT_ROUTE_INVENTORY_2026-01-29.md** - All routes and APIs
-5. **docs/records/active/DB_REORG_TASKS_2026-01-29.md** - Database tasks
-6. **docs/records/active/PROJECT_STATUS_TODO_AND_FLIGHTTOOLS_ANALYSIS_2026-01-28.md** - Status and TODOs
-7. **docs/records/active/FUNCTIONALITY_REPORT_2026-01-28.md** - Feature analysis
-8. **logbook/AGENT_LOGBOOK_2026-01-29.md** - Detailed work log
+
+### 🎯 PRIORITY #1 (Always read first!)
+1. **CURRENT_TASK_STATUS.md** - ⚠️ What task is active RIGHT NOW and where to continue
+
+### 📚 Then read these for context:
+2. **.github/copilot-instructions.md** - Technical guidelines and critical context
+3. **logbook/AGENT_ACTIONS_LOG.md** - Action history and error resolutions
+4. **docs/records/active/PROJECT_SNAPSHOT_2026-01-29.md** - Current state overview
+5. **docs/records/active/DATABASE_GUIDE_2026-02-11.md** - Database configuration (CORRECTED)
+6. **docs/records/active/PROJECT_ROUTE_INVENTORY_2026-01-29.md** - All routes and APIs
+7. **docs/records/active/DB_REORG_TASKS_2026-01-29.md** - Database tasks
+8. **docs/records/active/PROJECT_STATUS_TODO_AND_FLIGHTTOOLS_ANALYSIS_2026-01-28.md** - Status and TODOs
 
 ## O que foi feito na reorganização
 - Toda a documentação solta em raiz foi movida para docs/records/ por categoria.
