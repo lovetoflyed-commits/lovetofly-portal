@@ -1,5 +1,63 @@
 # Agent Actions Log (Atualização obrigatória)
 
+## 2026-02-11
+
+- Ação: Análise do problema de agentes usando banco de dados errado e não seguindo instruções.
+- Resultado: Identificadas 4 causas principais: documentação dispersa (366 .md na raiz), configuração de DB em múltiplos lugares, instruções incompletas no copilot-instructions.md, e ausência de fluxo de onboarding claro.
+- Erros: Sem erros.
+- Investigação: Revisão de .github/copilot-instructions.md, AGENT_START_HERE.md, documentação em /docs e /documentation, src/config/db.ts, e contagem de arquivos .md na raiz.
+- Correção: Não aplicável.
+- Verificação: Diagnóstico completo documentado no PR.
+
+- Ação: Atualização completa de .github/copilot-instructions.md com contexto abrangente.
+- Resultado: Arquivo expandido de 33 para 340+ linhas incluindo: seção obrigatória de leitura, guia completo de configuração do banco de dados, organização de documentação, estrutura do projeto, workflows, armadilhas comuns, e checklist de workflow do agente.
+- Erros: Sem erros.
+- Investigação: Análise de problemas reportados e documentação existente.
+- Correção: Não aplicável.
+- Verificação: Conferir .github/copilot-instructions.md com as novas seções adicionadas.
+
+- Ação: Criação de DATABASE_GUIDE_2026-02-11.md como fonte única de verdade para configuração do banco.
+- Resultado: Guia abrangente de 400+ linhas criado em docs/records/active/ incluindo: política de banco único, detalhes de conexão, configuração de código, esquema do banco, gerenciamento de migrações, melhores práticas de queries, testes, e troubleshooting.
+- Erros: Sem erros.
+- Investigação: Consolidação de informações de NEON_SETUP.md, SETUP_AND_CONNECTIONS.md, src/config/db.ts, e .env.example.
+- Correção: Não aplicável.
+- Verificação: Conferir docs/records/active/DATABASE_GUIDE_2026-02-11.md.
+
+- Ação: Atualização de AGENT_START_HERE.md com cross-references e avisos críticos.
+- Resultado: Adicionada referência proeminente a copilot-instructions.md, aviso sobre não usar banco local, ordem de leitura atualizada incluindo copilot-instructions.md como primeiro item, e regras expandidas incluindo cross-reference para instruções técnicas.
+- Erros: Sem erros.
+- Investigação: Revisão da ordem de leitura existente e integração com novo conteúdo.
+- Correção: Não aplicável.
+- Verificação: Conferir AGENT_START_HERE.md linhas 1-30.
+
+- Ação: Atualização de README.md com seção proeminente para agentes AI.
+- Resultado: Adicionado aviso destacado para agentes AI no topo do README e seção expandida "AI Development" com links para AGENT_START_HERE.md, copilot-instructions.md, e DATABASE_GUIDE.
+- Erros: Sem erros.
+- Investigação: Análise da estrutura do README existente.
+- Correção: Não aplicável.
+- Verificação: Conferir README.md seção "AI Development".
+
+- Ação: Atualização de documentation/README.md com referências ao novo guia do banco.
+- Resultado: Adicionado link destacado para DATABASE_GUIDE_2026-02-11.md na seção "Setup & Configuration" e nota expandida no rodapé referenciando os 3 documentos principais para agentes.
+- Erros: Sem erros.
+- Investigação: Revisão da estrutura de documentação existente.
+- Correção: Não aplicável.
+- Verificação: Conferir documentation/README.md seção "Setup & Configuration" e nota final.
+
+- Ação: Adição de comentário em .vscode/settings.json referenciando instruções do Copilot.
+- Resultado: Comentário "AI CODING AGENTS" adicionado no topo do arquivo apontando para .github/copilot-instructions.md e AGENT_START_HERE.md.
+- Erros: Sem erros.
+- Investigação: Verificação de configurações existentes do VS Code.
+- Correção: Não aplicável.
+- Verificação: Conferir .vscode/settings.json linha 2.
+
+- Ação: Armazenamento de 5 fatos críticos na memória do agente para sessões futuras.
+- Resultado: Armazenados fatos sobre: configuração do banco de dados (usar apenas Neon via db.ts), organização de documentação (não criar arquivos na raiz), onboarding de agentes (ordem de leitura obrigatória), contexto do HangarShare (é feature, não projeto separado), e regras de migrations (nunca editar existentes).
+- Erros: Sem erros.
+- Investigação: Identificação dos fatos mais críticos para evitar erros futuros.
+- Correção: Não aplicável.
+- Verificação: Memórias armazenadas via tool store_memory confirmadas como bem-sucedidas.
+
 ## 2026-01-29
 - Ação: Remoção de registro indevido em public/ads.txt (arquivo de Google AdSense).
 - Resultado: ads.txt restaurado ao conteúdo original.
