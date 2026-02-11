@@ -71,10 +71,18 @@
     
     "// MISC": "=== Other optimizations ===",
     "telemetry.telemetryLevel": "off",
+    
+    "// GITHUB COPILOT": "=== Copilot configuration ===",
     "github.copilot.enable": {
         "*": true,
         "plaintext": false,
         "markdown": false
     },
+    "github.copilot.advanced": {
+        "debug.overrideEngine": "",
+        "debug.testOverrideProxyUrl": "",
+        "debug.overrideProxyUrl": ""
+    },
+    "http.proxyStrictSSL": true,
     "python.analysis.typeCheckingMode": "basic"
 }
