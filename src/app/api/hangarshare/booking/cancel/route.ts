@@ -39,9 +39,7 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
-    const stripe = new Stripe(stripeSecretKey, {
-      apiVersion: '2024-11-20.acacia' as any,
-    });
+    const stripe = new Stripe(stripeSecretKey);
     const body = await request.json();
     const { bookingId, reason, refundType = 'full' } = body;
 

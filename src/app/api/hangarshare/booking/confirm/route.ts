@@ -9,9 +9,7 @@ async function getStripe() {
     throw new Error('STRIPE_SECRET_KEY ausente. Configure no .env.local e reinicie o servidor.');
   }
 
-  return new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: '2024-11-20.acacia' as any,
-  });
+  return new Stripe(process.env.STRIPE_SECRET_KEY);
 }
 
 // Helpers to get local time in a specific timezone without external deps
