@@ -6,9 +6,7 @@ async function getStripe() {
     throw new Error('Stripe not configured');
   }
   const Stripe = (await import('stripe')).default;
-  return new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: '2025-12-15.clover' as any,
-  });
+  return new Stripe(process.env.STRIPE_SECRET_KEY);
 }
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
