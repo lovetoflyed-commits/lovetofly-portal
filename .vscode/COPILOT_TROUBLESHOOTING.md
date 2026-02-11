@@ -53,7 +53,8 @@ Ensure VS Code and GitHub Copilot extension are up to date:
 ### 7. Diagnostics
 
 View diagnostic logs:
-- Press F1 and run "Developer: GitHub Copilot Chat Diagnostics"
+- Press F1 and run "GitHub Copilot: Show Output" or "Developer: Show Logs"
+- Check the "GitHub Copilot" output channel for errors
 
 ### 8. Alternative Network
 

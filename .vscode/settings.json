@@ -78,11 +78,13 @@
         "plaintext": false,
         "markdown": false
     },
+    "// Advanced: Leave empty unless debugging network/proxy issues": "",
     "github.copilot.advanced": {
         "debug.overrideEngine": "",
         "debug.testOverrideProxyUrl": "",
         "debug.overrideProxyUrl": ""
     },
+    "// Set to false only if you have SSL certificate issues": "",
     "http.proxyStrictSSL": true,
     "python.analysis.typeCheckingMode": "basic"
 }
