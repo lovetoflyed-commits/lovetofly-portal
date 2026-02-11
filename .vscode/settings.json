@@ -71,10 +71,15 @@
     
     "// MISC": "=== Other optimizations ===",
     "telemetry.telemetryLevel": "off",
+    
+    "// GITHUB COPILOT": "=== AI-assisted coding ===",
+    "github.copilot.inlineSuggest.enable": true,
     "github.copilot.enable": {
         "*": true,
         "plaintext": false,
-        "markdown": false
+        "markdown": false,
+        "scminput": false
     },
+    
     "python.analysis.typeCheckingMode": "basic"
 }
