@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import UserTypeSelectionModal from './UserTypeSelectionModal';
 
 interface LandingPageProps {
   onOpenLogin: () => void;
@@ -8,7 +10,26 @@ interface LandingPageProps {
 }
 
 export default function LandingPage({ onOpenLogin, onOpenRegister }: LandingPageProps) {
+  const router = useRouter();
   const [selectedPlan, setSelectedPlan] = useState<'free' | 'premium' | 'pro'>('free');
+  const [showUserTypeModal, setShowUserTypeModal] = useState(false);
+
+  const handleRegisterClick = () => {
+    // Show user type selection modal instead of opening register form directly
+    setShowUserTypeModal(true);
+  };
+
+  const handleUserTypeSelect = (userType: 'individual' | 'business') => {
+    setShowUserTypeModal(false);
+
+    if (userType === 'individual') {
+      // Open the individual register form modal
+      onOpenRegister();
+    } else {
+      // Navigate to business register page
+      router.push('/register-business');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
@@ -29,7 +50,7 @@ export default function LandingPage({ onOpenLogin, onOpenRegister }: LandingPage
                 Entrar
               </button>
               <button
-                onClick={onOpenRegister}
+                onClick={handleRegisterClick}
                 className="bg-blue-900 text-white px-6 py-2 rounded-lg hover:bg-blue-800 transition-colors text-sm font-bold"
               >
                 Criar Conta
@@ -37,8 +58,7 @@ export default function LandingPage({ onOpenLogin, onOpenRegister }: LandingPage
               <a
                 href="#"
                 onClick={(e) => { e.preventDefault(); onOpenLogin(); }}
-                className="ml-2 text-xs text-slate-400 hover:text-blue-700 underline underline-offset-2 focus:outline-none"
-                style={{ letterSpacing: '0.05em' }}
+                className="ml-2 text-xs text-slate-400 hover:text-blue-700 underline underline-offset-2 focus:outline-none tracking-wider"
                 tabIndex={0}
                 aria-label="Acesso restrito ao staff"
               >
@@ -53,7 +73,7 @@ export default function LandingPage({ onOpenLogin, onOpenRegister }: LandingPage
       <section className="relative overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-5"></div>
-        
+
         <div className="relative max-w-7xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
           <div className="text-center space-y-8">
             {/* Main Headline */}
@@ -73,7 +93,7 @@ export default function LandingPage({ onOpenLogin, onOpenRegister }: LandingPage
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <button
-                onClick={onOpenRegister}
+                onClick={handleRegisterClick}
                 className="px-8 py-4 bg-gradient-to-r from-orange-500 to-red-500 text-white text-lg font-bold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
               >
                 🚀 Começar Gratuitamente
@@ -536,6 +556,13 @@ export default function LandingPage({ onOpenLogin, onOpenRegister }: LandingPage
           </div>
         </div>
       </footer>
+
+      {/* User Type Selection Modal */}
+      <UserTypeSelectionModal
+        isOpen={showUserTypeModal}
+        onSelect={handleUserTypeSelect}
+        onCancel={() => setShowUserTypeModal(false)}
+      />
     </div>
   );
 }

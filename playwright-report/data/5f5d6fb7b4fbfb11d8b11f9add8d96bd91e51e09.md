@@ -1,0 +1,84 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - img "Love to Fly" [ref=e5] [cursor=pointer]
+      - generic [ref=e6]:
+        - heading "PORTAL DA AVIAÇÃO CIVIL" [level=1] [ref=e7]
+        - paragraph [ref=e8]: O SEU PORTAL DA AVIAÇÃO CIVIL
+      - generic [ref=e9]:
+        - generic [ref=e10]: premium
+        - generic [ref=e11]: Olá, Admin Sistema
+        - button "Sair" [ref=e12] [cursor=pointer]
+  - generic [ref=e13]:
+    - banner [ref=e14]:
+      - generic [ref=e16]:
+        - link "LOVE TO FLY" [ref=e17] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e18]: LOVE TO FLY
+        - navigation [ref=e19]:
+          - link "Courses" [ref=e20] [cursor=pointer]:
+            - /url: /courses
+          - link "Logbook" [ref=e21] [cursor=pointer]:
+            - /url: /logbook
+          - link "Tools" [ref=e22] [cursor=pointer]:
+            - /url: /tools/e6b
+          - link "Shop" [ref=e23] [cursor=pointer]:
+            - /url: /shop
+          - button "Classificados" [ref=e25] [cursor=pointer]:
+            - text: Classificados
+            - img [ref=e26]
+          - link "Forum" [ref=e28] [cursor=pointer]:
+            - /url: /forum
+        - generic [ref=e29]:
+          - button [ref=e31] [cursor=pointer]:
+            - img [ref=e32]
+          - link "Admin Sistema" [ref=e34] [cursor=pointer]:
+            - /url: /profile
+          - link "Página inicial" [ref=e35] [cursor=pointer]:
+            - /url: /
+    - main [ref=e36]:
+      - generic [ref=e37]:
+        - generic [ref=e38]:
+          - generic [ref=e40]: A
+          - generic [ref=e41]:
+            - heading "Admin Sistema" [level=1] [ref=e42]
+            - generic [ref=e44]: admin
+          - button "Editar Perfil" [ref=e45] [cursor=pointer]
+        - generic [ref=e46]:
+          - generic [ref=e48]:
+            - button "Editar perfil" [ref=e49] [cursor=pointer]
+            - button "Minhas reservas" [ref=e50] [cursor=pointer]
+            - button "Notificações" [ref=e51] [cursor=pointer]
+          - generic [ref=e53]:
+            - heading "👤 Dados Pessoais" [level=3] [ref=e54]:
+              - generic [ref=e55]: 👤
+              - text: Dados Pessoais
+            - generic [ref=e56]:
+              - generic [ref=e57]:
+                - generic [ref=e58]: Email
+                - paragraph [ref=e59]: admin@test.local
+              - generic [ref=e60]:
+                - generic [ref=e61]: Telefone
+                - paragraph [ref=e62]: Não informado
+              - generic [ref=e63]:
+                - generic [ref=e64]: Endereço
+                - paragraph [ref=e65]: Não informado
+          - generic [ref=e67]:
+            - heading "✈️ Qualificações & Voo" [level=3] [ref=e68]:
+              - generic [ref=e69]: ✈️
+              - text: Qualificações & Voo
+            - generic [ref=e70]:
+              - generic [ref=e71]:
+                - generic [ref=e72]: Horas Totais de Voo
+                - paragraph [ref=e73]: 0h
+                - paragraph [ref=e74]: Calculado automaticamente do seu logbook
+              - generic [ref=e75]:
+                - paragraph [ref=e76]: 📝 Nenhuma qualificação cadastrada
+                - button "Adicionar qualificações" [ref=e77] [cursor=pointer]
+  - button "Open Next.js Dev Tools" [ref=e83] [cursor=pointer]:
+    - img [ref=e84]
+  - alert [ref=e87]
+```

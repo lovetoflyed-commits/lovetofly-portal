@@ -10,6 +10,7 @@ interface User {
   email: string;
   plan?: string;
   role?: string;
+  user_type?: string;
 }
 
 interface AuthContextType {
@@ -25,7 +26,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
-  
+
   // Initialize user and token from localStorage
   const [user, setUser] = useState<User | null>(() => {
     if (typeof window !== 'undefined') {
@@ -34,14 +35,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     return null;
   });
-  
+
   const [token, setToken] = useState<string | null>(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('token');
     }
     return null;
   });
-  
+
   const [error, setError] = useState<string | null>(null);
 
   // Initialize Sentry on mount (client-side only)
@@ -67,14 +68,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(data.user);
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        
+
         // Set user in Sentry for error tracking
         setSentryUser({
           id: data.user.id?.toString(),
           email: data.user.email,
           username: data.user.name,
         });
-        
+
         console.log('[AuthContext] Login response user:', data.user);
 
         // After login, check membership and downgrade if expired, then sync plan and send notifications
@@ -122,12 +123,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    if (typeof window !== 'undefined' && user?.id) {
+      const payload = {
+        userId: user.id,
+        activityType: 'logout',
+        description: 'User logged out',
+        ipAddress: null,
+        userAgent: navigator.userAgent
+      };
+
+      if (navigator.sendBeacon) {
+        const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+        navigator.sendBeacon('/api/admin/activity/log', blob);
+      } else {
+        fetch('/api/admin/activity/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          keepalive: true
+        }).catch(() => undefined);
+      }
+    }
+
     setUser(null);
     setToken(null);
-    
+
     // Clear user from Sentry
     setSentryUser(null);
-    
+
     if (typeof window !== 'undefined') {
       localStorage.removeItem('token');
       localStorage.removeItem('user');

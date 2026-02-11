@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Love to Fly Portal - Test Reports</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 50px 40px;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 32px;
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #1e40af;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .description {
+            color: #555;
+            margin-bottom: 40px;
+            line-height: 1.6;
+            font-size: 15px;
+        }
+
+        .reports-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .report-card {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .report-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 16px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .report-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        .report-button:active {
+            transform: translateY(0);
+        }
+
+        .report-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e40af;
+        }
+
+        .report-info {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .divider {
+            height: 1px;
+            background: #eee;
+            margin: 30px 0;
+        }
+
+        .info-section {
+            text-align: left;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .info-section h3 {
+            color: #1e40af;
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .info-section ul {
+            list-style: none;
+            font-size: 14px;
+            color: #555;
+            line-height: 1.8;
+        }
+
+        .info-section li {
+            margin-bottom: 6px;
+        }
+
+        .info-section li:before {
+            content: "✓ ";
+            color: #10b981;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .print-guide {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            border-radius: 4px;
+            text-align: left;
+            margin-top: 20px;
+        }
+
+        .print-guide h4 {
+            color: #1e40af;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .print-guide ol {
+            margin-left: 20px;
+            font-size: 13px;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .print-guide li {
+            margin-bottom: 4px;
+        }
+
+        .footer {
+            color: #999;
+            font-size: 12px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        @media (max-width: 600px) {
+            .reports-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 30px 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .report-button {
+                font-size: 14px;
+                padding: 14px 20px;
+            }
+        }
+
+        .status-badge {
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">Love to Fly Portal</div>
+        <div class="subtitle">Test Report Portal</div>
+        
+        <h1>Comprehensive Test Reports</h1>
+        <p class="description">
+            Select your preferred language to view the complete test analysis and Quality Assurance report with all test results, findings, and recommendations.
+        </p>
+
+        <div class="reports-grid">
+            <!-- English Report -->
+            <div class="report-card">
+                <div class="status-badge">Document Ready</div>
+                <div class="report-title">English Report</div>
+                <div class="report-info">Full report in English</div>
+                <a href="TEST_REPORT_FULL_EN.html" target="_blank" class="report-button">
+                    <span>📄</span>
+                    <span>Open Report (EN)</span>
+                </a>
+                <div class="report-info" style="font-size: 11px; color: #aaa;">
+                    25-30 pages • A4 Format • PDF Ready
+                </div>
+            </div>
+
+            <!-- Portuguese Report -->
+            <div class="report-card">
+                <div class="status-badge">Documento Pronto</div>
+                <div class="report-title">Portuguese Report</div>
+                <div class="report-info">Relatório completo em Português</div>
+                <a href="TEST_REPORT_FULL_PT.html" target="_blank" class="report-button">
+                    <span>📄</span>
+                    <span>Abrir Relatório (PT)</span>
+                </a>
+                <div class="report-info" style="font-size: 11px; color: #aaa;">
+                    25-30 páginas • Formato A4 • Pronto para PDF
+                </div>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="info-section">
+            <h3>📊 What's Included</h3>
+            <ul>
+                <li>Executive Summary with Key Metrics</li>
+                <li>Build Validation Results (242 pages)</li>
+                <li>End-to-End Test Results (172 tests)</li>
+                <li>TypeScript & Code Quality Assessment</li>
+                <li>Deep Analysis & Risk Assessment</li>
+                <li>Critical Issues & Recommendations</li>
+                <li>Complete Appendix & References</li>
+            </ul>
+        </div>
+
+        <div class="info-section">
+            <h3>🖨️ Print to PDF (Easy)</h3>
+            <div class="print-guide">
+                <h4>Quick Steps:</h4>
+                <ol>
+                    <li>Click "Open Report" button above</li>
+                    <li>Press <strong>Cmd+P</strong> (Mac) or <strong>Ctrl+P</strong> (Windows)</li>
+                    <li>Select "Save as PDF" from dropdown</li>
+                    <li>Choose <strong>A4</strong> paper size</li>
+                    <li>Click <strong>Save</strong></li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <h3>📋 Report Statistics</h3>
+            <ul>
+                <li>100% Build Success Rate (242/242 pages)</li>
+                <li>95.5% E2E Test Pass Rate (42/44 tests)</li>
+                <li>Zero TypeScript Errors</li>
+                <li>2 Issues Identified (High Priority)</li>
+                <li>10 Recommendations Listed</li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            <p><strong>Love to Fly Portal Quality Assurance Report</strong></p>
+            <p>Generated: February 11, 2026 | Version 1.0</p>
+            <p>For questions or support, contact the Development Team</p>
+        </div>
+    </div>
+</body>
+</html>

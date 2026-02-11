@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 
 
@@ -16,8 +16,14 @@ type SidebarProps = {
 export default function Sidebar({ onFeatureClick, disabled }: SidebarProps) {
   const pathname = usePathname();
   const { user } = useAuth();
+  const [isClient, setIsClient] = useState(false);
   // Estado para controlar qual seção está expandida
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
+
+  // Detectar quando estamos no cliente para evitar hydration mismatch
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const menuSections = [
     {
@@ -37,6 +43,15 @@ export default function Sidebar({ onFeatureClick, disabled }: SidebarProps) {
         { href: '/mentorship', label: 'Mentoria', icon: '🤝' },
       ].filter(Boolean),
     },
+    // Portal para Empresas - Only for business users (pessoa jurídica)
+    ...(user?.user_type === 'business' ? [{
+      title: 'Portal para Empresas',
+      items: [
+        { href: '/business/dashboard', label: 'Dashboard de Contratação', icon: '📊' },
+        { href: '/business/company/profile', label: 'Perfil da Empresa', icon: '🏛️' },
+        { href: '/business/jobs', label: 'Gerenciar Vagas', icon: '📄' },
+      ],
+    }] : []),
     {
       title: 'Classificados',
       items: [
@@ -113,8 +128,9 @@ export default function Sidebar({ onFeatureClick, disabled }: SidebarProps) {
     },
   ];
 
-  // Hide sidebar if not authenticated
-  if (!user) return null;
+  // Durante SSR ou hydration, sempre renderizar o sidebar para evitar mismatch
+  // Só esconder após o cliente confirmar que não há usuário
+  if (isClient && !user) return null;
 
   return (
     <aside className="w-64 bg-blue-800 text-white min-h-screen border-r border-blue-900">
@@ -124,8 +140,8 @@ export default function Sidebar({ onFeatureClick, disabled }: SidebarProps) {
         </div>
         <div className="mb-6 p-4 bg-blue-900/80 rounded-lg">
           <div className="text-sm font-medium text-blue-200">Bem-vindo(a),</div>
-          <div className="text-base font-bold text-white">{user.name}</div>
-          {user.plan && (
+          <div className="text-base font-bold text-white">{user?.name || 'Carregando...'}</div>
+          {user?.plan && (
             <div className="mt-2 inline-block px-2 py-1 bg-yellow-400 text-yellow-900 text-xs font-bold rounded">
               {user.plan.toUpperCase()}
             </div>
@@ -141,7 +157,6 @@ export default function Sidebar({ onFeatureClick, disabled }: SidebarProps) {
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-colors focus:outline-none
                     ${isExpanded ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-700 hover:text-white'}`}
                   onClick={() => setExpandedSection(isExpanded ? null : section.title)}
-                  aria-expanded={isExpanded}
                 >
                   <span className="text-xs font-bold uppercase tracking-wide flex-1 text-left">{section.title}</span>
                   <svg

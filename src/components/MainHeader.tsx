@@ -28,14 +28,13 @@ export default function MainHeader() {
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
         {/* First column: Logo 4cm x 4cm centered */}
         <div
-          className="flex items-center justify-center cursor-pointer"
-          style={{ height: '3.2cm', minWidth: '8cm', width: '8cm' }}
+          className="flex items-center justify-center cursor-pointer h-32 min-w-64 w-64"
           onClick={() => router.push("/")}
         >
           <img
             src="/logo-pac.png"
             alt="Love to Fly"
-            style={{ width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'center', display: 'block' }}
+            className="w-full h-full object-contain block"
           />
         </div>
         {/* Second column: Title and Subtitle */}

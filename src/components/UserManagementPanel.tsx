@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useAuth } from '@/context/AuthContext';
 
 interface User {
   id: string;
@@ -16,6 +17,9 @@ interface User {
   is_banned?: boolean;
   last_activity_at?: string;
   days_inactive?: number;
+  user_type?: string;
+  user_type_verified?: boolean;
+  business_name?: string;
 }
 
 interface ModerationAction {
@@ -26,6 +30,7 @@ interface ModerationAction {
 }
 
 export default function UserManagementPanel() {
+  const { token } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -43,10 +48,29 @@ export default function UserManagementPanel() {
   const [editData, setEditData] = useState({ role: '', plan: '' });
   const searchInputRef = useRef<HTMLInputElement>(null);
   const actionType = moderationData.actionType as string;
+  const mounted = useRef(false);
 
   useEffect(() => {
-    fetchUsers();
+    if (mounted.current) {
+      fetchUsers();
+    }
   }, [searchQuery, page]);
+
+  // Refetch on mount and when window regains focus
+  useEffect(() => {
+    mounted.current = true;
+    fetchUsers();
+
+    const handleFocus = () => {
+      fetchUsers();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      mounted.current = false;
+    };
+  }, []);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -54,10 +78,16 @@ export default function UserManagementPanel() {
       const params = new URLSearchParams({
         ...(searchQuery && { q: searchQuery }),
         page: page.toString(),
-        limit: '20'
+        limit: '20',
+        t: Date.now().toString() // Cache buster
       });
-      
-      const res = await fetch(`/api/admin/users/search?${params}`);
+
+      const res = await fetch(`/api/admin/users/search?${params}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+        }
+      });
       if (res.ok) {
         const data = await res.json();
         setUsers(data.users);
@@ -115,16 +145,23 @@ export default function UserManagementPanel() {
   };
 
   const handleRoleChange = async (userId: string, newRole: string) => {
+    if (!token) {
+      alert('Missing auth token. Please log in again.');
+      return;
+    }
     setActionLoading(true);
     try {
       const res = await fetch(`/api/admin/users/${userId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
         body: JSON.stringify({ role: newRole })
       });
-      
+
       const data = await res.json();
-      
+
       if (res.ok) {
         alert('Role updated successfully!');
         setSelectedUser(null);
@@ -143,17 +180,24 @@ export default function UserManagementPanel() {
 
   const handleUserUpdate = async (updates: { role?: string; plan?: string }) => {
     if (!selectedUser) return;
-    
+    if (!token) {
+      alert('Missing auth token. Please log in again.');
+      return;
+    }
+
     setActionLoading(true);
     try {
       const res = await fetch(`/api/admin/users/${selectedUser.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
         body: JSON.stringify(updates)
       });
-      
+
       const data = await res.json();
-      
+
       if (res.ok) {
         const updateType = updates.role ? 'Role' : 'Plan';
         alert(`${updateType} updated successfully!`);
@@ -192,8 +236,119 @@ export default function UserManagementPanel() {
     );
   };
 
+  const getUserTypeBadge = (userType?: string, verified?: boolean, role?: string) => {
+    const adminRoles = new Set([
+      'master',
+      'admin',
+      'operations_lead',
+      'support_lead',
+      'content_manger',
+      'finance_manager',
+      'marketing',
+      'compliance',
+      'staff'
+    ]);
+    if (role && adminRoles.has(role.toLowerCase())) {
+      return (
+        <span className="px-2 py-1 rounded text-xs font-bold bg-blue-100 text-blue-800">
+          STAFF
+        </span>
+      );
+    }
+
+    if (userType === 'business') {
+      return (
+        <span className={`px-2 py-1 rounded text-xs font-bold ${verified ? 'bg-purple-100 text-purple-800' : 'bg-purple-50 text-purple-700'
+          }`}>
+          {verified ? '✓' : '○'} BUSINESS
+        </span>
+      );
+    }
+
+    if (userType === 'staff') {
+      return (
+        <span className="px-2 py-1 rounded text-xs font-bold bg-blue-100 text-blue-800">
+          STAFF
+        </span>
+      );
+    }
+
+    return (
+      <span className="px-2 py-1 rounded text-xs font-bold bg-slate-100 text-slate-700">
+        PESSOA FISICA
+      </span>
+    );
+  };
+
+  const getRoleBadge = (role?: string) => {
+    const normalized = role?.toLowerCase();
+    const roleMap: Record<string, { label: string; bg: string; text: string }> = {
+      master: { label: 'MASTER C.E.O.', bg: 'bg-yellow-200', text: 'text-yellow-900' },
+      admin: { label: 'CHEFE DE OPERACOES', bg: 'bg-slate-200', text: 'text-slate-800' },
+      operations_lead: { label: 'CHEFE DE OPERACOES', bg: 'bg-slate-200', text: 'text-slate-800' },
+      support_lead: { label: 'LIDER DE SUPORTE', bg: 'bg-green-100', text: 'text-green-800' },
+      content_manger: { label: 'GESTOR DE CONTEUDOS', bg: 'bg-purple-100', text: 'text-purple-800' },
+      finance_manager: { label: 'GESTOR FINANCEIRO', bg: 'bg-teal-100', text: 'text-teal-800' },
+      marketing: { label: 'GESTOR DE MARKETING', bg: 'bg-orange-100', text: 'text-orange-800' },
+      compliance: { label: 'GESTOR DE CONFORMIDADES', bg: 'bg-red-100', text: 'text-red-800' }
+    };
+
+    const badge = normalized ? roleMap[normalized] : null;
+    if (!badge) {
+      return (
+        <span className="px-2 py-1 rounded text-xs font-bold bg-gray-100 text-gray-800">
+          {role ? role.toUpperCase() : 'USER'}
+        </span>
+      );
+    }
+
+    return (
+      <span className={`px-2 py-1 rounded text-xs font-bold ${badge.bg} ${badge.text}`}>
+        {badge.label}
+      </span>
+    );
+  };
+
+  const formatActivityTime = (timestamp?: string): string => {
+    if (!timestamp) return 'Never';
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+    if (diffDays === 0) {
+      if (diffHours === 0) return `${diffMins}m ago`;
+      return `${diffHours}h ago`;
+    }
+    if (diffDays === 1) return '1d ago';
+    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  const getActivityBadge = (daysInactive?: number, timestamp?: string) => {
+    if (!timestamp) {
+      return <span className="px-2 py-1 rounded text-xs font-bold bg-red-100 text-red-800">🔴 Never</span>;
+    }
+    if ((daysInactive || 0) === 0) {
+      return <span className="px-2 py-1 rounded text-xs font-bold bg-green-100 text-green-800">🟢 Online</span>;
+    }
+    if ((daysInactive || 0) <= 7) {
+      return <span className="px-2 py-1 rounded text-xs font-bold bg-blue-100 text-blue-800">🔵 Active</span>;
+    }
+    if ((daysInactive || 0) <= 30) {
+      return <span className="px-2 py-1 rounded text-xs font-bold bg-yellow-100 text-yellow-800">🟡 Idle</span>;
+    }
+    return <span className="px-2 py-1 rounded text-xs font-bold bg-orange-100 text-orange-800">🟠 Inactive</span>;
+  };
+
   const filteredUsers = users.filter(u => {
     if (filterStatus === 'all') return true;
+    if (filterStatus === 'business') return u.user_type === 'business';
+    if (filterStatus === 'staff') return u.user_type === 'staff' || (u.role && u.role !== 'user');
+    if (filterStatus === 'individual') return u.user_type === 'individual' || !u.user_type;
     if (filterStatus === 'banned') return u.is_banned;
     if (filterStatus === 'suspended') return u.access_level === 'suspended';
     if (filterStatus === 'warned') return (u.active_warnings || 0) > 0;
@@ -205,7 +360,7 @@ export default function UserManagementPanel() {
     <div className="bg-white rounded-xl shadow p-6">
       <div className="mb-6">
         <h2 className="text-xl font-bold mb-4 text-green-900">Portal Users Management</h2>
-        
+
         {/* Search Bar */}
         <div className="mb-4 flex gap-2">
           <input
@@ -223,6 +378,9 @@ export default function UserManagementPanel() {
             className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
           >
             <option value="all">All Users</option>
+            <option value="business">Pessoa Juridica</option>
+            <option value="individual">Pessoa Fisica</option>
+            <option value="staff">Staff</option>
             <option value="banned">Banned</option>
             <option value="suspended">Suspended</option>
             <option value="warned">Warned</option>
@@ -240,93 +398,94 @@ export default function UserManagementPanel() {
               <tr className="bg-green-50">
                 <th className="p-2 text-xs">Name</th>
                 <th className="p-2 text-xs">Email</th>
+                <th className="p-2 text-xs">Type</th>
                 <th className="p-2 text-xs">Status</th>
                 <th className="p-2 text-xs">Role</th>
                 <th className="p-2 text-xs">Moderation</th>
-                <th className="p-2 text-xs">Activity</th>
+                <th className="p-2 text-xs">Last Login</th>
                 <th className="p-2 text-xs">Plan</th>
                 <th className="p-2 text-xs">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.map((u) => (
-                <tr key={u.id} className="border-t hover:bg-slate-50">
-                  <td className="p-2 text-sm font-medium">{u.name}</td>
-                  <td className="p-2 text-xs text-slate-600">{u.email}</td>
-                  <td className="p-2">{getAccessLevelBadge(u.access_level)}</td>
-                  <td className="p-2">
-                    <span className={`px-2 py-1 rounded text-xs font-bold ${
-                      u.role === 'master' ? 'bg-purple-100 text-purple-800' :
-                      u.role === 'admin' ? 'bg-red-100 text-red-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>{u.role}</span>
-                  </td>
-                  <td className="p-2 text-xs">
-                    {u.active_warnings! > 0 && <span className="mr-1">⚠ {u.active_warnings}</span>}
-                    {u.active_strikes! > 0 && <span className="mr-1">⛔ {u.active_strikes}</span>}
-                    {u.is_banned && <span className="mr-1">🔒 Banned</span>}
-                    {u.active_warnings === 0 && u.active_strikes === 0 && !u.is_banned && '—'}
-                  </td>
-                  <td className="p-2 text-xs">
-                    {u.last_activity_at ? (
-                      <span>{u.days_inactive} days ago</span>
-                    ) : (
-                      <span className="text-red-600">Never</span>
-                    )}
-                  </td>
-                  <td className="p-2">
-                    <span className={`px-2 py-1 rounded text-xs font-bold ${
-                      u.plan === 'pro' ? 'bg-blue-100 text-blue-800' :
-                      u.plan === 'premium' ? 'bg-yellow-100 text-yellow-800' :
-                      u.plan === 'free' ? 'bg-gray-100 text-gray-800' :
-                      u.plan === 'standard' ? 'bg-slate-100 text-slate-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {u.plan ? u.plan.toUpperCase() : 'N/A'}
-                    </span>
-                  </td>
-                  <td className="p-2">
-                    <div className="flex gap-1">
-                      <a
-                        href={`/admin/users/${u.id}`}
-                        className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-                        title="View full profile"
-                      >
-                        Profile
-                      </a>
-                      <button
-                        onClick={() => setSelectedUser(u)}
-                        className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition"
-                      >
-                        Edit
-                      </button>
-                      {u.access_level && u.access_level !== 'active' ? (
-                        <button
-                          onClick={() => {
-                            setSelectedUser(u);
-                            setModerationData({ actionType: 'restore', severity: 'normal', reason: 'User access restored' });
-                            setShowModerationModal(true);
-                          }}
-                          className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 transition"
-                          title="Restore this user's access"
+              {filteredUsers.map((u) => {
+                const displayName = u.user_type === 'business' && u.business_name ? u.business_name : u.name;
+                return (
+                  <tr key={u.id} className="border-t hover:bg-slate-50">
+                    <td className="p-2 text-sm font-medium">{displayName}</td>
+                    <td className="p-2 text-xs text-slate-600">{u.email}</td>
+                    <td className="p-2">{getUserTypeBadge(u.user_type, u.user_type_verified, u.role)}</td>
+                    <td className="p-2">{getAccessLevelBadge(u.access_level)}</td>
+                    <td className="p-2">
+                      {getRoleBadge(u.role)}
+                    </td>
+                    <td className="p-2 text-xs">
+                      {u.active_warnings! > 0 && <span className="mr-1">⚠ {u.active_warnings}</span>}
+                      {u.active_strikes! > 0 && <span className="mr-1">⛔ {u.active_strikes}</span>}
+                      {u.is_banned && <span className="mr-1">🔒 Banned</span>}
+                      {u.active_warnings === 0 && u.active_strikes === 0 && !u.is_banned && '—'}
+                    </td>
+                    <td className="p-2">
+                      <div className="flex flex-col gap-1">
+                        {getActivityBadge(u.days_inactive, u.last_activity_at)}
+                        <span className="text-xs text-slate-500" title={u.last_activity_at ? new Date(u.last_activity_at).toLocaleString() : 'Never logged in'}>
+                          {formatActivityTime(u.last_activity_at)}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="p-2">
+                      <span className={`px-2 py-1 rounded text-xs font-bold ${u.plan === 'pro' ? 'bg-blue-100 text-blue-800' :
+                        u.plan === 'premium' ? 'bg-yellow-100 text-yellow-800' :
+                          u.plan === 'free' ? 'bg-gray-100 text-gray-800' :
+                            u.plan === 'standard' ? 'bg-slate-100 text-slate-800' :
+                              'bg-gray-100 text-gray-800'
+                        }`}>
+                        {u.plan ? u.plan.toUpperCase() : 'N/A'}
+                      </span>
+                    </td>
+                    <td className="p-2">
+                      <div className="flex gap-1">
+                        <a
+                          href={`/admin/users/${u.id}`}
+                          className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                          title="View full profile"
                         >
-                          ↩ Restore
-                        </button>
-                      ) : (
+                          Profile
+                        </a>
                         <button
-                          onClick={() => {
-                            setSelectedUser(u);
-                            setShowModerationModal(true);
-                          }}
-                          className="px-2 py-1 text-xs bg-orange-600 text-white rounded hover:bg-orange-700 transition"
+                          onClick={() => setSelectedUser(u)}
+                          className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition"
                         >
-                          Moderate
+                          Edit
                         </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        {u.access_level && u.access_level !== 'active' ? (
+                          <button
+                            onClick={() => {
+                              setSelectedUser(u);
+                              setModerationData({ actionType: 'restore', severity: 'normal', reason: 'User access restored' });
+                              setShowModerationModal(true);
+                            }}
+                            className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 transition"
+                            title="Restore this user's access"
+                          >
+                            ↩ Restore
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setSelectedUser(u);
+                              setShowModerationModal(true);
+                            }}
+                            className="px-2 py-1 text-xs bg-orange-600 text-white rounded hover:bg-orange-700 transition"
+                          >
+                            Moderate
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -359,8 +518,10 @@ export default function UserManagementPanel() {
       {selectedUser && !showModerationModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-            <h3 className="text-xl font-bold mb-4 text-green-900">Edit User: {selectedUser.name}</h3>
-            
+            <h3 className="text-xl font-bold mb-4 text-green-900">
+              Edit User: {selectedUser.user_type === 'business' && selectedUser.business_name ? selectedUser.business_name : selectedUser.name}
+            </h3>
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-2">Portal Role</label>
@@ -435,7 +596,7 @@ export default function UserManagementPanel() {
             <h3 className="text-xl font-bold mb-4 text-orange-900">
               {actionType === 'restore' ? 'Restore Access' : 'Moderate User'}: {selectedUser.name}
             </h3>
-            
+
             <div className="space-y-4">
               {actionType !== 'restore' && (
                 <>
@@ -443,7 +604,7 @@ export default function UserManagementPanel() {
                     <label className="block text-sm font-medium mb-1">Action Type</label>
                     <select
                       value={actionType}
-                      onChange={e => setModerationData({...moderationData, actionType: e.target.value as any})}
+                      onChange={e => setModerationData({ ...moderationData, actionType: e.target.value as any })}
                       className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-orange-500"
                     >
                       <option value="warning">⚠ Warning</option>
@@ -462,7 +623,7 @@ export default function UserManagementPanel() {
                         <label className="block text-sm font-medium mb-1">Severity</label>
                         <select
                           value={moderationData.severity}
-                          onChange={e => setModerationData({...moderationData, severity: e.target.value as any})}
+                          onChange={e => setModerationData({ ...moderationData, severity: e.target.value as any })}
                           className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-orange-500"
                         >
                           <option value="low">Low</option>
@@ -479,7 +640,7 @@ export default function UserManagementPanel() {
                             type="number"
                             min="1"
                             defaultValue={7}
-                            onChange={e => setModerationData({...moderationData, suspensionDays: parseInt(e.target.value)})}
+                            onChange={e => setModerationData({ ...moderationData, suspensionDays: parseInt(e.target.value) })}
                             className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-orange-500"
                           />
                         </div>
@@ -509,7 +670,7 @@ export default function UserManagementPanel() {
                 </label>
                 <textarea
                   value={moderationData.reason}
-                  onChange={e => setModerationData({...moderationData, reason: e.target.value})}
+                  onChange={e => setModerationData({ ...moderationData, reason: e.target.value })}
                   placeholder={actionType === 'restore' ? 'Explain why access is being restored...' : 'Explain why this action is necessary...'}
                   className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
                   rows={3}
@@ -521,11 +682,10 @@ export default function UserManagementPanel() {
               <button
                 onClick={handleModeration}
                 disabled={actionLoading || (actionType !== 'restore' && !moderationData.reason.trim())}
-                className={`flex-1 px-4 py-2 ${
-                  actionType === 'restore' 
-                    ? 'bg-green-600 hover:bg-green-700' 
-                    : 'bg-orange-600 hover:bg-orange-700'
-                } text-white rounded font-bold transition disabled:opacity-50`}
+                className={`flex-1 px-4 py-2 ${actionType === 'restore'
+                  ? 'bg-green-600 hover:bg-green-700'
+                  : 'bg-orange-600 hover:bg-orange-700'
+                  } text-white rounded font-bold transition disabled:opacity-50`}
               >
                 {actionLoading ? 'Processing...' : actionType === 'restore' ? 'Restore Access' : 'Apply Action'}
               </button>
