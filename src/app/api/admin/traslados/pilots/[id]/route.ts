@@ -5,9 +5,11 @@ import { getAdminUser, logAdminAction, requireAdmin } from '@/utils/adminAuth';
 
 const VALID_STATUSES = ['pending', 'approved', 'rejected', 'inactive'];
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const authError = await requireAdmin(request);
   if (authError) return authError;
+
+  const { id } = await params;
 
   try {
     const body = await request.json();
@@ -37,7 +39,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ message: 'No updates provided' }, { status: 400 });
     }
 
-    values.push(Number(params.id));
+    values.push(Number(id));
 
     const result = await pool.query(
       `UPDATE traslados_pilots
@@ -57,7 +59,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         adminUser.id,
         'update',
         'traslados_pilot',
-        params.id,
+        id,
         { status, notes },
         request
       );

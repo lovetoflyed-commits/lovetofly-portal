@@ -56,6 +56,27 @@ export async function POST(request: Request) {
       { expiresIn: '7d' }
     );
 
+    const ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || request.headers.get('x-real-ip')
+      || null;
+    const userAgent = request.headers.get('user-agent') || null;
+
+    await pool.query(
+      `INSERT INTO user_activity_log
+        (user_id, activity_type, activity_category, description, ip_address, user_agent, status, details)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [
+        user.id,
+        'login',
+        'authentication',
+        'User logged in successfully',
+        ipAddress,
+        userAgent,
+        'success',
+        { source: 'api/auth/login' }
+      ]
+    );
+
     return NextResponse.json({
       message: 'Login successful',
       token,
@@ -65,6 +86,7 @@ export async function POST(request: Request) {
         email: user.email,
         plan: user.plan || 'free',
         role: user.role || 'user',
+        user_type: user.user_type || 'individual',
       },
     });
   } catch (error: any) {

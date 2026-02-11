@@ -904,35 +904,27 @@ export default function AdminDashboardPage() {
                       messageNotifications.map((item) => (
                         <div
                           key={item.id}
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => {
-                            setActiveNotification(item);
-                            setShowNotificationModal(true);
-                          }}
-                          onKeyDown={(event) => {
-                            if (event.key === 'Enter' || event.key === ' ') {
-                              setActiveNotification(item);
-                              setShowNotificationModal(true);
-                            }
-                          }}
-                          className="px-4 py-3 cursor-pointer hover:bg-slate-50"
+                          className="px-4 py-3 hover:bg-slate-50"
                         >
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex items-start gap-3">
-                              <label className="pt-1" onClick={(event) => event.stopPropagation()}>
+                              <label className="pt-1">
                                 <input
                                   type="checkbox"
                                   checked={selectedNotificationIds.includes(item.id)}
-                                  onClick={(event) => event.stopPropagation()}
-                                  onChange={(event) => {
-                                    event.stopPropagation();
-                                    toggleNotificationSelection(item.id);
-                                  }}
+                                  onChange={() => toggleNotificationSelection(item.id)}
                                   className="h-4 w-4"
+                                  title="Selecionar notificação"
                                 />
                               </label>
-                              <div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveNotification(item);
+                                  setShowNotificationModal(true);
+                                }}
+                                className="text-left flex-1"
+                              >
                               <p className="text-sm font-semibold text-slate-900">{item.title}</p>
                               <p className="mt-1 text-xs text-slate-400">{new Date(item.created_at).toLocaleString('pt-BR')}</p>
                               <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px]">
@@ -954,16 +946,13 @@ export default function AdminDashboardPage() {
                                 )}
                               </div>
                               <p className="mt-2 text-sm text-slate-600">{truncateText(item.message, 140)}</p>
-                              </div>
+                              </button>
                             </div>
                             <div className="flex flex-col items-end gap-2">
                               {!item.is_read && (
                                 <button
                                   type="button"
-                                  onClick={(event) => {
-                                    event.stopPropagation();
-                                    handleNotificationAction(item.id, 'read');
-                                  }}
+                                  onClick={() => handleNotificationAction(item.id, 'read')}
                                   className="text-xs text-blue-700 font-semibold hover:text-blue-900"
                                 >
                                   Marcar lida
@@ -972,8 +961,7 @@ export default function AdminDashboardPage() {
                               {item.type === 'staff_task' && item.metadata?.taskStatus !== 'done' && (
                                 <button
                                   type="button"
-                                  onClick={(event) => {
-                                    event.stopPropagation();
+                                  onClick={() => {
                                     item.metadata?.taskId
                                       ? updateTaskStatusById(Number(item.metadata.taskId), 'done')
                                       : updateTaskStatus(item.id, 'done');
@@ -985,10 +973,7 @@ export default function AdminDashboardPage() {
                               )}
                               <button
                                 type="button"
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  handleNotificationAction(item.id, 'dismiss');
-                                }}
+                                onClick={() => handleNotificationAction(item.id, 'dismiss')}
                                 className="text-xs text-slate-500 hover:text-slate-700"
                               >
                                 Remover
@@ -1033,19 +1018,7 @@ export default function AdminDashboardPage() {
                 {tasks.filter((task) => task.status !== 'done').slice(0, 6).map((task) => (
                   <div
                     key={task.id}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => {
-                      setActiveTask(task);
-                      setShowTaskPreviewModal(true);
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        setActiveTask(task);
-                        setShowTaskPreviewModal(true);
-                      }
-                    }}
-                    className="w-full text-left rounded-lg border border-slate-100 bg-slate-50 px-3 py-3 text-sm hover:border-blue-200 hover:bg-blue-50/40 transition cursor-pointer"
+                    className="w-full text-left rounded-lg border border-slate-100 bg-slate-50 px-3 py-3 text-sm hover:border-blue-200 hover:bg-blue-50/40 transition"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1">
@@ -1065,9 +1038,12 @@ export default function AdminDashboardPage() {
                         </div>
                         <p className="text-xs text-slate-500 mt-2">{truncateText(task.description, 110)}</p>
                         <div className="mt-2">
-                          <div className="h-2 w-full rounded-full bg-slate-200">
-                            <div className="h-2 rounded-full bg-emerald-500" style={{ width: `${task.progress_percent}%` }} />
-                          </div>
+                          <progress 
+                            value={task.progress_percent} 
+                            max={100} 
+                            className="w-full h-2 rounded-full [&::-webkit-progress-bar]:bg-slate-200 [&::-webkit-progress-value]:bg-emerald-500 [&::-moz-progress-bar]:bg-emerald-500"
+                            aria-label={`Progresso da tarefa: ${task.progress_percent}%`}
+                          />
                           <div className="mt-1 text-[11px] text-slate-500">Progresso: {task.progress_percent}%</div>
                         </div>
                       </div>
@@ -1082,7 +1058,16 @@ export default function AdminDashboardPage() {
                         >
                           Concluir
                         </button>
-                        <span className="text-xs text-blue-700">Abrir detalhes</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveTask(task);
+                            setShowTaskPreviewModal(true);
+                          }}
+                          className="text-xs text-blue-700 hover:text-blue-900"
+                        >
+                          Abrir detalhes
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -1190,19 +1175,7 @@ export default function AdminDashboardPage() {
                       {tasks.map((task) => (
                         <div
                           key={task.id}
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => {
-                            setActiveTask(task);
-                            setShowTaskPreviewModal(true);
-                          }}
-                          onKeyDown={(event) => {
-                            if (event.key === 'Enter' || event.key === ' ') {
-                              setActiveTask(task);
-                              setShowTaskPreviewModal(true);
-                            }
-                          }}
-                          className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm hover:border-blue-200 hover:bg-blue-50/40 transition cursor-pointer"
+                          className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm hover:border-blue-200 hover:bg-blue-50/40 transition"
                         >
                           <div className="flex items-start justify-between gap-4">
                             <div>
@@ -1225,16 +1198,25 @@ export default function AdminDashboardPage() {
                                 </span>
                               </div>
                             </div>
-                            <button
-                              type="button"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                updateTaskStatusById(task.id, 'done');
-                              }}
-                              className="text-xs font-semibold text-emerald-700 hover:text-emerald-900"
-                            >
-                              Concluir
-                            </button>
+                            <div className="flex flex-col items-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveTask(task);
+                                  setShowTaskPreviewModal(true);
+                                }}
+                                className="text-xs text-blue-700 hover:text-blue-900"
+                              >
+                                Abrir detalhes
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => updateTaskStatusById(task.id, 'done')}
+                                className="text-xs font-semibold text-emerald-700 hover:text-emerald-900"
+                              >
+                                Concluir
+                              </button>
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -1448,6 +1430,7 @@ export default function AdminDashboardPage() {
                         value={messageForm.priority}
                         onChange={(event) => setMessageForm((prev) => ({ ...prev, priority: event.target.value as NotificationItem['priority'] }))}
                         className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                        title="Prioridade da mensagem"
                       >
                         <option value="low">Baixa</option>
                         <option value="normal">Normal</option>
@@ -1461,6 +1444,7 @@ export default function AdminDashboardPage() {
                         value={messageForm.targetType}
                         onChange={(event) => setMessageForm((prev) => ({ ...prev, targetType: event.target.value }))}
                         className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                        title="Destino da mensagem"
                       >
                         <option value="all">Toda a equipe</option>
                         <option value="role">Função específica</option>
@@ -1475,6 +1459,7 @@ export default function AdminDashboardPage() {
                         value={messageForm.targetRole}
                         onChange={(event) => setMessageForm((prev) => ({ ...prev, targetRole: event.target.value }))}
                         className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                        title="Função destino"
                       >
                         <option value="staff">Staff</option>
                         <option value="admin">Admin</option>
@@ -1490,6 +1475,7 @@ export default function AdminDashboardPage() {
                           value={messageForm.targetEmail}
                           onChange={(event) => setMessageForm((prev) => ({ ...prev, targetEmail: event.target.value }))}
                           className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                          title="Membro da equipe"
                         >
                           <option value="">Selecione um membro</option>
                           {staffOptions.map((staff) => (
@@ -1507,6 +1493,7 @@ export default function AdminDashboardPage() {
                           onChange={(event) => setMessageForm((prev) => ({ ...prev, targetEmail: event.target.value }))}
                           className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
                           placeholder="ex: equipe@lovetofly.com.br"
+                          title="Email manual"
                         />
                       </div>
                     </div>
@@ -1554,6 +1541,7 @@ export default function AdminDashboardPage() {
                       required
                       className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
                       placeholder="Resumo da tarefa"
+                      title="Titulo da tarefa"
                     />
                   </div>
                   <div>
@@ -1565,6 +1553,7 @@ export default function AdminDashboardPage() {
                       rows={4}
                       className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
                       placeholder="Detalhes e instruções"
+                      title="Descricao da tarefa"
                     />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1574,6 +1563,7 @@ export default function AdminDashboardPage() {
                         value={taskForm.priority}
                         onChange={(event) => setTaskForm((prev) => ({ ...prev, priority: event.target.value as NotificationItem['priority'] }))}
                         className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                        title="Prioridade da tarefa"
                       >
                         <option value="low">Baixa</option>
                         <option value="normal">Normal</option>
@@ -1587,6 +1577,7 @@ export default function AdminDashboardPage() {
                         value={taskForm.status}
                         onChange={(event) => setTaskForm((prev) => ({ ...prev, status: event.target.value }))}
                         className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                        title="Status da tarefa"
                       >
                         <option value="open">Aberta</option>
                         <option value="in_progress">Em andamento</option>
@@ -1605,6 +1596,7 @@ export default function AdminDashboardPage() {
                         value={taskForm.dueDate}
                         onChange={(event) => setTaskForm((prev) => ({ ...prev, dueDate: event.target.value }))}
                         className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                        title="Prazo da tarefa"
                       />
                     </div>
                     <div>
@@ -1613,6 +1605,7 @@ export default function AdminDashboardPage() {
                         value={taskForm.targetType}
                         onChange={(event) => setTaskForm((prev) => ({ ...prev, targetType: event.target.value }))}
                         className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                        title="Destino da tarefa"
                       >
                         <option value="all">Toda a equipe</option>
                         <option value="role">Função específica</option>
@@ -1627,6 +1620,7 @@ export default function AdminDashboardPage() {
                         value={taskForm.targetRole}
                         onChange={(event) => setTaskForm((prev) => ({ ...prev, targetRole: event.target.value }))}
                         className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                        title="Funcao destino"
                       >
                         <option value="staff">Staff</option>
                         <option value="admin">Admin</option>
@@ -1642,6 +1636,7 @@ export default function AdminDashboardPage() {
                       rows={4}
                       className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
                       placeholder="Ex: Revisar documento\nValidar dados\nEnviar confirmação"
+                      title="Checklist da tarefa"
                     />
                   </div>
                   {taskForm.targetType === 'email' && (
@@ -1652,6 +1647,7 @@ export default function AdminDashboardPage() {
                           value={taskForm.targetEmail}
                           onChange={(event) => setTaskForm((prev) => ({ ...prev, targetEmail: event.target.value }))}
                           className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                          title="Membro da equipe"
                         >
                           <option value="">Selecione um membro</option>
                           {staffOptions.map((staff) => (
@@ -1669,6 +1665,7 @@ export default function AdminDashboardPage() {
                           onChange={(event) => setTaskForm((prev) => ({ ...prev, targetEmail: event.target.value }))}
                           className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
                           placeholder="ex: equipe@lovetofly.com.br"
+                          title="Email manual"
                         />
                       </div>
                     </div>

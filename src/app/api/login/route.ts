@@ -33,6 +33,27 @@ export async function POST(request: Request) {
       { expiresIn: '1d' } // Token expira em 1 dia
     );
 
+    const ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || request.headers.get('x-real-ip')
+      || null;
+    const userAgent = request.headers.get('user-agent') || null;
+
+    await pool.query(
+      `INSERT INTO user_activity_log
+        (user_id, activity_type, activity_category, description, ip_address, user_agent, status, details)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [
+        user.id,
+        'login',
+        'authentication',
+        'User logged in successfully',
+        ipAddress,
+        userAgent,
+        'success',
+        { source: 'api/login' }
+      ]
+    );
+
     // 5. Retorna sucesso e o token
     const response = NextResponse.json({ 
       message: 'Login realizado com sucesso!',

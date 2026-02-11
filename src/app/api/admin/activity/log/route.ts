@@ -5,7 +5,21 @@ import pool from '@/config/db';
 // Log user activity (login, logout, etc.)
 export async function POST(request: NextRequest) {
   try {
-    const { userId, activityType, description, ipAddress, userAgent, metadata } = await request.json();
+    const {
+      userId,
+      activityType,
+      activityCategory,
+      description,
+      ipAddress,
+      userAgent,
+      metadata,
+      details,
+      targetType,
+      targetId,
+      oldValue,
+      newValue,
+      status
+    } = await request.json();
 
     if (!userId || !activityType) {
       return NextResponse.json(
@@ -15,10 +29,26 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await pool.query(
-      `INSERT INTO user_activity_log (user_id, activity_type, description, ip_address, user_agent, metadata)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO user_activity_log
+        (user_id, activity_type, activity_category, description, ip_address, user_agent, metadata,
+         details, target_type, target_id, old_value, new_value, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
        RETURNING id, created_at`,
-      [userId, activityType, description || null, ipAddress || null, userAgent || null, metadata || {}]
+      [
+        userId,
+        activityType,
+        activityCategory || null,
+        description || null,
+        ipAddress || null,
+        userAgent || null,
+        metadata || {},
+        details || null,
+        targetType || null,
+        targetId || null,
+        oldValue || null,
+        newValue || null,
+        status || 'success'
+      ]
     );
 
     return NextResponse.json(

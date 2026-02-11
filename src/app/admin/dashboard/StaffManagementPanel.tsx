@@ -48,6 +48,7 @@ export default function StaffManagementPanel({ currentRole }: { currentRole: Rol
                         value={newRole}
                         onChange={(e) => setNewRole(e.target.value as Role)}
                         className="border rounded px-2 py-1"
+                        title="Selecionar nova função"
                       >
                         <option value="">Selecione</option>
                         {assignableRoles.map((r: Role) => (

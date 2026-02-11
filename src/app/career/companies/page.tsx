@@ -161,6 +161,7 @@ export default function CompaniesPage() {
                   value={selectedIndustry}
                   onChange={(e) => setSelectedIndustry(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  title="Setor"
                 >
                   <option value="">Todos os setores</option>
                   {industries.map((industry) => (

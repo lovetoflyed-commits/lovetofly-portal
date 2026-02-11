@@ -93,272 +93,12 @@ import { maskCEP, maskCPF, maskPhone, isValidCPF } from '@/utils/masks';
 import Sidebar from '@/components/Sidebar';
 import HangarCarousel from '@/components/HangarCarousel';
 import LandingPage from '@/components/LandingPage';
+import IndividualRegisterForm from '@/components/IndividualRegisterForm';
 
 
 
-// Register form (keeps required backend fields but simplified layout)
 function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    firstName: '', lastName: '', birthDate: '', cpf: '', email: '', password: '', confirmPassword: '',
-    mobilePhone: '', addressStreet: '', addressNumber: '', addressComplement: '', addressNeighborhood: '',
-    addressCity: '', addressState: '', addressZip: '', addressCountry: 'Brasil', aviationRole: '',
-    aviationRoleOther: '', socialMedia: '', newsletter: false, terms: false,
-  });
-  const [zipStatus, setZipStatus] = useState('');
-  const [zipLoading, setZipLoading] = useState(false);
-
-  const fetchAddressByCEP = async (cep: string) => {
-    const cleaned = cep.replace(/\D/g, '');
-    if (cleaned.length !== 8) return;
-
-    setZipLoading(true);
-    setZipStatus('Buscando CEP...');
-
-    try {
-      // Use internal API endpoint instead of direct external call
-      const response = await fetch(`/api/address/cep?code=${cleaned}`);
-      if (!response.ok) throw new Error('CEP lookup failed');
-
-      const data = await response.json();
-      if (data.error || !data.success) {
-        setZipStatus('CEP não encontrado.');
-        return;
-      }
-
-      setFormData((prev) => ({
-        ...prev,
-        addressZip: maskCEP(cleaned),
-        addressStreet: data.street || prev.addressStreet,
-        addressNeighborhood: data.neighborhood || prev.addressNeighborhood,
-        addressCity: data.city || prev.addressCity,
-        addressState: data.state || prev.addressState,
-      }));
-
-      setZipStatus('Endereço preenchido automaticamente.');
-    } catch (err) {
-      setZipStatus('Não foi possível buscar o CEP.');
-    } finally {
-      setZipLoading(false);
-    }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    let finalValue = value;
-    if (name === 'cpf') finalValue = maskCPF(value);
-    if (name === 'addressZip') finalValue = maskCEP(value);
-    if (name === 'mobilePhone') finalValue = maskPhone(value);
-
-    if (type === 'checkbox') {
-      setFormData((prev) => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
-      return;
-    }
-
-    setFormData((prev) => ({ ...prev, [name]: finalValue }));
-    if (name === 'addressZip') {
-      const cleanedZip = finalValue.replace(/\D/g, '');
-      if (cleanedZip.length === 8) {
-        fetchAddressByCEP(cleanedZip);
-      } else {
-        setZipStatus('');
-      }
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    if (!formData.terms) {
-      setError('Você deve aceitar os termos de uso.');
-      setLoading(false);
-      return;
-    }
-
-    const cleanedCPF = formData.cpf.replace(/\D/g, '');
-    if (!isValidCPF(cleanedCPF)) {
-      setError('CPF inválido.');
-      setLoading(false);
-      return;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      setError('As senhas não coincidem.');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const cleanedFormData = {
-        ...formData,
-        cpf: cleanedCPF,
-        mobilePhone: formData.mobilePhone.replace(/\D/g, ''),
-        addressZip: formData.addressZip.replace(/\D/g, ''),
-      };
-
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(cleanedFormData),
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        alert('Cadastro realizado com sucesso! Faça login.');
-        onSuccess();
-      } else {
-        setError(data.error || 'Erro no cadastro.');
-      }
-    } catch (err) {
-      setError('Erro de conexão.');
-    }
-
-    setLoading(false);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {error && (
-        <div className="bg-red-100 border border-red-300 text-red-700 text-sm px-3 py-2 rounded">
-          {error}
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">Nome</label>
-          <input name="firstName" required value={formData.firstName} onChange={handleChange} className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-        </div>
-        <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">Sobrenome</label>
-          <input name="lastName" required value={formData.lastName} onChange={handleChange} className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">Data de Nascimento</label>
-          <input type="date" name="birthDate" required value={formData.birthDate} onChange={handleChange} className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-        </div>
-        <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">CPF</label>
-          <input name="cpf" required value={formData.cpf} onChange={handleChange} placeholder="000.000.000-00" className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">Email</label>
-          <input type="email" name="email" required value={formData.email} onChange={handleChange} className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-        </div>
-        <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">Telefone</label>
-          <input name="mobilePhone" required value={formData.mobilePhone} onChange={handleChange} placeholder="(00) 00000-0000" className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">Senha</label>
-          <div className="relative">
-            <input type={showPassword ? 'text' : 'password'} name="password" required value={formData.password} onChange={handleChange} className="w-full rounded border border-slate-300 px-3 py-2 pr-10 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 text-sm font-semibold"
-            >
-              {showPassword ? '🙈' : '👁️'}
-            </button>
-          </div>
-        </div>
-        <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">Confirmar Senha</label>
-          <div className="relative">
-            <input type={showConfirmPassword ? 'text' : 'password'} name="confirmPassword" required value={formData.confirmPassword} onChange={handleChange} className="w-full rounded border border-slate-300 px-3 py-2 pr-10 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 text-sm font-semibold"
-            >
-              {showConfirmPassword ? '🙈' : '👁️'}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">Função na Aviação</label>
-          <select name="aviationRole" required value={formData.aviationRole} onChange={handleChange} className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-            <option value="">Selecione</option>
-            <option value="student">Estudante</option>
-            <option value="pilot">Piloto</option>
-            <option value="instructor">Instrutor</option>
-            <option value="mechanic">Mecânico</option>
-            <option value="other">Outro</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">CEP</label>
-          <input name="addressZip" required value={formData.addressZip} onChange={handleChange} placeholder="00000-000" className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-          {zipStatus && (
-            <p className="text-xs text-slate-500 mt-1">{zipLoading ? 'Buscando CEP...' : zipStatus}</p>
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">Endereço</label>
-          <input name="addressStreet" required value={formData.addressStreet} onChange={handleChange} className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-        </div>
-        <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">Número</label>
-          <input name="addressNumber" required value={formData.addressNumber} onChange={handleChange} className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">Bairro</label>
-          <input name="addressNeighborhood" required value={formData.addressNeighborhood} onChange={handleChange} className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-        </div>
-        <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">Cidade</label>
-          <input name="addressCity" required value={formData.addressCity} onChange={handleChange} className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">Estado</label>
-          <input name="addressState" required value={formData.addressState} onChange={handleChange} className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-        </div>
-        <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">País</label>
-          <input name="addressCountry" required value={formData.addressCountry} onChange={handleChange} className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <input type="checkbox" name="terms" checked={formData.terms} onChange={handleChange} className="w-4 h-4" />
-        <span className="text-xs text-slate-700">Aceito os termos de uso</span>
-      </div>
-
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full py-3 rounded-lg bg-blue-900 text-white font-bold shadow-md hover:bg-blue-800 disabled:opacity-60"
-      >
-        {loading ? 'Cadastrando...' : 'Cadastrar'}
-      </button>
-    </form>
-  );
+  return <IndividualRegisterForm onSuccess={onSuccess} />;
 }
 
 // Modal shell
@@ -592,6 +332,17 @@ export default function Home() {
         { name: 'Mentoria Profissional', desc: 'Conecte-se com pilotos experientes e profissionais da aviação para orientação de carreira, dicas de entrevista e networking', href: '/mentorship', minPlan: 'pro' },
       ]
     },
+    hiring: {
+      name: 'Portal para Empresas - Contratação',
+      icon: '💼',
+      minPlan: 'premium',
+      description: 'Plataforma completa para publicar vagas, revisar candidatos e gerenciar contratações na aviação',
+      features: [
+        { name: 'Perfil da Empresa', desc: 'Configure o perfil da sua empresa com informações de contato, descrição, volume de contratações e certificações. Primeiro passo para publicar vagas', href: '/business/company/profile', minPlan: 'premium' },
+        { name: 'Dashboard de Recrutamento', desc: 'Visualize o status de suas vagas, número de candidatos, aplicações pendentes de revisão e métricas de engajamento em tempo real', href: '/business/dashboard', minPlan: 'premium' },
+        { name: 'Gerenciar Vagas e Candidatos', desc: 'Publique vagas, revise perfis de candidatos, organize por status (revisão, entrevista, oferta) e acompanhe histórico de comunicações', href: '/business/jobs', minPlan: 'premium' },
+      ]
+    },
     hangarshare: {
       name: 'HangarShare - Aluguel de Hangares',
       icon: '🏢',
@@ -748,7 +499,7 @@ export default function Home() {
     const diffMs = now.getTime() - published.getTime();
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays > 0) return `Há ${diffDays} dia${diffDays > 1 ? 's' : ''}`;
     if (diffHours > 0) return `Há ${diffHours} hora${diffHours > 1 ? 's' : ''}`;
     return 'Agora';
@@ -756,14 +507,14 @@ export default function Home() {
 
   const fetchWeather = async (icao: string) => {
     if (icao.length !== 4) return;
-    
+
     setLoadingWeather(true);
     setWeatherError('');
     setWeatherData(null);
-    
+
     try {
       const response = await fetch(`/api/weather/metar?icao=${icao}`);
-      
+
       if (!response.ok) {
         let errorMessage = 'Aeroporto não encontrado';
         try {
@@ -774,7 +525,7 @@ export default function Home() {
         }
         throw new Error(errorMessage);
       }
-      
+
       const data = await response.json();
       setWeatherData(data);
       setWeatherError('');
@@ -788,7 +539,7 @@ export default function Home() {
   };
 
   const getFlightCategory = (category?: string) => {
-    switch(category) {
+    switch (category) {
       case 'VFR': return { label: 'VFR', color: 'text-green-600', bg: 'bg-green-50' };
       case 'MVFR': return { label: 'MVFR', color: 'text-blue-600', bg: 'bg-blue-50' };
       case 'IFR': return { label: 'IFR', color: 'text-red-600', bg: 'bg-red-50' };
@@ -825,19 +576,19 @@ export default function Home() {
                     />
                     <a
                       href={(proceduresIcao || '').trim().length === 4 ? `/procedures/${(proceduresIcao || '').trim().toUpperCase()}#procedures` : '#'}
-                      className={`px-3 py-1 text-xs font-bold rounded ${ (proceduresIcao || '').trim().length === 4 ? 'bg-blue-900 text-white hover:bg-blue-800' : 'bg-slate-300 text-slate-600 cursor-not-allowed'}`}
+                      className={`px-3 py-1 text-xs font-bold rounded ${(proceduresIcao || '').trim().length === 4 ? 'bg-blue-900 text-white hover:bg-blue-800' : 'bg-slate-300 text-slate-600 cursor-not-allowed'}`}
                     >
                       Procedimentos
                     </a>
                     <a
                       href={(proceduresIcao || '').trim().length === 4 ? `/procedures/${(proceduresIcao || '').trim().toUpperCase()}#rotaer` : '#'}
-                      className={`px-3 py-1 text-xs font-bold rounded ${ (proceduresIcao || '').trim().length === 4 ? 'bg-indigo-600 text-white hover:bg-indigo-500' : 'bg-slate-300 text-slate-600 cursor-not-allowed'}`}
+                      className={`px-3 py-1 text-xs font-bold rounded ${(proceduresIcao || '').trim().length === 4 ? 'bg-indigo-600 text-white hover:bg-indigo-500' : 'bg-slate-300 text-slate-600 cursor-not-allowed'}`}
                     >
                       ROTAER
                     </a>
                     <a
                       href={(proceduresIcao || '').trim().length === 4 ? `/procedures/${(proceduresIcao || '').trim().toUpperCase()}#notams` : '#'}
-                      className={`px-3 py-1 text-xs font-bold rounded ${ (proceduresIcao || '').trim().length === 4 ? 'bg-amber-600 text-white hover:bg-amber-500' : 'bg-slate-300 text-slate-600 cursor-not-allowed'}`}
+                      className={`px-3 py-1 text-xs font-bold rounded ${(proceduresIcao || '').trim().length === 4 ? 'bg-amber-600 text-white hover:bg-amber-500' : 'bg-slate-300 text-slate-600 cursor-not-allowed'}`}
                     >
                       NOTAMs
                     </a>
@@ -865,7 +616,7 @@ export default function Home() {
                     onChange={(e) => setIcaoCode(e.target.value.toUpperCase())}
                     className="w-24 rounded border border-slate-300 px-2 py-1 text-sm uppercase focus:ring-2 focus:ring-blue-500 outline-none"
                   />
-                  <button 
+                  <button
                     onClick={() => fetchWeather(icaoCode)}
                     disabled={loadingWeather || icaoCode.length !== 4}
                     className="px-3 py-1 bg-blue-900 text-white text-xs font-bold rounded hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
@@ -873,13 +624,13 @@ export default function Home() {
                     {loadingWeather ? '...' : 'Buscar'}
                   </button>
                 </div>
-                
+
                 {weatherError && (
                   <div className="text-xs text-red-600 bg-red-50 p-2 rounded">
                     {weatherError}
                   </div>
                 )}
-                
+
                 {weatherData ? (
                   <div className="space-y-2">
                     <div className="flex justify-between items-center text-sm">
@@ -888,7 +639,7 @@ export default function Home() {
                         {getFlightCategory(weatherData.flight_category).label}
                       </span>
                     </div>
-                    
+
                     <div className="text-xs text-slate-700 space-y-1">
                       {weatherData.temperature && (
                         <div>🌡️ Temp: {weatherData.temperature.repr}°C{weatherData.dewpoint && ` • Dew: ${weatherData.dewpoint.repr}°C`}</div>
@@ -907,7 +658,7 @@ export default function Home() {
                           {Number.isFinite(weatherData.altimeter.value) && (
                             <span>
                               {' '}
-                              • { (weatherData.altimeter.value * 0.02953).toFixed(2) } inHg
+                              • {(weatherData.altimeter.value * 0.02953).toFixed(2)} inHg
                             </span>
                           )}
                         </div>
@@ -916,11 +667,11 @@ export default function Home() {
                         <div>☁️ Nuvens: {weatherData.clouds.join(', ')} FT</div>
                       )}
                     </div>
-                    
+
                     <div className="text-xs text-slate-600 bg-slate-50 p-2 rounded font-mono break-all leading-relaxed">
                       {weatherData.raw}
                     </div>
-                    
+
                     <div className="text-xs text-slate-400">
                       ⏰ {weatherData.time ? new Date(weatherData.time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + 'Z' : 'N/A'}
                     </div>
@@ -974,7 +725,7 @@ export default function Home() {
                     className="w-full h-40 object-cover cursor-pointer hover:opacity-90 transition"
                   />
                 </Link>
-                <button 
+                <button
                   className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center hover:bg-white shadow-lg"
                   title="Favoritar"
                 >
@@ -993,7 +744,7 @@ export default function Home() {
                 <div className="flex items-baseline gap-2">
                   <span className="text-lg font-black text-green-700">{classifieds[listingIndex].price}</span>
                 </div>
-                
+
                 <div className="text-xs text-slate-600 space-y-1 bg-slate-50 rounded-lg p-2">
                   <div className="flex items-center gap-2">
                     <span className="font-semibold">📅 Ano:</span>
@@ -1023,7 +774,7 @@ export default function Home() {
                 </div>
               </div>
 
-                <div className="flex items-center justify-between pt-2 border-t border-slate-200">
+              <div className="flex items-center justify-between pt-2 border-t border-slate-200">
                 <button
                   aria-label="Anterior"
                   onClick={() => setListingIndex((listingIndex - 1 + classifieds.length) % classifieds.length)}
@@ -1031,7 +782,7 @@ export default function Home() {
                 >
                   ‹
                 </button>
-                
+
                 <div className="flex gap-1.5">
                   {classifieds.map((_, i) => (
                     <button
@@ -1139,7 +890,7 @@ export default function Home() {
                   height={160}
                   className="w-full h-40 object-cover"
                 />
-                <button 
+                <button
                   className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center hover:bg-white shadow-lg"
                   title="Favoritar"
                 >
@@ -1152,7 +903,7 @@ export default function Home() {
                   <h4 className="text-base font-bold text-blue-900">Reserve ou Anuncie seu Hangar</h4>
                   <p className="text-xs text-slate-500">Plataforma completa para locação de hangares</p>
                 </div>
-                
+
                 <div className="text-xs text-slate-600 space-y-1 bg-slate-50 rounded-lg p-2">
                   <div className="flex items-center gap-2">
                     <span className="font-semibold">🏢 Hangares:</span>
@@ -1173,14 +924,14 @@ export default function Home() {
                 </div>
 
                 <div className="flex gap-2">
-                  <Link 
-                    href="/hangarshare" 
+                  <Link
+                    href="/hangarshare"
                     className="flex-1 px-3 py-2 bg-blue-900 text-white text-xs font-bold rounded hover:bg-blue-800 text-center"
                   >
                     🔍 Buscar Hangares
                   </Link>
-                  <Link 
-                    href="/hangarshare/owner/register" 
+                  <Link
+                    href="/hangarshare/owner/register"
                     className="flex-1 px-3 py-2 bg-orange-500 text-white text-xs font-bold rounded hover:bg-orange-600 text-center"
                   >
                     ➕ Anunciar Hangar
@@ -1294,7 +1045,7 @@ export default function Home() {
 
               <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 space-y-3">
                 <p className="text-sm text-blue-900 font-semibold">Proteção completa para sua aeronave</p>
-                
+
                 <div className="space-y-2">
                   <div className="text-xs text-blue-800 space-y-1">
                     <div className="flex items-center gap-2">
@@ -1377,7 +1128,7 @@ export default function Home() {
   // Landing page for non-logged users
   return (
     <>
-      <LandingPage 
+      <LandingPage
         onOpenLogin={() => setLoginOpen(true)}
         onOpenRegister={() => setRegisterOpen(true)}
       />

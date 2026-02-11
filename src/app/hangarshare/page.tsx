@@ -120,9 +120,7 @@ export default function HangarSharePage() {
                         }
                       }}
                       className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                      style={{
-                        background: `linear-gradient(to right, #1e3a8a 0%, #1e3a8a ${(minPrice/20000)*100}%, #e2e8f0 ${(minPrice/20000)*100}%, #e2e8f0 100%)`
-                      }}
+                      title="Preco minimo"
                     />
                   </div>
 
@@ -142,9 +140,7 @@ export default function HangarSharePage() {
                         }
                       }}
                       className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-900"
-                      style={{
-                        background: `linear-gradient(to right, #1e3a8a 0%, #1e3a8a ${(maxPrice/20000)*100}%, #e2e8f0 ${(maxPrice/20000)*100}%, #e2e8f0 100%)`
-                      }}
+                      title="Preco maximo"
                     />
                   </div>
 

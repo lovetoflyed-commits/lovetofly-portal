@@ -243,6 +243,7 @@ export default function ForumPage() {
                     onChange={(e) => setFilters((prev) => ({ ...prev, query: e.target.value }))}
                     placeholder="Título, conteúdo ou autor"
                     className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                    title="Buscar"
                   />
                 </div>
                 <div>
@@ -251,6 +252,7 @@ export default function ForumPage() {
                     value={filters.category}
                     onChange={(e) => setFilters((prev) => ({ ...prev, category: e.target.value }))}
                     className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                    title="Categoria"
                   >
                     <option value="">Todas</option>
                     {categories.map((cat) => (
@@ -273,12 +275,14 @@ export default function ForumPage() {
                       value={filters.from}
                       onChange={(e) => setFilters((prev) => ({ ...prev, from: e.target.value }))}
                       className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                      title="Periodo inicial"
                     />
                     <input
                       type="date"
                       value={filters.to}
                       onChange={(e) => setFilters((prev) => ({ ...prev, to: e.target.value }))}
                       className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                      title="Periodo final"
                     />
                   </div>
                 </div>
@@ -406,6 +410,7 @@ export default function ForumPage() {
               <button 
                 onClick={() => setShowNewTopicModal(false)}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label="Fechar modal"
               >
                 <X size={24} />
               </button>

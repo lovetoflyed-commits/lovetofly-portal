@@ -140,6 +140,7 @@ export default function CareerJobsPage() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  title="Buscar vagas"
                 />
               </div>
 
@@ -149,6 +150,7 @@ export default function CareerJobsPage() {
                   value={selectedLevel}
                   onChange={(e) => setSelectedLevel(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  title="Nivel"
                 >
                   <option value="">Todos os níveis</option>
                   <option value="Júnior">Júnior</option>
@@ -163,6 +165,7 @@ export default function CareerJobsPage() {
                   value={selectedType}
                   onChange={(e) => setSelectedType(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  title="Tipo"
                 >
                   <option value="">Todos os tipos</option>
                   <option value="Período Integral">Período Integral</option>

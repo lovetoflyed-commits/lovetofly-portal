@@ -202,6 +202,7 @@ export default function PartsClassifieds() {
                     value={filters.category}
                     onChange={(e) => setFilters({ ...filters, category: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    title="Categoria"
                   >
                     <option value="">Todas</option>
                     {categories.map((cat) => (
@@ -220,6 +221,7 @@ export default function PartsClassifieds() {
                     value={filters.condition}
                     onChange={(e) => setFilters({ ...filters, condition: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    title="Condicao"
                   >
                     <option value="">Todas</option>
                     {conditions.map((c) => (
@@ -238,6 +240,7 @@ export default function PartsClassifieds() {
                     value={filters.state}
                     onChange={(e) => setFilters({ ...filters, state: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    title="Estado"
                   >
                     <option value="">Todos</option>
                     {brazilianStates.map((state) => (
@@ -258,6 +261,7 @@ export default function PartsClassifieds() {
                     value={filters.manufacturer}
                     onChange={(e) => setFilters({ ...filters, manufacturer: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    title="Fabricante"
                   />
                 </div>
               </div>
@@ -273,6 +277,7 @@ export default function PartsClassifieds() {
                     value={filters.part_number}
                     onChange={(e) => setFilters({ ...filters, part_number: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    title="Numero da peca"
                   />
                 </div>
 
@@ -286,6 +291,7 @@ export default function PartsClassifieds() {
                     value={filters.min_price}
                     onChange={(e) => setFilters({ ...filters, min_price: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    title="Preco minimo"
                   />
                 </div>
 
@@ -299,6 +305,7 @@ export default function PartsClassifieds() {
                     value={filters.max_price}
                     onChange={(e) => setFilters({ ...filters, max_price: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    title="Preco maximo"
                   />
                 </div>
 
@@ -310,6 +317,7 @@ export default function PartsClassifieds() {
                     value={filters.has_certification}
                     onChange={(e) => setFilters({ ...filters, has_certification: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    title="Certificacao"
                   >
                     <option value="">Qualquer uma</option>
                     <option value="true">Certificada</option>

@@ -43,7 +43,7 @@ app.prepare().then(() => {
   process.on('SIGINT', gracefulShutdown);
 
   // Start server
-  server.listen(PORT, () => {
+  server.listen(PORT, '0.0.0.0', () => {
     console.log(`> Ready on http://localhost:${PORT}`);
   });
 });

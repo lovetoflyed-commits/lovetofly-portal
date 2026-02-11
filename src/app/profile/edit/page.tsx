@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import AvatarUploader from "@/components/AvatarUploader";
 import { maskBrazilianPhone, unmaskPhone } from "@/utils/phoneFormat";
+import { maskCEP } from "@/utils/masks";
 
 interface UserProfile {
   id: number;
@@ -55,6 +56,8 @@ export default function EditProfilePage() {
   const [pendingAvatar, setPendingAvatar] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [cepLoading, setCepLoading] = useState(false);
+  const [cepStatus, setCepStatus] = useState('');
 
   useEffect(() => {
     async function fetchProfile() {
@@ -89,11 +92,56 @@ export default function EditProfilePage() {
     if (token) fetchProfile();
   }, [token]);
 
+  const fetchAddressByCEP = async (cep: string) => {
+    const cleaned = cep.replace(/\D/g, '');
+    if (cleaned.length !== 8) return;
+
+    setCepLoading(true);
+    setCepStatus('Buscando CEP...');
+
+    try {
+      const response = await fetch(`/api/address/cep?code=${cleaned}`);
+      if (!response.ok) throw new Error('CEP lookup failed');
+
+      const data = await response.json();
+      if (data.error || !data.success) {
+        setCepStatus('CEP não encontrado.');
+        setCepLoading(false);
+        return;
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        addressZip: maskCEP(cleaned),
+        addressStreet: data.street || prev.addressStreet,
+        addressNeighborhood: data.neighborhood || prev.addressNeighborhood,
+        addressCity: data.city || prev.addressCity,
+        addressState: data.state || prev.addressState,
+      }));
+
+      setCepStatus('Endereço preenchido automaticamente.');
+    } catch (err) {
+      console.error('Failed to fetch address by CEP:', err);
+      setCepStatus('Não foi possível buscar o CEP.');
+    } finally {
+      setCepLoading(false);
+    }
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     // Apply mask for phone input
     if (name === 'mobilePhone') {
       setFormData(prev => ({ ...prev, [name]: maskBrazilianPhone(value) }));
+    } else if (name === 'addressZip') {
+      const masked = maskCEP(value);
+      setFormData(prev => ({ ...prev, [name]: masked }));
+      const cleaned = masked.replace(/\D/g, '');
+      if (cleaned.length === 8) {
+        fetchAddressByCEP(masked);
+      } else {
+        setCepStatus('');
+      }
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
@@ -114,12 +162,12 @@ export default function EditProfilePage() {
     const mobilePhone = unmaskPhone(formData.mobilePhone.trim());
     const role = formData.aviationRole.trim();
     const roleOther = formData.aviationRoleOther.trim();
-    
+
     if (!firstName || !lastName) {
       setMessage('Nome e sobrenome são obrigatórios.');
       return;
     }
-    
+
     if (role.length === 0 && roleOther.length === 0) {
       setMessage('Informe sua função na aviação ou outra função.');
       return;
@@ -154,7 +202,7 @@ export default function EditProfilePage() {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           firstName: firstName || null,
           lastName: lastName || null,
           mobilePhone: mobilePhone || null,
@@ -166,7 +214,7 @@ export default function EditProfilePage() {
           addressState: formData.addressState || null,
           addressZip: formData.addressZip || null,
           addressCountry: formData.addressCountry || null,
-          aviationRole: role || null, 
+          aviationRole: role || null,
           aviationRoleOther: roleOther || null,
           licencas: formData.licencas || null,
           habilitacoes: formData.habilitacoes || null,
@@ -186,8 +234,8 @@ export default function EditProfilePage() {
 
       // Update AuthContext with new user data (especially name for header)
       if (data.data) {
-        updateUser({ 
-          name: `${data.data.firstName} ${data.data.lastName}`.trim() 
+        updateUser({
+          name: `${data.data.firstName} ${data.data.lastName}`.trim()
         });
       }
 
@@ -216,9 +264,9 @@ export default function EditProfilePage() {
         {/* Avatar uploader */}
         <div className="mb-6">
           <h2 className="text-sm font-bold text-slate-700 mb-2">Foto de Perfil</h2>
-          <AvatarUploader 
-            initialAvatarUrl={pendingAvatar || profile.avatarUrl || null} 
-            onPhotoSelected={(dataUrl) => setPendingAvatar(dataUrl)} 
+          <AvatarUploader
+            initialAvatarUrl={pendingAvatar || profile.avatarUrl || null}
+            onPhotoSelected={(dataUrl) => setPendingAvatar(dataUrl)}
           />
           {pendingAvatar && (
             <div className="mt-2 text-xs text-orange-600 font-bold">
@@ -242,47 +290,50 @@ export default function EditProfilePage() {
         <form className="space-y-5" onSubmit={handleSubmit}>
           <div>
             <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Nome</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               name="firstName"
-              className="w-full border rounded px-3 py-2" 
-              value={formData.firstName} 
+              className="w-full border rounded px-3 py-2"
+              value={formData.firstName}
               onChange={handleChange}
-              disabled={isBlocked} 
-              readOnly={isBlocked} 
+              disabled={isBlocked}
+              readOnly={isBlocked}
+              title="Nome"
             />
           </div>
           <div>
             <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Sobrenome</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               name="lastName"
-              className="w-full border rounded px-3 py-2" 
-              value={formData.lastName} 
+              className="w-full border rounded px-3 py-2"
+              value={formData.lastName}
               onChange={handleChange}
-              disabled={isBlocked} 
-              readOnly={isBlocked} 
+              disabled={isBlocked}
+              readOnly={isBlocked}
+              title="Sobrenome"
             />
           </div>
           <div>
             <label className="block text-xs font-bold text-slate-400 uppercase mb-1">CPF</label>
-            <input type="text" className="w-full border rounded px-3 py-2" defaultValue={profile.cpf} disabled={isBlocked} readOnly={isBlocked} />
+            <input type="text" className="w-full border rounded px-3 py-2" defaultValue={profile.cpf} disabled={isBlocked} readOnly={isBlocked} title="CPF" />
           </div>
           <div>
             <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Email</label>
-            <input type="email" className="w-full border rounded px-3 py-2" defaultValue={profile.email} disabled readOnly />
+            <input type="email" className="w-full border rounded px-3 py-2" defaultValue={profile.email} disabled readOnly title="Email" />
           </div>
           <div>
             <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Telefone</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               name="mobilePhone"
-              className="w-full border rounded px-3 py-2" 
-              value={formData.mobilePhone} 
+              className="w-full border rounded px-3 py-2"
+              value={formData.mobilePhone}
               onChange={handleChange}
               placeholder="+55(XX)XXXXX-XXXX"
-              disabled={isBlocked} 
-              readOnly={isBlocked} 
+              disabled={isBlocked}
+              readOnly={isBlocked}
+              title="Telefone"
             />
           </div>
           {/* Address Section */}
@@ -291,108 +342,117 @@ export default function EditProfilePage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
                 <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Rua/Avenida</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   name="addressStreet"
-                  className="w-full border rounded px-3 py-2" 
+                  className="w-full border rounded px-3 py-2"
                   value={formData.addressStreet}
                   onChange={handleChange}
-                  disabled={isBlocked} 
-                  readOnly={isBlocked} 
+                  disabled={isBlocked}
+                  readOnly={isBlocked}
+                  title="Rua ou avenida"
                 />
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Número</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   name="addressNumber"
-                  className="w-full border rounded px-3 py-2" 
+                  className="w-full border rounded px-3 py-2"
                   value={formData.addressNumber}
                   onChange={handleChange}
-                  disabled={isBlocked} 
-                  readOnly={isBlocked} 
+                  disabled={isBlocked}
+                  readOnly={isBlocked}
+                  title="Numero"
                 />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Complemento</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   name="addressComplement"
-                  className="w-full border rounded px-3 py-2" 
+                  className="w-full border rounded px-3 py-2"
                   value={formData.addressComplement}
                   onChange={handleChange}
-                  disabled={isBlocked} 
-                  readOnly={isBlocked} 
-                  placeholder="Apto, Bloco, etc." 
+                  disabled={isBlocked}
+                  readOnly={isBlocked}
+                  placeholder="Apto, Bloco, etc."
+                  title="Complemento"
                 />
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Bairro</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   name="addressNeighborhood"
-                  className="w-full border rounded px-3 py-2" 
+                  className="w-full border rounded px-3 py-2"
                   value={formData.addressNeighborhood}
                   onChange={handleChange}
-                  disabled={isBlocked} 
-                  readOnly={isBlocked} 
+                  disabled={isBlocked}
+                  readOnly={isBlocked}
+                  title="Bairro"
                 />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Cidade</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   name="addressCity"
-                  className="w-full border rounded px-3 py-2" 
+                  className="w-full border rounded px-3 py-2"
                   value={formData.addressCity}
                   onChange={handleChange}
-                  disabled={isBlocked} 
-                  readOnly={isBlocked} 
+                  disabled={isBlocked}
+                  readOnly={isBlocked}
+                  title="Cidade"
                 />
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Estado</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   name="addressState"
-                  className="w-full border rounded px-3 py-2" 
+                  className="w-full border rounded px-3 py-2"
                   value={formData.addressState}
                   onChange={handleChange}
-                  disabled={isBlocked} 
-                  readOnly={isBlocked} 
-                  placeholder="SP" 
-                  maxLength={2} 
+                  disabled={isBlocked}
+                  readOnly={isBlocked}
+                  placeholder="SP"
+                  maxLength={2}
+                  title="Estado"
                 />
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase mb-1">CEP</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   name="addressZip"
-                  className="w-full border rounded px-3 py-2" 
+                  className="w-full border rounded px-3 py-2"
                   value={formData.addressZip}
                   onChange={handleChange}
-                  disabled={isBlocked} 
-                  readOnly={isBlocked} 
-                  placeholder="12345-678" 
+                  disabled={isBlocked}
+                  readOnly={isBlocked}
+                  placeholder="12345-678"
+                  title="CEP"
                 />
+                {cepStatus && <p className="text-xs text-slate-500 mt-1">{cepStatus}</p>}
               </div>
             </div>
             <div className="mt-4">
               <label className="block text-xs font-bold text-slate-400 uppercase mb-1">País</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 name="addressCountry"
-                className="w-full border rounded px-3 py-2" 
+                className="w-full border rounded px-3 py-2"
                 value={formData.addressCountry}
                 onChange={handleChange}
-                disabled={isBlocked} 
-                readOnly={isBlocked} 
-                placeholder="Brasil" 
+                disabled={isBlocked}
+                readOnly={isBlocked}
+                placeholder="Brasil"
+                title="Pais"
               />
             </div>
           </div>
@@ -402,11 +462,12 @@ export default function EditProfilePage() {
           </div>
           <div>
             <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Função na Aviação</label>
-            <select 
+            <select
               name="aviationRole"
-              className="w-full border rounded px-3 py-2 bg-white" 
-              value={formData.aviationRole} 
+              className="w-full border rounded px-3 py-2 bg-white"
+              value={formData.aviationRole}
               onChange={(e) => setFormData(prev => ({ ...prev, aviationRole: e.target.value }))}
+              title="Funcao na aviacao"
             >
               <option value="">Selecione uma função</option>
               <option value="Piloto Privado (PP)">Piloto Privado (PP)</option>
@@ -429,27 +490,27 @@ export default function EditProfilePage() {
           {formData.aviationRole === 'Outro' && (
             <div>
               <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Especifique a Função</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 name="aviationRoleOther"
-                className="w-full border rounded px-3 py-2" 
-                value={formData.aviationRoleOther} 
+                className="w-full border rounded px-3 py-2"
+                value={formData.aviationRoleOther}
                 onChange={handleChange}
                 placeholder="Digite sua função na aviação"
               />
             </div>
           )}
-          
+
           {/* Qualificações ANAC/RBAC 61 */}
           <div className="border-t pt-5 mt-5">
             <h3 className="text-sm font-bold text-slate-700 mb-4">Qualificações de Aviação</h3>
             <div>
               <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Licenças</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 name="licencas"
-                className="w-full border rounded px-3 py-2" 
-                value={formData.licencas} 
+                className="w-full border rounded px-3 py-2"
+                value={formData.licencas}
                 onChange={handleChange}
                 placeholder="Ex: PP, PC, ATP"
               />
@@ -457,11 +518,11 @@ export default function EditProfilePage() {
             </div>
             <div className="mt-4">
               <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Habilitações</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 name="habilitacoes"
-                className="w-full border rounded px-3 py-2" 
-                value={formData.habilitacoes} 
+                className="w-full border rounded px-3 py-2"
+                value={formData.habilitacoes}
                 onChange={handleChange}
                 placeholder="Ex: MLTE, IFR, B737"
               />
@@ -469,35 +530,35 @@ export default function EditProfilePage() {
             </div>
             <div className="mt-4">
               <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Curso Atual</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 name="curso_atual"
-                className="w-full border rounded px-3 py-2" 
-                value={formData.curso_atual} 
+                className="w-full border rounded px-3 py-2"
+                value={formData.curso_atual}
                 onChange={handleChange}
                 placeholder="Ex: Habilitação de Tipo A320"
               />
               <p className="text-xs text-slate-500 mt-1">Curso de aviação que está realizando atualmente (opcional)</p>
             </div>
           </div>
-          
+
           {message && (
             <div className={`mt-4 p-3 rounded text-sm font-bold ${message.startsWith('✓') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
               {message}
             </div>
           )}
           <div className="mt-6 flex gap-3">
-            <button 
-              type="button" 
-              onClick={() => router.push('/profile')} 
+            <button
+              type="button"
+              onClick={() => router.push('/profile')}
               className="flex-1 py-3 bg-slate-200 text-slate-700 font-bold rounded hover:bg-slate-300"
               disabled={saving}
             >
               Cancelar
             </button>
-            <button 
-              type="submit" 
-              className="flex-1 py-3 bg-blue-600 text-white font-bold rounded hover:bg-blue-700 disabled:opacity-50" 
+            <button
+              type="submit"
+              className="flex-1 py-3 bg-blue-600 text-white font-bold rounded hover:bg-blue-700 disabled:opacity-50"
               disabled={saving}
             >
               {saving ? 'Salvando...' : 'Salvar Alterações'}

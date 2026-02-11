@@ -328,7 +328,7 @@ export default function LogbookPage() {
             <div className="mb-8 bg-white rounded-lg shadow-md border border-gray-200 p-6">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-gray-900">Novo Voo - ANAC CIV Digital</h2>
-                <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600">
+                <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600" aria-label="Fechar formulário">
                   <X size={24} />
                 </button>
               </div>
@@ -338,19 +338,19 @@ export default function LogbookPage() {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Data *</label>
-                    <input type="date" required value={formData.date} onChange={(e) => handleInputChange('date', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
+                    <input type="date" required value={formData.date} onChange={(e) => handleInputChange('date', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" title="Data" />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Matrícula Aeronave *</label>
-                    <input type="text" required value={formData.aircraft_registration} onChange={(e) => handleInputChange('aircraft_registration', e.target.value)} placeholder="PT-ABC" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
+                    <input type="text" required value={formData.aircraft_registration} onChange={(e) => handleInputChange('aircraft_registration', e.target.value)} placeholder="PT-ABC" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" title="Matricula aeronave" />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Modelo Aeronave *</label>
-                    <input type="text" required value={formData.aircraft_model} onChange={(e) => handleInputChange('aircraft_model', e.target.value)} placeholder="C172" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
+                    <input type="text" required value={formData.aircraft_model} onChange={(e) => handleInputChange('aircraft_model', e.target.value)} placeholder="C172" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" title="Modelo aeronave" />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Tipo Aeronave *</label>
-                    <select value={formData.aircraft_type} onChange={(e) => handleInputChange('aircraft_type', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <select value={formData.aircraft_type} onChange={(e) => handleInputChange('aircraft_type', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" title="Tipo aeronave">
                       <option>Avião</option>
                       <option>Helicóptero</option>
                       <option>Planador</option>
@@ -362,19 +362,19 @@ export default function LogbookPage() {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Aeródromo Origem *</label>
-                    <input type="text" required value={formData.departure_aerodrome} onChange={(e) => handleInputChange('departure_aerodrome', e.target.value)} placeholder="SBMT" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 uppercase" />
+                    <input type="text" required value={formData.departure_aerodrome} onChange={(e) => handleInputChange('departure_aerodrome', e.target.value)} placeholder="SBMT" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 uppercase" title="Aerodromo origem" />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Hora Partida (HH:MM)</label>
-                    <input type="time" value={formData.departure_time} onChange={(e) => handleInputChange('departure_time', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
+                    <input type="time" value={formData.departure_time} onChange={(e) => handleInputChange('departure_time', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" title="Hora partida" />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Aeródromo Destino *</label>
-                    <input type="text" required value={formData.arrival_aerodrome} onChange={(e) => handleInputChange('arrival_aerodrome', e.target.value)} placeholder="SBJD" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 uppercase" />
+                    <input type="text" required value={formData.arrival_aerodrome} onChange={(e) => handleInputChange('arrival_aerodrome', e.target.value)} placeholder="SBJD" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 uppercase" title="Aerodromo destino" />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Hora Chegada (HH:MM)</label>
-                    <input type="time" value={formData.arrival_time} onChange={(e) => handleInputChange('arrival_time', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
+                    <input type="time" value={formData.arrival_time} onChange={(e) => handleInputChange('arrival_time', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" title="Hora chegada" />
                   </div>
                 </div>
 
@@ -384,23 +384,23 @@ export default function LogbookPage() {
                   <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">Diurno</label>
-                      <input type="text" pattern="\d{2}:\d{2}" value={formData.time_diurno} onChange={(e) => handleTimeMask('time_diurno', e.target.value)} placeholder="HH:MM" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono" />
+                      <input type="text" pattern="\d{2}:\d{2}" value={formData.time_diurno} onChange={(e) => handleTimeMask('time_diurno', e.target.value)} placeholder="HH:MM" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono" title="Tempo diurno" />
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">Noturno</label>
-                      <input type="text" pattern="\d{2}:\d{2}" value={formData.time_noturno} onChange={(e) => handleTimeMask('time_noturno', e.target.value)} placeholder="HH:MM" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono" />
+                      <input type="text" pattern="\d{2}:\d{2}" value={formData.time_noturno} onChange={(e) => handleTimeMask('time_noturno', e.target.value)} placeholder="HH:MM" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono" title="Tempo noturno" />
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">IFR Real</label>
-                      <input type="text" pattern="\d{2}:\d{2}" value={formData.time_ifr_real} onChange={(e) => handleTimeMask('time_ifr_real', e.target.value)} placeholder="HH:MM" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono" />
+                      <input type="text" pattern="\d{2}:\d{2}" value={formData.time_ifr_real} onChange={(e) => handleTimeMask('time_ifr_real', e.target.value)} placeholder="HH:MM" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono" title="Tempo IFR real" />
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">Sob Capota</label>
-                      <input type="text" pattern="\d{2}:\d{2}" value={formData.time_under_hood} onChange={(e) => handleTimeMask('time_under_hood', e.target.value)} placeholder="HH:MM" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono" />
+                      <input type="text" pattern="\d{2}:\d{2}" value={formData.time_under_hood} onChange={(e) => handleTimeMask('time_under_hood', e.target.value)} placeholder="HH:MM" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono" title="Tempo sob capota" />
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">Simulador</label>
-                      <input type="text" pattern="\d{2}:\d{2}" value={formData.time_simulator} onChange={(e) => handleTimeMask('time_simulator', e.target.value)} placeholder="HH:MM" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono" />
+                      <input type="text" pattern="\d{2}:\d{2}" value={formData.time_simulator} onChange={(e) => handleTimeMask('time_simulator', e.target.value)} placeholder="HH:MM" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono" title="Tempo simulador" />
                     </div>
                   </div>
                 </div>
@@ -409,15 +409,15 @@ export default function LogbookPage() {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Pousos Dia</label>
-                    <input type="number" min="0" value={formData.day_landings} onChange={(e) => handleInputChange('day_landings', parseInt(e.target.value))} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
+                    <input type="number" min="0" value={formData.day_landings} onChange={(e) => handleInputChange('day_landings', parseInt(e.target.value))} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" title="Pousos dia" />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Pousos Noite</label>
-                    <input type="number" min="0" value={formData.night_landings} onChange={(e) => handleInputChange('night_landings', parseInt(e.target.value))} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
+                    <input type="number" min="0" value={formData.night_landings} onChange={(e) => handleInputChange('night_landings', parseInt(e.target.value))} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" title="Pousos noite" />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Função *</label>
-                    <select value={formData.function} onChange={(e) => handleInputChange('function', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <select value={formData.function} onChange={(e) => handleInputChange('function', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" title="Funcao">
                       <option value="PIC">Piloto em Comando (PIC)</option>
                       <option value="SIC">Copiloto (SIC)</option>
                       <option value="STUDENT">Piloto em Instrução</option>
@@ -427,7 +427,7 @@ export default function LogbookPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Habilitação *</label>
-                    <select value={formData.rating} onChange={(e) => handleInputChange('rating', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <select value={formData.rating} onChange={(e) => handleInputChange('rating', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" title="Habilitacao">
                       <option value="VFR">VFR</option>
                       <option value="IFRA">IFRA (Avião)</option>
                       <option value="MLTE">MLTE</option>
@@ -440,18 +440,18 @@ export default function LogbookPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Milhas Navegação</label>
-                    <input type="number" min="0" value={formData.nav_miles} onChange={(e) => handleInputChange('nav_miles', parseInt(e.target.value))} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
+                    <input type="number" min="0" value={formData.nav_miles} onChange={(e) => handleInputChange('nav_miles', parseInt(e.target.value))} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" title="Milhas navegacao" />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Número CANAC</label>
-                    <input type="text" value={formData.pilot_canac_number} onChange={(e) => handleInputChange('pilot_canac_number', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
+                    <input type="text" value={formData.pilot_canac_number} onChange={(e) => handleInputChange('pilot_canac_number', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" title="Numero CANAC" />
                   </div>
                 </div>
 
                 {/* Remarks */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Observações</label>
-                  <textarea value={formData.remarks} onChange={(e) => handleInputChange('remarks', e.target.value)} rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Manobras realizadas, aproximações IFR, etc." />
+                  <textarea value={formData.remarks} onChange={(e) => handleInputChange('remarks', e.target.value)} rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Manobras realizadas, aproximações IFR, etc." title="Observacoes" />
                 </div>
 
                 {/* Submit Buttons */}

@@ -62,6 +62,11 @@ interface OwnerStatsResponse {
 }
 
 export async function GET(request: NextRequest) {
+  return NextResponse.json(
+    { success: false, message: 'HangarShare V2 is disabled' },
+    { status: 404 }
+  );
+
   const startTime = Date.now();
 
   try {

@@ -165,81 +165,81 @@ export default function RegisterPage() {
           <div className="flex gap-2">
             <div className="w-1/2">
               <label className="block text-xs font-bold mb-1">Nome</label>
-              <input name="firstName" value={form.firstName} onChange={handleChange} required className="w-full px-3 py-2 border rounded" />
+              <input name="firstName" value={form.firstName} onChange={handleChange} required className="w-full px-3 py-2 border rounded" title="Nome" />
             </div>
             <div className="w-1/2">
               <label className="block text-xs font-bold mb-1">Sobrenome</label>
-              <input name="lastName" value={form.lastName} onChange={handleChange} required className="w-full px-3 py-2 border rounded" />
+              <input name="lastName" value={form.lastName} onChange={handleChange} required className="w-full px-3 py-2 border rounded" title="Sobrenome" />
             </div>
           </div>
           <div>
             <label className="block text-xs font-bold mb-1">E-mail</label>
-            <input name="email" type="email" value={form.email} onChange={handleChange} required className="w-full px-3 py-2 border rounded" />
+            <input name="email" type="email" value={form.email} onChange={handleChange} required className="w-full px-3 py-2 border rounded" title="Email" />
           </div>
           <div className="flex gap-2">
             <div className="w-1/2">
               <label className="block text-xs font-bold mb-1">Senha</label>
-              <input name="password" type="password" value={form.password} onChange={handleChange} required className="w-full px-3 py-2 border rounded" />
+              <input name="password" type="password" value={form.password} onChange={handleChange} required className="w-full px-3 py-2 border rounded" title="Senha" />
             </div>
             <div className="w-1/2">
               <label className="block text-xs font-bold mb-1">Confirmar senha</label>
-              <input name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange} required className="w-full px-3 py-2 border rounded" />
+              <input name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange} required className="w-full px-3 py-2 border rounded" title="Confirmar senha" />
             </div>
           </div>
           <div>
             <label className="block text-xs font-bold mb-1">CPF</label>
-            <input name="cpf" value={form.cpf} onChange={handleChange} required className="w-full px-3 py-2 border rounded" />
+            <input name="cpf" value={form.cpf} onChange={handleChange} required className="w-full px-3 py-2 border rounded" title="CPF" />
           </div>
           <div>
             <label className="block text-xs font-bold mb-1">Data de nascimento</label>
-            <input name="birthDate" type="date" value={form.birthDate} onChange={handleChange} required className="w-full px-3 py-2 border rounded" />
+            <input name="birthDate" type="date" value={form.birthDate} onChange={handleChange} required className="w-full px-3 py-2 border rounded" title="Data de nascimento" />
           </div>
           <div>
             <label className="block text-xs font-bold mb-1">Celular</label>
-            <input name="mobilePhone" value={form.mobilePhone} onChange={handleChange} required className="w-full px-3 py-2 border rounded" />
+            <input name="mobilePhone" value={form.mobilePhone} onChange={handleChange} required className="w-full px-3 py-2 border rounded" title="Celular" />
           </div>
           <div>
             <label className="block text-xs font-bold mb-1">CEP</label>
             <div className="flex gap-2 items-center">
-              <input name="addressZip" value={form.addressZip} onChange={handleChange} onBlur={handleCepBlur} required className="w-full px-3 py-2 border rounded" />
+              <input name="addressZip" value={form.addressZip} onChange={handleChange} onBlur={handleCepBlur} required className="w-full px-3 py-2 border rounded" title="CEP" />
               {cepLoading && <span className="text-xs text-blue-600">Buscando...</span>}
             </div>
           </div>
           <div>
             <label className="block text-xs font-bold mb-1">Rua</label>
-            <input name="addressStreet" value={form.addressStreet} onChange={handleChange} required className="w-full px-3 py-2 border rounded" />
+            <input name="addressStreet" value={form.addressStreet} onChange={handleChange} required className="w-full px-3 py-2 border rounded" title="Rua" />
           </div>
           <div className="flex gap-2">
             <div className="w-1/3">
               <label className="block text-xs font-bold mb-1">Número</label>
-              <input name="addressNumber" value={form.addressNumber} onChange={handleChange} required className="w-full px-3 py-2 border rounded" />
+              <input name="addressNumber" value={form.addressNumber} onChange={handleChange} required className="w-full px-3 py-2 border rounded" title="Numero" />
             </div>
             <div className="w-1/3">
               <label className="block text-xs font-bold mb-1">Complemento</label>
-              <input name="addressComplement" value={form.addressComplement} onChange={handleChange} className="w-full px-3 py-2 border rounded" />
+              <input name="addressComplement" value={form.addressComplement} onChange={handleChange} className="w-full px-3 py-2 border rounded" title="Complemento" />
             </div>
             <div className="w-1/3">
               <label className="block text-xs font-bold mb-1">Bairro</label>
-              <input name="addressNeighborhood" value={form.addressNeighborhood} onChange={handleChange} required className="w-full px-3 py-2 border rounded" />
+              <input name="addressNeighborhood" value={form.addressNeighborhood} onChange={handleChange} required className="w-full px-3 py-2 border rounded" title="Bairro" />
             </div>
           </div>
           <div className="flex gap-2">
             <div className="w-1/2">
               <label className="block text-xs font-bold mb-1">Cidade</label>
-              <input name="addressCity" value={form.addressCity} onChange={handleChange} required className="w-full px-3 py-2 border rounded" />
+              <input name="addressCity" value={form.addressCity} onChange={handleChange} required className="w-full px-3 py-2 border rounded" title="Cidade" />
             </div>
             <div className="w-1/4">
               <label className="block text-xs font-bold mb-1">UF</label>
-              <input name="addressState" value={form.addressState} onChange={handleChange} required className="w-full px-3 py-2 border rounded" />
+              <input name="addressState" value={form.addressState} onChange={handleChange} required className="w-full px-3 py-2 border rounded" title="UF" />
             </div>
             <div className="w-1/4">
               <label className="block text-xs font-bold mb-1">País</label>
-              <input name="addressCountry" value={form.addressCountry} onChange={handleChange} required className="w-full px-3 py-2 border rounded" />
+              <input name="addressCountry" value={form.addressCountry} onChange={handleChange} required className="w-full px-3 py-2 border rounded" title="Pais" />
             </div>
           </div>
           <div>
             <label className="block text-xs font-bold mb-1">Perfil na aviação</label>
-            <select name="aviationRole" value={form.aviationRole} onChange={handleChange} required className="w-full px-3 py-2 border rounded">
+            <select name="aviationRole" value={form.aviationRole} onChange={handleChange} required className="w-full px-3 py-2 border rounded" title="Perfil na aviacao">
               <option value="">Selecione seu perfil</option>
               <option value="student">Estudante</option>
               <option value="pilot">Piloto</option>

@@ -432,7 +432,7 @@ export default function CareerProfilePage() {
 
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-2">Localização *</label>
-                    <input type="text" name="location" value={formData.location} onChange={handleChange} placeholder="Cidade, Estado" required className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                    <input type="text" name="location" value={formData.location} onChange={handleChange} placeholder="Cidade, Estado" required className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" title="Localizacao" />
                   </div>
                 </div>
               )}
@@ -445,7 +445,7 @@ export default function CareerProfilePage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-bold text-slate-700 mb-2">Tipo de Licença *</label>
-                      <select name="licenseType" value={formData.licenseType} onChange={handleChange} required className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                      <select name="licenseType" value={formData.licenseType} onChange={handleChange} required className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" title="Tipo de licenca">
                         <option value="">Selecione...</option>
                         <option value="PPL">PPL (Piloto Privado)</option>
                         <option value="CPL">CPL (Piloto Comercial)</option>
@@ -462,7 +462,7 @@ export default function CareerProfilePage() {
                     </div>
                     <div>
                       <label className="block text-sm font-bold text-slate-700 mb-2">Nível de Qualificação</label>
-                      <select name="licenseLevel" value={formData.licenseLevel} onChange={handleChange} className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                      <select name="licenseLevel" value={formData.licenseLevel} onChange={handleChange} className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" title="Nível de qualificação">
                         <option value="">Selecione...</option>
                         <option value="Student">Estudante</option>
                         <option value="Licensed">Licenciado</option>
@@ -475,11 +475,11 @@ export default function CareerProfilePage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-bold text-slate-700 mb-2">Total de Horas de Voo</label>
-                      <input type="number" name="totalFlightHours" value={formData.totalFlightHours} onChange={handleChange} placeholder="Ex: 5000" className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                      <input type="number" name="totalFlightHours" value={formData.totalFlightHours} onChange={handleChange} placeholder="Ex: 5000" className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" title="Total de horas de voo" />
                     </div>
                     <div>
                       <label className="block text-sm font-bold text-slate-700 mb-2">Medical Certificate</label>
-                      <select name="medicalCertificate" value={formData.medicalCertificate} onChange={handleChange} className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                      <select name="medicalCertificate" value={formData.medicalCertificate} onChange={handleChange} className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" title="Certificado médico">
                         <option value="">Selecione...</option>
                         <option value="Class1">Classe 1</option>
                         <option value="Class2">Classe 2</option>
@@ -498,7 +498,7 @@ export default function CareerProfilePage() {
 
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-2">Nível de Inglês *</label>
-                    <select name="englishLevel" value={formData.englishLevel} onChange={handleChange} required className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                    <select name="englishLevel" value={formData.englishLevel} onChange={handleChange} required className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" title="Nivel de ingles">
                       <option value="">Selecione...</option>
                       <option value="Basic">Básico</option>
                       <option value="Intermediate">Intermediário</option>
@@ -535,11 +535,21 @@ export default function CareerProfilePage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                       <div>
                         <label className="block text-sm font-bold text-slate-700 mb-2">Data de Início</label>
-                        <input type="month" name="startDate" value={formData.startDate} onChange={handleChange} className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition bg-white" />
+                        <input
+                          type="text"
+                          name="startDate"
+                          value={formData.startDate}
+                          onChange={handleChange}
+                          placeholder="AAAA-MM"
+                          inputMode="numeric"
+                          pattern="\d{4}-\d{2}"
+                          className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition bg-white"
+                          title="Data de início do cargo atual"
+                        />
                       </div>
                       <div>
                         <label className="block text-sm font-bold text-slate-700 mb-2">Tipo de Emprego</label>
-                        <select name="employmentType" value={formData.employmentType} onChange={handleChange} className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition bg-white">
+                        <select name="employmentType" value={formData.employmentType} onChange={handleChange} className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition bg-white" title="Tipo de emprego">
                           <option value="">Selecione...</option>
                           <option value="FullTime">Tempo Integral</option>
                           <option value="PartTime">Tempo Parcial</option>
@@ -552,7 +562,7 @@ export default function CareerProfilePage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                       <div>
                         <label className="block text-sm font-bold text-slate-700 mb-2">Setor/Indústria</label>
-                        <select name="industry" value={formData.industry} onChange={handleChange} className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition bg-white">
+                        <select name="industry" value={formData.industry} onChange={handleChange} className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition bg-white" title="Setor de atuação">
                           <option value="">Selecione...</option>
                           <option value="Commercial">Aviação Comercial</option>
                           <option value="Corporate">Aviação Executiva</option>
@@ -567,7 +577,7 @@ export default function CareerProfilePage() {
                       </div>
                       <div>
                         <label className="block text-sm font-bold text-slate-700 mb-2">Anos de Experiência *</label>
-                        <select name="yearsOfExperience" value={formData.yearsOfExperience} onChange={handleChange} required className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition bg-white">
+                        <select name="yearsOfExperience" value={formData.yearsOfExperience} onChange={handleChange} required className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition bg-white" title="Anos de experiencia">
                           <option value="">Selecione...</option>
                           <option value="0-1">Menos de 1 ano</option>
                           <option value="1-3">1-3 anos</option>
@@ -625,6 +635,7 @@ export default function CareerProfilePage() {
                                   placeholder="Ex: TAP Portugal, LATAM Brasil"
                                   required
                                   className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                                  title="Nome da empresa"
                                 />
                               </div>
                               <div>
@@ -645,21 +656,29 @@ export default function CareerProfilePage() {
                               <div>
                                 <label className="block text-sm font-bold text-slate-700 mb-2">Data de Início *</label>
                                 <input
-                                  type="month"
+                                  type="text"
                                   value={job.startDate}
                                   onChange={(e) => handlePreviousJobChange(job.id, 'startDate', e.target.value)}
+                                  placeholder="AAAA-MM"
+                                  inputMode="numeric"
+                                  pattern="\d{4}-\d{2}"
                                   required
                                   className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                                  title="Data de início do emprego anterior"
                                 />
                               </div>
                               <div>
                                 <label className="block text-sm font-bold text-slate-700 mb-2">Data de Término *</label>
                                 <input
-                                  type="month"
+                                  type="text"
                                   value={job.endDate}
                                   onChange={(e) => handlePreviousJobChange(job.id, 'endDate', e.target.value)}
+                                  placeholder="AAAA-MM"
+                                  inputMode="numeric"
+                                  pattern="\d{4}-\d{2}"
                                   required
                                   className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                                  title="Data de término do emprego anterior"
                                 />
                               </div>
                             </div>
@@ -746,7 +765,7 @@ export default function CareerProfilePage() {
                   
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-2">Nível Educacional Máximo</label>
-                    <select name="highestEducation" value={formData.highestEducation} onChange={handleChange} className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                    <select name="highestEducation" value={formData.highestEducation} onChange={handleChange} className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" title="Nivel educacional maximo">
                       <option value="">Selecione...</option>
                       <option value="HighSchool">Ensino Médio</option>
                       <option value="Associate">Curso Técnico</option>
@@ -771,7 +790,7 @@ export default function CareerProfilePage() {
                   
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-2">Habilidades Técnicas</label>
-                    <textarea name="coreSkills" value={formData.coreSkills} onChange={handleChange} placeholder="Ex: Pilotagem em IFR, Navegação, Procedimentos de Segurança, Operação de Aeronaves, Análise de Performance..." rows={4} className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                    <textarea name="coreSkills" value={formData.coreSkills} onChange={handleChange} placeholder="Ex: Pilotagem em IFR, Navegação, Procedimentos de Segurança, Operação de Aeronaves, Análise de Performance..." rows={4} className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" title="Habilidades tecnicas" />
                     <p className="text-xs text-slate-500 mt-1">Separe as habilidades com vírgulas - máximo 10</p>
                   </div>
 
@@ -790,13 +809,13 @@ export default function CareerProfilePage() {
                   
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-2">Idiomas</label>
-                    <textarea name="languages" value={formData.languages} onChange={handleChange} placeholder="Ex: Português (Nativo), Inglês (Fluente), Espanhol (Intermediário)..." rows={3} className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                    <textarea name="languages" value={formData.languages} onChange={handleChange} placeholder="Ex: Português (Nativo), Inglês (Fluente), Espanhol (Intermediário)..." rows={3} className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" title="Idiomas" />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-bold text-slate-700 mb-2">Tipo de Emprego Desejado</label>
-                      <select name="jobType" value={formData.jobType} onChange={handleChange} className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                      <select name="jobType" value={formData.jobType} onChange={handleChange} className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" title="Tipo de emprego desejado">
                         <option value="">Selecione...</option>
                         <option value="FullTime">Tempo Integral</option>
                         <option value="PartTime">Tempo Parcial</option>
@@ -807,7 +826,7 @@ export default function CareerProfilePage() {
                     </div>
                     <div>
                       <label className="block text-sm font-bold text-slate-700 mb-2">Disposição para Viagens</label>
-                      <select name="willTravelPercentage" value={formData.willTravelPercentage} onChange={handleChange} className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                      <select name="willTravelPercentage" value={formData.willTravelPercentage} onChange={handleChange} className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" title="Disposição para viagens">
                         <option value="">Selecione...</option>
                         <option value="0">Não viajo</option>
                         <option value="25">Até 25%</option>

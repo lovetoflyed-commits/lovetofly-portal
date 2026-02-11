@@ -9,21 +9,34 @@ export async function GET(
   try {
     const { userId } = await params;
 
-    // Combined query to fetch all user data in one roundtrip
-    // This eliminates 6 sequential queries down to 1
+    // Combined query to fetch all user data including business profile
     const userQuery = `
       SELECT 
         u.id, u.first_name, u.last_name, u.email, u.role, u.aviation_role,
         u.plan, u.cpf, u.birth_date, u.mobile_phone, 
         u.address_street, u.address_number, u.address_complement, u.address_neighborhood,
         u.address_city, u.address_state, u.address_zip, u.address_country,
-        u.created_at, u.updated_at,
+        u.created_at, u.updated_at, u.user_type, u.user_type_verified, u.cnpj as user_cnpj,
+        u.badges, u.licencas, u.habilitacoes, u.curso_atual, u.is_hangar_owner,
         uas.access_level, uas.access_reason, uas.changed_at, uas.restore_date,
         ho.id as hangar_owner_id, ho.company_name, ho.cnpj, ho.phone, ho.address, 
-        ho.website, ho.description, ho.verification_status, ho.created_at as hangar_created_at
+        ho.website, ho.description, ho.verification_status, ho.created_at as hangar_created_at,
+        bu.id as business_user_id, bu.legal_name, bu.business_name, bu.business_type,
+        bu.business_phone, bu.business_email, bu.website as business_website,
+        bu.representative_name, bu.representative_title,
+        bu.headquarters_street, bu.headquarters_number, bu.headquarters_complement,
+        bu.headquarters_neighborhood, bu.headquarters_city, bu.headquarters_state,
+        bu.headquarters_zip, bu.headquarters_country, bu.company_size, bu.industry,
+        bu.description as business_description, bu.established_year, bu.annual_hiring_volume,
+        bu.primary_operations, bu.hiring_status, bu.operation_status,
+        bu.faa_certificate_number, bu.insurance_verified, bu.safety_record_public,
+        bu.verification_status as business_verification_status, bu.verification_notes,
+        bu.verification_date, bu.is_verified as business_is_verified,
+        bu.created_at as business_created_at, bu.updated_at as business_updated_at
       FROM users u
       LEFT JOIN user_access_status uas ON u.id = uas.user_id
       LEFT JOIN hangar_owners ho ON u.id = ho.user_id
+      LEFT JOIN business_users bu ON u.id = bu.user_id
       WHERE u.id = $1
       LIMIT 1`;
 
@@ -45,10 +58,12 @@ export async function GET(
         [userId]
       ),
       pool.query(
-        `SELECT id, activity_type, description, ip_address, user_agent, metadata, created_at
+        `SELECT id, activity_type, activity_category, description, 
+          target_type, target_id, old_value, new_value,
+          ip_address, user_agent, status, details, created_at
         FROM user_activity_log WHERE user_id = $1
         ORDER BY created_at DESC
-        LIMIT 100`,
+        LIMIT 200`,
         [userId]
       ),
       pool.query(
@@ -83,6 +98,14 @@ export async function GET(
         address_country: user.address_country,
         created_at: user.created_at,
         updated_at: user.updated_at,
+        user_type: user.user_type,
+        user_type_verified: user.user_type_verified,
+        user_cnpj: user.user_cnpj,
+        badges: user.badges,
+        licencas: user.licencas,
+        habilitacoes: user.habilitacoes,
+        curso_atual: user.curso_atual,
+        is_hangar_owner: user.is_hangar_owner,
         name: [user.first_name, user.last_name].filter(Boolean).join(' ')
       },
       access: user.access_level ? {
@@ -104,6 +127,43 @@ export async function GET(
         verification_status: user.verification_status,
         created_at: user.hangar_created_at
       } : null,
+      businessUser: user.business_user_id ? {
+        id: user.business_user_id,
+        legal_name: user.legal_name,
+        business_name: user.business_name,
+        business_type: user.business_type,
+        cnpj: user.user_cnpj,
+        business_phone: user.business_phone,
+        business_email: user.business_email,
+        website: user.business_website,
+        representative_name: user.representative_name,
+        representative_title: user.representative_title,
+        headquarters_street: user.headquarters_street,
+        headquarters_number: user.headquarters_number,
+        headquarters_complement: user.headquarters_complement,
+        headquarters_neighborhood: user.headquarters_neighborhood,
+        headquarters_city: user.headquarters_city,
+        headquarters_state: user.headquarters_state,
+        headquarters_zip: user.headquarters_zip,
+        headquarters_country: user.headquarters_country,
+        company_size: user.company_size,
+        industry: user.industry,
+        description: user.business_description,
+        established_year: user.established_year,
+        annual_hiring_volume: user.annual_hiring_volume,
+        primary_operations: user.primary_operations,
+        hiring_status: user.hiring_status,
+        operation_status: user.operation_status,
+        faa_certificate_number: user.faa_certificate_number,
+        insurance_verified: user.insurance_verified,
+        safety_record_public: user.safety_record_public,
+        verification_status: user.business_verification_status,
+        verification_notes: user.verification_notes,
+        verification_date: user.verification_date,
+        is_verified: user.business_is_verified,
+        created_at: user.business_created_at,
+        updated_at: user.business_updated_at
+      } : null,
       stats: statsResult.rows[0]
     }, { status: 200 });
   } catch (error) {
@@ -122,6 +182,7 @@ export async function PATCH(
     const body = await request.json();
     const userUpdates = body?.user ?? {};
     const hangarUpdates = body?.hangarOwner ?? null;
+    const businessUpdates = body?.businessUser ?? null;
 
     const userFields = new Set([
       'first_name',
@@ -133,6 +194,8 @@ export async function PATCH(
       'aviation_role',
       'role',
       'plan',
+      'user_type',
+      'user_type_verified',
       'address_street',
       'address_number',
       'address_complement',
@@ -153,6 +216,40 @@ export async function PATCH(
       'verification_status'
     ]);
 
+    const businessFields = new Set([
+      'legal_name',
+      'business_name',
+      'business_type',
+      'cnpj',
+      'business_phone',
+      'business_email',
+      'website',
+      'representative_name',
+      'representative_title',
+      'headquarters_street',
+      'headquarters_number',
+      'headquarters_complement',
+      'headquarters_neighborhood',
+      'headquarters_city',
+      'headquarters_state',
+      'headquarters_zip',
+      'headquarters_country',
+      'company_size',
+      'industry',
+      'description',
+      'established_year',
+      'annual_hiring_volume',
+      'primary_operations',
+      'hiring_status',
+      'operation_status',
+      'faa_certificate_number',
+      'insurance_verified',
+      'safety_record_public',
+      'verification_status',
+      'verification_notes',
+      'is_verified'
+    ]);
+
     const userUpdatesSql: string[] = [];
     const userValues: any[] = [];
     let userParam = 1;
@@ -169,6 +266,23 @@ export async function PATCH(
       await client.query('BEGIN');
 
       let updatedUser = null;
+      const derivedUserUpdates: Record<string, any> = {};
+
+      if (businessUpdates && (Object.prototype.hasOwnProperty.call(businessUpdates, 'verification_status') || Object.prototype.hasOwnProperty.call(businessUpdates, 'is_verified'))) {
+        const approved = businessUpdates.verification_status === 'approved';
+        const isVerified = businessUpdates.is_verified === true;
+        derivedUserUpdates.user_type = 'business';
+        derivedUserUpdates.user_type_verified = approved || isVerified;
+      }
+
+      Object.entries(derivedUserUpdates).forEach(([key, value]) => {
+        if (!userFields.has(key)) return;
+        if (userUpdatesSql.some((entry) => entry.startsWith(`${key} = `))) return;
+        userUpdatesSql.push(`${key} = $${userParam}`);
+        userValues.push(value);
+        userParam++;
+      });
+
       if (userUpdatesSql.length > 0) {
         userUpdatesSql.push('updated_at = NOW()');
         userValues.push(userId);
@@ -212,9 +326,97 @@ export async function PATCH(
         }
       }
 
-      if (!updatedUser && !updatedHangar) {
+      let updatedBusiness = null;
+      if (businessUpdates) {
+        const businessSql: string[] = [];
+        const businessValues: any[] = [];
+        let businessParam = 1;
+
+        Object.entries(businessUpdates).forEach(([key, value]) => {
+          if (!businessFields.has(key)) return;
+          businessSql.push(`${key} = $${businessParam}`);
+          businessValues.push(value);
+          businessParam++;
+        });
+
+        if (businessSql.length > 0) {
+          businessSql.push('updated_at = NOW()');
+          businessValues.push(userId);
+          const businessQuery = `
+            UPDATE business_users
+            SET ${businessSql.join(', ')}
+            WHERE user_id = $${businessParam}
+            RETURNING id, legal_name, business_name, business_type, cnpj, business_phone, business_email,
+              website, representative_name, representative_title, headquarters_street, headquarters_number,
+              headquarters_complement, headquarters_neighborhood, headquarters_city, headquarters_state,
+              headquarters_zip, headquarters_country, company_size, industry, description, established_year,
+              annual_hiring_volume, primary_operations, hiring_status, operation_status,
+              faa_certificate_number, insurance_verified, safety_record_public,
+              verification_status, verification_notes, verification_date, is_verified,
+              created_at, updated_at
+          `;
+          const result = await client.query(businessQuery, businessValues);
+          updatedBusiness = result.rows[0] || null;
+        }
+      }
+
+      if (!updatedUser && !updatedHangar && !updatedBusiness) {
         await client.query('ROLLBACK');
         return NextResponse.json({ message: 'No fields to update' }, { status: 400 });
+      }
+
+      if (updatedUser) {
+        await client.query(
+          `INSERT INTO user_activity_log
+            (user_id, activity_type, activity_category, description, details, target_type, target_id, new_value, status)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'success')`,
+          [
+            userId,
+            'admin_user_update',
+            'admin',
+            'Admin updated user profile fields',
+            JSON.stringify({ userUpdates, derivedUserUpdates }),
+            'user',
+            userId,
+            JSON.stringify(updatedUser)
+          ]
+        );
+      }
+
+      if (updatedHangar) {
+        await client.query(
+          `INSERT INTO user_activity_log
+            (user_id, activity_type, activity_category, description, details, target_type, target_id, new_value, status)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'success')`,
+          [
+            userId,
+            'admin_hangar_update',
+            'admin',
+            'Admin updated hangar owner profile',
+            JSON.stringify({ hangarUpdates }),
+            'hangar_owner',
+            updatedHangar.id,
+            JSON.stringify(updatedHangar)
+          ]
+        );
+      }
+
+      if (updatedBusiness) {
+        await client.query(
+          `INSERT INTO user_activity_log
+            (user_id, activity_type, activity_category, description, details, target_type, target_id, new_value, status)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'success')`,
+          [
+            userId,
+            'admin_business_update',
+            'admin',
+            'Admin updated business profile',
+            JSON.stringify({ businessUpdates }),
+            'business_user',
+            updatedBusiness.id,
+            JSON.stringify(updatedBusiness)
+          ]
+        );
       }
 
       await client.query('COMMIT');
@@ -227,7 +429,8 @@ export async function PATCH(
               name: [updatedUser.first_name, updatedUser.last_name].filter(Boolean).join(' ')
             }
           : null,
-        hangarOwner: updatedHangar
+        hangarOwner: updatedHangar,
+        businessUser: updatedBusiness
       });
     } catch (error) {
       await client.query('ROLLBACK');

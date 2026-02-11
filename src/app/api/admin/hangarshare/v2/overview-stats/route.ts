@@ -65,7 +65,12 @@ interface OverviewStats {
   };
 }
 
-export async function GET(request: Request): Promise<NextResponse<OverviewStats>> {
+export async function GET(request: Request): Promise<NextResponse> {
+  return NextResponse.json(
+    { success: false, message: 'HangarShare V2 is disabled' },
+    { status: 404 }
+  );
+
   const startTime = Date.now();
 
   try {

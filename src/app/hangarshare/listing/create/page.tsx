@@ -555,12 +555,12 @@ export default function HangarListingPage() {
               4. Confirmação
             </span>
           </div>
-          <div className="w-full bg-slate-200 rounded-full h-2">
-            <div
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${(step / 4) * 100}%` }}
-            />
-          </div>
+          <progress 
+            value={step} 
+            max={4} 
+            className="w-full h-2 rounded-full [&::-webkit-progress-bar]:bg-slate-200 [&::-webkit-progress-value]:bg-blue-600 [&::-moz-progress-bar]:bg-blue-600"
+            aria-label={`Progresso: passo ${step} de 4`}
+          />
         </div>
 
         {/* Step Content */}
@@ -651,6 +651,7 @@ export default function HangarListingPage() {
                     onChange={handlePhotoChange}
                     disabled={compressing}
                     className="mb-2"
+                    title="Fotos do hangar"
                   />
                   <p className="text-xs text-slate-500 mb-2">
                     As imagens serão automaticamente otimizadas para o tamanho ideal.
@@ -683,6 +684,7 @@ export default function HangarListingPage() {
                       value={formData.hangarNumber}
                       onChange={(e) => setFormData({ ...formData, hangarNumber: e.target.value })}
                       className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
+                      title="Numero do hangar"
                     />
                   </div>
                   <div>
@@ -697,6 +699,7 @@ export default function HangarListingPage() {
                       onChange={(e) => setFormData({ ...formData, hangarSizeSqm: e.target.value })}
                       className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
                       required
+                      title="Tamanho da area"
                     />
                   </div>
                 </div>
@@ -711,6 +714,7 @@ export default function HangarListingPage() {
                     onChange={(e) => setFormData({ ...formData, hangarLocationDescription: e.target.value })}
                     rows={3}
                     className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
+                    title="Localizacao no aerodromo"
                   />
                 </div>
 
@@ -728,6 +732,7 @@ export default function HangarListingPage() {
                         value={formData.maxWingspanMeters}
                         onChange={(e) => setFormData({ ...formData, maxWingspanMeters: e.target.value })}
                         className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
+                        title="Envergadura maxima"
                       />
                     </div>
                     <div>
@@ -741,6 +746,7 @@ export default function HangarListingPage() {
                         value={formData.maxLengthMeters}
                         onChange={(e) => setFormData({ ...formData, maxLengthMeters: e.target.value })}
                         className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
+                        title="Comprimento maximo"
                       />
                     </div>
                     <div>
@@ -754,6 +760,7 @@ export default function HangarListingPage() {
                         value={formData.maxHeightMeters}
                         onChange={(e) => setFormData({ ...formData, maxHeightMeters: e.target.value })}
                         className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
+                        title="Altura maxima"
                       />
                     </div>
                   </div>
@@ -784,6 +791,7 @@ export default function HangarListingPage() {
                           setFormData({ ...formData, totalSpaces: total, availableSpaces: available });
                         }}
                         className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500 outline-none"
+                        title="Total de vagas"
                       />
                       <p className="text-xs text-slate-500 mt-1">Quantas aeronaves cabem no total?</p>
                     </div>
@@ -799,6 +807,7 @@ export default function HangarListingPage() {
                         value={formData.availableSpaces}
                         onChange={(e) => setFormData({ ...formData, availableSpaces: e.target.value })}
                         className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500 outline-none"
+                        title="Vagas disponiveis"
                       />
                       <p className="text-xs text-slate-500 mt-1">Quantas vagas estão disponíveis para locação?</p>
                     </div>
@@ -813,6 +822,7 @@ export default function HangarListingPage() {
                       onChange={(e) => setFormData({ ...formData, spaceDescription: e.target.value })}
                       rows={2}
                       className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500 outline-none resize-none"
+                      title="Descricao das vagas"
                     />
                   </div>
                 </div>
@@ -857,6 +867,7 @@ export default function HangarListingPage() {
                         value={formData.hourlyRate}
                         onChange={(e) => setFormData({ ...formData, hourlyRate: e.target.value })}
                         className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
+                        title="Preco por hora"
                       />
                     </div>
                     <div>
@@ -870,6 +881,7 @@ export default function HangarListingPage() {
                         value={formData.dailyRate}
                         onChange={(e) => setFormData({ ...formData, dailyRate: e.target.value })}
                         className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
+                        title="Preco por dia"
                       />
                     </div>
                     <div>
@@ -883,6 +895,7 @@ export default function HangarListingPage() {
                         value={formData.weeklyRate}
                         onChange={(e) => setFormData({ ...formData, weeklyRate: e.target.value })}
                         className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
+                        title="Preco por semana"
                       />
                     </div>
                     <div>
@@ -896,6 +909,7 @@ export default function HangarListingPage() {
                         value={formData.monthlyRate}
                         onChange={(e) => setFormData({ ...formData, monthlyRate: e.target.value })}
                         className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
+                        title="Preco por mes"
                       />
                     </div>
                   </div>
@@ -914,6 +928,7 @@ export default function HangarListingPage() {
                         onChange={(e) => setFormData({ ...formData, availableFrom: e.target.value })}
                         className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
                         required
+                        title="Disponivel desde"
                       />
                     </div>
                     <div>
@@ -925,6 +940,7 @@ export default function HangarListingPage() {
                         value={formData.availableUntil}
                         onChange={(e) => setFormData({ ...formData, availableUntil: e.target.value })}
                         className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
+                        title="Disponivel ate"
                       />
                     </div>
                   </div>

@@ -278,6 +278,7 @@ export default function AircraftClassifieds() {
                     value={filters.category}
                     onChange={(e) => setFilters({ ...filters, category: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    title="Categoria"
                   >
                     <option value="">Todas</option>
                     {categories.map((cat) => (
@@ -296,6 +297,7 @@ export default function AircraftClassifieds() {
                     value={filters.state}
                     onChange={(e) => setFilters({ ...filters, state: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    title="Estado"
                   >
                     <option value="">Todos</option>
                     {brazilianStates.map((state) => (
@@ -316,6 +318,7 @@ export default function AircraftClassifieds() {
                     value={filters.manufacturer}
                     onChange={(e) => setFilters({ ...filters, manufacturer: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    title="Fabricante"
                   />
                 </div>
 
