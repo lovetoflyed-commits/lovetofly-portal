@@ -20,18 +20,30 @@
 
 ## 🗄️ DATABASE CONFIGURATION (Critical - Read Carefully)
 
-### ⚠️ IMPORTANT: Single Source of Truth
-**This project uses ONLY ONE database: Neon PostgreSQL (Cloud)**
+### ⚠️ IMPORTANT: Dual Database Configuration
+**This project supports TWO database configurations:**
 
-**DO NOT use any local database, mock database, or test database unless explicitly instructed.**
+1. **Production/Cloud**: Neon PostgreSQL (Cloud) - Used in production via `DATABASE_URL`
+2. **Local Development**: Local PostgreSQL - Database name MUST be `lovetofly-portal` (with hyphen)
+
+**DO NOT use mock databases or different database names. Use only these two configurations.**
 
 ### Database Connection Details
+
+#### Production/Cloud Database (Neon PostgreSQL)
 - **Host**: `ep-billowing-hat-accmfenf-pooler.sa-east-1.aws.neon.tech`
 - **Port**: `5432`
 - **Database**: `neondb`
 - **User**: `neondb_owner`
 - **SSL**: Required (`sslmode=require`)
-- **Connection**: Configured in `src/config/db.ts` using `DATABASE_URL` from `.env`
+- **Connection**: Configured via `DATABASE_URL` environment variable
+
+#### Local Development Database (PostgreSQL)
+- **Host**: `localhost`
+- **Port**: `5432`
+- **Database**: `lovetofly-portal` (⚠️ MUST use hyphen, not underscore)
+- **User**: `postgres` (or your local user)
+- **Connection**: Configured via individual `DB_*` environment variables when `DATABASE_URL` is not set
 
 ### Database Connection File
 ```typescript
@@ -40,23 +52,47 @@ import { Pool } from 'pg';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  // Fallback only if DATABASE_URL not set
+  // Fallback for local development when DATABASE_URL not set
+  ...(process.env.DATABASE_URL ? {} : {
+    user: process.env.DB_USER || 'postgres',
+    host: process.env.DB_HOST || 'localhost',
+    database: process.env.DB_NAME || 'lovetofly-portal', // ⚠️ MUST be 'lovetofly-portal'
+    password: process.env.DB_PASSWORD || 'Master@51',
+    port: Number(process.env.DB_PORT) || 5432,
+  }),
 });
 
 export default pool;
 ```
 
-### Environment Variable (from .env)
+### Environment Variables
+
+**For Production/Cloud (Neon)**:
 ```bash
 DATABASE_URL=postgresql://neondb_owner:password@ep-billowing-hat-accmfenf-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
 ```
 
+**For Local Development**:
+```bash
+# Option 1: Use DATABASE_URL pointing to local database
+DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/lovetofly-portal
+
+# Option 2: Use individual variables (DATABASE_URL takes precedence if set)
+DB_USER=postgres
+DB_HOST=localhost
+DB_NAME=lovetofly-portal
+DB_PASSWORD=yourpassword
+DB_PORT=5432
+```
+
 ### Database Usage Rules
 1. **ALWAYS** import from `src/config/db.ts` - never create new connections
-2. **NEVER** use `localhost` or local PostgreSQL unless in .env
-3. **ALWAYS** use parameterized queries to prevent SQL injection
-4. **NEVER** edit existing migration files - create new ones only
-5. Check `docs/records/active/DB_VALIDATION_REPORT_2026-01-29.md` for table status
+2. **For Production**: Set `DATABASE_URL` to Neon PostgreSQL
+3. **For Local Development**: Either set `DATABASE_URL` to local PostgreSQL OR use `DB_*` variables
+4. **Local database name MUST be** `lovetofly-portal` (with hyphen, cannot be changed)
+5. **ALWAYS** use parameterized queries to prevent SQL injection
+6. **NEVER** edit existing migration files - create new ones only
+7. Check `docs/records/active/DB_VALIDATION_REPORT_2026-01-29.md` for table status
 
 ## 📁 DOCUMENTATION ORGANIZATION (Critical)
 
@@ -163,8 +199,8 @@ npm run seed:dev       # Seed development data
 ## ⚠️ COMMON PITFALLS & HOW TO AVOID THEM
 
 ### 1. Database Confusion
-❌ **DON'T**: Create connections to local databases or use mock data  
-✅ **DO**: Always use `import pool from '@/config/db'` for the Neon database
+❌ **DON'T**: Create new pg.Pool() instances or use different database names  
+✅ **DO**: Always use `import pool from '@/config/db'` and database name `lovetofly-portal` for local dev
 
 ### 2. Documentation Clutter
 ❌ **DON'T**: Create new .md files in root directory  

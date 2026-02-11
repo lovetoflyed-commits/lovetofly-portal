@@ -1,27 +1,30 @@
 # Database Configuration Guide — 2026-02-11
 
-## ⚠️ CRITICAL: Single Database Policy
+## ⚠️ CRITICAL: Dual Database Configuration Policy
 
-**This project uses ONLY ONE database: Neon PostgreSQL (Cloud)**
+**This project supports TWO database configurations:**
+
+1. **Production/Cloud**: Neon PostgreSQL (Cloud) - Used in production
+2. **Local Development**: Local PostgreSQL - Database name MUST be `lovetofly-portal` (with hyphen)
 
 ### Common Mistakes to Avoid
 ❌ **DON'T**:
-- Create connections to `localhost:5432`
-- Use mock databases or test databases
+- Use a different database name (e.g., `lovetofly_portal` with underscore)
 - Create new `pg.Pool()` instances in code
-- Use hardcoded connection strings
+- Use hardcoded connection strings in application code
 - Edit existing migration files
 
 ✅ **DO**:
 - Always import from `src/config/db.ts`
-- Use `DATABASE_URL` from environment variables
-- Create new migration files for schema changes
+- Use `lovetofly-portal` (with hyphen) for local development
+- Use Neon PostgreSQL for production via `DATABASE_URL`
 - Use parameterized queries for all SQL
+- Create new migration files for schema changes
 - Check table status in DB_VALIDATION_REPORT before using
 
 ## Database Connection Details
 
-### Production & Development Database
+### Production & Cloud Database
 **Provider**: Neon PostgreSQL (Cloud)
 **Region**: São Paulo, Brazil (sa-east-1)
 **SSL**: Required
@@ -35,16 +38,63 @@ SSL Mode: require
 Channel Binding: require
 ```
 
+### Local Development Database
+**Provider**: PostgreSQL (Local)
+**Database**: `lovetofly-portal` ⚠️ **MUST use hyphen, cannot be changed**
+
+```
+Host: localhost
+Port: 5432
+Database: lovetofly-portal
+User: postgres (or your local PostgreSQL user)
+Password: (your local password)
+```
+
 ### Connection String Format
+
+**For Production/Cloud (Neon)**:
 ```bash
 DATABASE_URL=postgresql://neondb_owner:{password}@ep-billowing-hat-accmfenf-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
 ```
 
+**For Local Development**:
+```bash
+# Option 1: Connection string to local database
+DATABASE_URL=postgresql://postgres:{password}@localhost:5432/lovetofly-portal
+
+# Option 2: Individual environment variables (used as fallback)
+DB_USER=postgres
+DB_HOST=localhost
+DB_NAME=lovetofly-portal
+DB_PASSWORD=yourpassword
+DB_PORT=5432
+```
+
+**Note**: If `DATABASE_URL` is set, it takes precedence over individual `DB_*` variables.
+
 ### Environment Setup
 
-**File**: `.env` (local development)
+**File**: `.env` (for production/cloud)
 ```bash
 DATABASE_URL=postgresql://neondb_owner:{password}@ep-billowing-hat-accmfenf-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+JWT_SECRET=your-secret-key
+NEXT_PUBLIC_APP_URL=https://lovetofly.com.br
+```
+
+**File**: `.env` (for local development)
+```bash
+# Option 1: Use DATABASE_URL pointing to local database
+DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/lovetofly-portal
+JWT_SECRET=your-secret-key
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Option 2: Use individual DB variables
+# (Comment out or remove DATABASE_URL to use these)
+DB_USER=postgres
+DB_HOST=localhost
+DB_NAME=lovetofly-portal
+DB_PASSWORD=yourpassword
+DB_PORT=5432
 JWT_SECRET=your-secret-key
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
@@ -52,7 +102,19 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 **File**: `.env.example` (template)
 ```bash
 # Database (Neon / PostgreSQL)
+# For production/cloud, use Neon connection:
 DATABASE_URL=postgresql://user:password@host:port/dbname?sslmode=require
+
+# For local development, either:
+# 1. Use DATABASE_URL with local PostgreSQL:
+# DATABASE_URL=postgresql://postgres:password@localhost:5432/lovetofly-portal
+
+# 2. Or use individual variables (when DATABASE_URL not set):
+DB_USER=postgres
+DB_HOST=localhost
+DB_NAME=lovetofly-portal
+DB_PASSWORD=yourpassword
+DB_PORT=5432
 
 # JWT / Auth
 JWT_SECRET=replace-with-a-strong-secret
@@ -324,12 +386,19 @@ const result = await pool.query(
 ## Testing Database Connections
 
 ### Manual Test (psql)
+
+**For Production/Cloud (Neon)**:
 ```bash
 PGPASSWORD='your-password' psql \
   -h ep-billowing-hat-accmfenf-pooler.sa-east-1.aws.neon.tech \
   -U neondb_owner \
   -d neondb \
   -c "SELECT NOW();"
+```
+
+**For Local Development**:
+```bash
+psql -U postgres -d lovetofly-portal -c "SELECT NOW();"
 ```
 
 ### Test Script (Node.js)

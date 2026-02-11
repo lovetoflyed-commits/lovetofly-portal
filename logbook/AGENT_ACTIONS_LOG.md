@@ -1,5 +1,42 @@
 # Agent Actions Log (Atualização obrigatória)
 
+## 2026-02-11 (Continuação - Correção de Documentação)
+
+- Ação: Identificação de erro crítico na documentação anterior sobre configuração de banco de dados.
+- Resultado: Descoberto que a documentação recém-criada estava INCORRETA ao afirmar "APENAS um banco de dados (Neon)". O projeto suporta DOIS bancos: Neon (produção) e PostgreSQL local (desenvolvimento).
+- Erros: Documentação anterior muito restritiva, impedindo desenvolvimento local. Código em src/config/db.ts claramente suporta fallback para banco local com nome 'lovetofly-portal'.
+- Investigação: Revisão de src/config/db.ts linhas 7-13 mostrando configuração de fallback. Busca em arquivos encontrou múltiplas referências ao banco local 'lovetofly-portal'. .env.example tinha nome ERRADO ('lovetofly_portal' com underscore ao invés de hífen).
+- Correção: Atualizada documentação em .github/copilot-instructions.md, docs/records/active/DATABASE_GUIDE_2026-02-11.md, AGENT_START_HERE.md, e .env.example para refletir configuração dual correta.
+- Verificação: Conferir arquivos modificados mostrando configuração dual (produção: Neon, desenvolvimento: local PostgreSQL com nome 'lovetofly-portal').
+
+- Ação: Correção de .env.example com nome de banco incorreto.
+- Resultado: Mudado DB_NAME de 'lovetofly_portal' (underscore) para 'lovetofly-portal' (hífen). Adicionada nota explicativa sobre obrigatoriedade do hífen.
+- Erros: Sem erros.
+- Investigação: Comparação com src/config/db.ts linha 10 que usa 'lovetofly-portal'.
+- Correção: Editado .env.example para usar nome correto.
+- Verificação: Conferir .env.example linha 26.
+
+- Ação: Atualização completa de .github/copilot-instructions.md para documentar configuração dual.
+- Resultado: Seção de banco de dados reescrita para clarificar: (1) Produção usa Neon PostgreSQL via DATABASE_URL, (2) Desenvolvimento local usa PostgreSQL com banco 'lovetofly-portal'. Removidas declarações incorretas sobre "apenas um banco". Adicionados exemplos de configuração para ambos os ambientes.
+- Erros: Sem erros.
+- Investigação: Análise de como desenvolvedores realmente usam o projeto localmente.
+- Correção: Reescrita de 5 seções no arquivo de instruções.
+- Verificação: Conferir .github/copilot-instructions.md seções "DATABASE CONFIGURATION" e "Database Usage Rules".
+
+- Ação: Atualização de docs/records/active/DATABASE_GUIDE_2026-02-11.md com configuração dual.
+- Resultado: Guia de banco reescrito para documentar ambas configurações (Neon e local). Adicionadas seções separadas para cada ambiente. Corrigidos exemplos de connection strings e comandos psql.
+- Erros: Sem erros.
+- Investigação: Revisão do guia criado anteriormente que estava incorreto.
+- Correção: Editadas 6 seções do DATABASE_GUIDE.
+- Verificação: Conferir DATABASE_GUIDE seções "Database Connection Details" e "Connection String Format".
+
+- Ação: Atualização de AGENT_START_HERE.md para refletir configuração dual.
+- Resultado: Seção "Contexto correto do projeto" atualizada para mencionar ambos os bancos. Regras para agentes atualizadas com instruções corretas sobre quando usar cada banco.
+- Erros: Sem erros.
+- Investigação: Garantir consistência com outras documentações.
+- Correção: Editadas 2 seções em AGENT_START_HERE.md.
+- Verificação: Conferir AGENT_START_HERE.md seções "Contexto correto do projeto" e "Regra para novos agentes".
+
 ## 2026-02-11
 
 - Ação: Análise do problema de agentes usando banco de dados errado e não seguindo instruções.
