@@ -2,6 +2,8 @@
 
 A comprehensive aviation portal built with Next.js 16, featuring flight tools, hangar marketplace, and aviation community features.
 
+> **🤖 For AI Coding Agents**: Read [AGENT_START_HERE.md](./AGENT_START_HERE.md) and [.github/copilot-instructions.md](./.github/copilot-instructions.md) before starting any work.
+
 ## 🚀 Quick Start
 
 ```bash
@@ -62,7 +64,10 @@ src/
 
 ## 🤖 AI Development
 
-For AI coding agents, see [.github/copilot-instructions.md](.github/copilot-instructions.md)
+**For AI coding agents and GitHub Copilot**, see:
+- **[AGENT_START_HERE.md](./AGENT_START_HERE.md)** - Start here for project context and mandatory reading
+- **[.github/copilot-instructions.md](.github/copilot-instructions.md)** - Comprehensive technical guidelines
+- **[docs/records/active/DATABASE_GUIDE_2026-02-11.md](./docs/records/active/DATABASE_GUIDE_2026-02-11.md)** - Database configuration guide
 
 ## 📄 License
 

@@ -1,4 +1,5 @@
 {
+    "// AI CODING AGENTS": "Read .github/copilot-instructions.md and AGENT_START_HERE.md before starting",
     "chat.mcp.assisted.nuget.enabled": true,
     "chat.mcp.discovery.enabled": {
         "claude-desktop": true,

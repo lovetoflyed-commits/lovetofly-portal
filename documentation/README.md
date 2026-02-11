@@ -13,6 +13,7 @@ This folder contains all project documentation organized by category.
 - [NEON_SETUP.md](NEON_SETUP.md) - Database setup
 - [DEPLOYMENT.md](DEPLOYMENT.md) - Deployment guide
 - [DEPLOYMENT_READY.md](DEPLOYMENT_READY.md) - Deployment checklist
+- [../docs/records/active/DATABASE_GUIDE_2026-02-11.md](../docs/records/active/DATABASE_GUIDE_2026-02-11.md) - **⭐ Comprehensive database guide (read this first!)**
 
 ### Features & Implementation
 
@@ -62,4 +63,7 @@ This folder contains all project documentation organized by category.
 
 ---
 
-**Note:** For AI agent instructions, see [../.github/copilot-instructions.md](../.github/copilot-instructions.md)
+**Note:** For AI agent instructions, see:
+- [../AGENT_START_HERE.md](../AGENT_START_HERE.md) - Agent onboarding and mandatory reading
+- [../.github/copilot-instructions.md](../.github/copilot-instructions.md) - Technical guidelines
+- [../docs/records/active/DATABASE_GUIDE_2026-02-11.md](../docs/records/active/DATABASE_GUIDE_2026-02-11.md) - Database configuration
