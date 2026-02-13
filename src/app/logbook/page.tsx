@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Plus, Calendar, MapPin, Download, X, Clock, Plane } from 'lucide-react';
+import { Plus, Calendar, MapPin, Download, X, Clock, Plane, Upload } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 import { useAuth } from '@/context/AuthContext';
+import LogbookImport from './components/LogbookImport';
 
 // ANAC CIV Digital compliant data structure
 const FLIGHT_LOGS = [
@@ -109,6 +110,7 @@ const initialFormState: NewFlightForm = {
 export default function LogbookPage() {
   const { user, token } = useAuth();
   const [showForm, setShowForm] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [formData, setFormData] = useState<NewFlightForm>(initialFormState);
   const [flights, setFlights] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -312,6 +314,11 @@ export default function LogbookPage() {
                   onClick={() => setShowForm(!showForm)}
                   className="flex items-center gap-2 bg-white text-blue-600 hover:bg-blue-50 px-6 py-3 rounded-lg font-semibold transition-colors shadow-lg">
                   <Plus size={18} /> Novo Registro
+                </button>
+                <button 
+                  onClick={() => setShowImport(true)}
+                  className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors shadow-lg">
+                  <Upload size={18} /> Importar Registros
                 </button>
                 <button className="flex items-center gap-2 bg-blue-700 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
                   <Download size={18} /> Extrato PDF
@@ -628,6 +635,17 @@ export default function LogbookPage() {
           </div>
         </div>
       </div>
+
+      {/* Import Modal */}
+      {showImport && (
+        <LogbookImport 
+          onClose={() => setShowImport(false)}
+          onImportComplete={() => {
+            fetchFlightLogs();
+          }}
+          token={token}
+        />
+      )}
     </div>
   );
 }
