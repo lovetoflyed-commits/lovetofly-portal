@@ -179,13 +179,13 @@ export async function POST(request: Request) {
     // Check file type
     const validTypes = [
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
-      'application/vnd.ms-excel', // .xls
+      'application/vnd.ms-excel', // .xls and .xlt
       'text/csv'
     ];
     
-    if (!validTypes.includes(file.type) && !file.name.match(/\.(xlsx|xls|csv)$/i)) {
+    if (!validTypes.includes(file.type) && !file.name.match(/\.(xlsx|xls|xlt|csv)$/i)) {
       return NextResponse.json({ 
-        message: 'Tipo de arquivo inválido. Use .xlsx, .xls ou .csv' 
+        message: 'Tipo de arquivo inválido. Use .xlsx, .xls, .xlt ou .csv' 
       }, { status: 400 });
     }
 

@@ -62,11 +62,11 @@ export default function LogbookImport({ onClose, onImportComplete, token }: Logb
 
   const validateAndSetFile = (selectedFile: File) => {
     // Check file type
-    const validExtensions = ['.xlsx', '.xls', '.csv'];
+    const validExtensions = ['.xlsx', '.xls', '.xlt', '.csv'];
     const fileExtension = selectedFile.name.toLowerCase().match(/\.[^.]+$/)?.[0];
     
     if (!fileExtension || !validExtensions.includes(fileExtension)) {
-      setError('Tipo de arquivo inválido. Use .xlsx, .xls ou .csv');
+      setError('Tipo de arquivo inválido. Use .xlsx, .xls, .xlt ou .csv');
       return;
     }
 
@@ -226,7 +226,7 @@ export default function LogbookImport({ onClose, onImportComplete, token }: Logb
                       Selecionar Arquivo
                     </button>
                     <p className="text-gray-500 text-xs mt-4">
-                      Formatos aceitos: .xlsx, .xls, .csv (máx. 10MB)
+                      Formatos aceitos: .xlsx, .xls, .xlt, .csv (máx. 10MB)
                     </p>
                   </>
                 ) : (
@@ -252,7 +252,7 @@ export default function LogbookImport({ onClose, onImportComplete, token }: Logb
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".xlsx,.xls,.csv"
+                accept=".xlsx,.xls,.xlt,.csv"
                 onChange={handleFileSelect}
                 className="hidden"
               />
