@@ -270,7 +270,7 @@ export default function AdminInboxPage() {
                             {item.is_read ? 'Lida' : 'Nova'}
                           </span>
                         </div>
-                        <p className="mt-1 text-xs text-slate-400">{new Date(item.created_at).toLocaleString('pt-BR')}</p>
+                        <p className="mt-1 text-xs text-slate-400" suppressHydrationWarning>{new Date(item.created_at).toLocaleString('pt-BR')}</p>
                         <p className="mt-2 text-sm text-slate-600">{truncateText(item.message, 140)}</p>
                       </div>
                     </div>
@@ -330,7 +330,7 @@ export default function AdminInboxPage() {
                 <span className={`rounded-full px-2 py-1 font-semibold ${priorityClass(activeNotification.priority)}`}>
                   Prioridade: {activeNotification.priority}
                 </span>
-                <span className="rounded-full bg-slate-100 px-2 py-1 font-semibold text-slate-500">
+                <span className="rounded-full bg-slate-100 px-2 py-1 font-semibold text-slate-500" suppressHydrationWarning>
                   {new Date(activeNotification.created_at).toLocaleString('pt-BR')}
                 </span>
               </div>

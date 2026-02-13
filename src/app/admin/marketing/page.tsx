@@ -270,7 +270,7 @@ export default function AdminMarketingPage() {
                   {campaign.description && (
                     <p className="text-sm text-slate-700 mt-2">{campaign.description}</p>
                   )}
-                  <div className="mt-2 text-xs text-slate-500">
+                  <div className="mt-2 text-xs text-slate-500" suppressHydrationWarning>
                     Início: {campaign.start_date ? new Date(campaign.start_date).toLocaleDateString('pt-BR') : '—'} •
                     Fim: {campaign.end_date ? new Date(campaign.end_date).toLocaleDateString('pt-BR') : '—'}
                   </div>
@@ -392,7 +392,7 @@ export default function AdminMarketingPage() {
                   <div className="mt-2 text-sm text-slate-700">
                     Status: {lead.status} • Origem: {lead.source || '—'}
                   </div>
-                  <div className="mt-2 text-xs text-slate-500">
+                  <div className="mt-2 text-xs text-slate-500" suppressHydrationWarning>
                     Campanha: {lead.campaign_name || '—'} • Criado em: {new Date(lead.created_at).toLocaleString('pt-BR')}
                   </div>
                   {lead.notes && (

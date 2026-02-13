@@ -380,7 +380,7 @@ export default function AdminDocumentsPage() {
 
                     {/* Review Info */}
                     {doc.reviewed_at && (
-                      <div className="mb-4 text-sm text-slate-600">
+                      <div className="mb-4 text-sm text-slate-600" suppressHydrationWarning>
                         Revisado por {doc.reviewed_by_name} em{' '}
                         {new Date(doc.reviewed_at).toLocaleString('pt-BR')}
                       </div>
@@ -406,7 +406,7 @@ export default function AdminDocumentsPage() {
 
                     {/* Metadata */}
                     <div className="mt-4 pt-4 border-t border-slate-200 text-xs text-slate-500">
-                      <p>Enviado em: {new Date(doc.created_at).toLocaleString('pt-BR')}</p>
+                      <p suppressHydrationWarning>Enviado em: {new Date(doc.created_at).toLocaleString('pt-BR')}</p>
                       <p>Tamanho: {(doc.file_size / 1024).toFixed(2)} KB</p>
                     </div>
                   </div>

@@ -176,7 +176,7 @@ export default function CompliancePanel() {
                   {record.description && (
                     <p className="text-sm text-slate-700 mt-2">{record.description}</p>
                   )}
-                  <div className="mt-2 text-xs text-slate-500">
+                  <div className="mt-2 text-xs text-slate-500" suppressHydrationWarning>
                     Criado em: {new Date(record.created_at).toLocaleString('pt-BR')}
                   </div>
                 </div>

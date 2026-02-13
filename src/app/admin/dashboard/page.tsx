@@ -103,7 +103,7 @@ export default function AdminDashboard() {
           <tbody>
             {logs.map(log => (
               <tr key={log.id} className="border-t">
-                <td className="p-2">{new Date(log.created_at).toLocaleString()}</td>
+                <td className="p-2" suppressHydrationWarning>{new Date(log.created_at).toLocaleString()}</td>
                 <td className="p-2">{log.admin_id}</td>
                 <td className="p-2">{log.action_type}</td>
                 <td className="p-2">{log.target_type} #{log.target_id}</td>

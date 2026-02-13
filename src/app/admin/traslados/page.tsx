@@ -415,10 +415,10 @@ export default function AdminTrasladosPage() {
         <div className="mb-8 grid gap-4 md:grid-cols-3">
           <div className="rounded-lg bg-white p-4 shadow">
             <div className="text-xs uppercase text-slate-500">Receita gerada (taxas)</div>
-            <div className="mt-2 text-xl font-bold text-emerald-700">
+            <div className="mt-2 text-xl font-bold text-emerald-700" suppressHydrationWarning>
               {formatCurrency(paymentSummary.paid)}
             </div>
-            <div className="mt-1 text-xs text-slate-500">
+            <div className="mt-1 text-xs text-slate-500" suppressHydrationWarning>
               Saldo a receber: {formatCurrency(paymentSummary.pending)} • Reembolsos: {formatCurrency(paymentSummary.refunded)}
             </div>
           </div>
@@ -466,7 +466,7 @@ export default function AdminTrasladosPage() {
                     <p className="text-xs text-slate-500">
                       {request.contact_name} • {request.contact_email}
                     </p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-slate-500" suppressHydrationWarning>
                       {t('adminTransfers.feeLabel')}: {request.fee_status ? request.fee_status.toUpperCase() : t('adminTransfers.feeNotRecorded')} •{' '}
                       {formatCurrency(request.fee_amount_cents ?? request.fee_base_amount_cents ?? null)}
                     </p>
@@ -594,11 +594,11 @@ export default function AdminTrasladosPage() {
                     <div className="flex flex-wrap gap-4">
                       <div>{t('adminTransfers.feeStatus')}: {selectedRequest.fee_status.toUpperCase()}</div>
                       <div>{t('adminTransfers.feePayer')}: {selectedRequest.fee_payer_role?.toUpperCase() || t('adminTransfers.notAvailable')}</div>
-                      <div>{t('adminTransfers.feeTotal')}: {formatCurrency(selectedRequest.fee_amount_cents ?? 0)}</div>
+                      <div suppressHydrationWarning>{t('adminTransfers.feeTotal')}: {formatCurrency(selectedRequest.fee_amount_cents ?? 0)}</div>
                     </div>
                     <div className="mt-2 space-y-1">
-                      <div>{t('adminTransfers.feeBase')}: {formatCurrency(selectedRequest.fee_base_amount_cents ?? selectedRequest.fee_amount_cents ?? 0)}</div>
-                      <div>
+                      <div suppressHydrationWarning>{t('adminTransfers.feeBase')}: {formatCurrency(selectedRequest.fee_base_amount_cents ?? selectedRequest.fee_amount_cents ?? 0)}</div>
+                      <div suppressHydrationWarning>
                         {getDiscountLabel(selectedRequest.fee_discount_reason)}:{' '}
                         {selectedRequest.fee_discount_cents && selectedRequest.fee_discount_cents > 0
                           ? `- ${formatCurrency(selectedRequest.fee_discount_cents)}`
