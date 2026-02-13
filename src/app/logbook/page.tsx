@@ -248,14 +248,17 @@ export default function LogbookPage() {
 
   // Calculate totals
   const calculateTotals = (flights: any[]) => {
-    return flights.reduce((acc, flight) => ({
-      totalHours: acc.totalHours + timeToHours(flight.time_diurno) + timeToHours(flight.time_noturno) + timeToHours(flight.time_ifr_real) + timeToHours(flight.time_under_hood),
-      picHours: acc.picHours + (flight.function === 'PIC' ? timeToHours(flight.time_diurno) + timeToHours(flight.time_noturno) + timeToHours(flight.time_ifr_real) + timeToHours(flight.time_under_hood) : 0),
-      instructionHours: acc.instructionHours + (flight.function === 'INSTRUCTOR' ? timeToHours(flight.time_diurno) + timeToHours(flight.time_noturno) + timeToHours(flight.time_ifr_real) + timeToHours(flight.time_under_hood) : 0),
-      ifrHours: acc.ifrHours + timeToHours(flight.time_ifr_real),
-      nightHours: acc.nightHours + timeToHours(flight.time_noturno),
-      totalLandings: acc.totalLandings + flight.day_landings + flight.night_landings
-    }), { totalHours: 0, picHours: 0, instructionHours: 0, ifrHours: 0, nightHours: 0, totalLandings: 0 });
+    return flights.reduce((acc, flight) => {
+      const flightFunction = String(flight.function || '').toUpperCase();
+      return {
+        totalHours: acc.totalHours + timeToHours(flight.time_diurno) + timeToHours(flight.time_noturno) + timeToHours(flight.time_ifr_real) + timeToHours(flight.time_under_hood),
+        picHours: acc.picHours + (flightFunction === 'PIC' ? timeToHours(flight.time_diurno) + timeToHours(flight.time_noturno) + timeToHours(flight.time_ifr_real) + timeToHours(flight.time_under_hood) : 0),
+        instructionHours: acc.instructionHours + (flightFunction === 'INSTRUCTOR' ? timeToHours(flight.time_diurno) + timeToHours(flight.time_noturno) + timeToHours(flight.time_ifr_real) + timeToHours(flight.time_under_hood) : 0),
+        ifrHours: acc.ifrHours + timeToHours(flight.time_ifr_real),
+        nightHours: acc.nightHours + timeToHours(flight.time_noturno),
+        totalLandings: acc.totalLandings + flight.day_landings + flight.night_landings
+      };
+    }, { totalHours: 0, picHours: 0, instructionHours: 0, ifrHours: 0, nightHours: 0, totalLandings: 0 });
   };
 
   const normalizeTime = (value: any): string => {

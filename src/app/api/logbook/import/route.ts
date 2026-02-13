@@ -372,7 +372,7 @@ export async function POST(request: Request) {
               timeSimulator,
               rowData.day_landings ? parseInt(String(rowData.day_landings), 10) : 0,
               rowData.night_landings ? parseInt(String(rowData.night_landings), 10) : 0,
-              String(rowData.function || 'PIC').trim(),
+              String(rowData.function || 'PIC').trim().toUpperCase(),
               String(rowData.rating || 'VFR').trim(),
               rowData.nav_miles ? parseInt(String(rowData.nav_miles), 10) : 0,
               rowData.pilot_canac_number ? String(rowData.pilot_canac_number).trim() : '',
