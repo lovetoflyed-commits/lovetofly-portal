@@ -1,6 +1,12 @@
 # Agent Actions Log (Atualização obrigatória)
 
 ## 2026-02-13
+- Ação: Tornado o log de atividade do login resiliente a qualquer divergência de schema.
+- Resultado: Login não falha mesmo se colunas do user_activity_log estiverem ausentes.
+- Erros: 500 em /api/auth/login na produção.
+- Investigação: Erro relacionado a INSERT em user_activity_log durante login.
+- Correção: Inserção em cascata com fallbacks e aviso em console sem interromper autenticação.
+- Verificação: Login deve concluir sem 500.
 - Ação: Hotfix para login quando coluna activity_category não existe em user_activity_log.
 - Resultado: Login volta a funcionar mesmo sem a coluna no banco.
 - Erros: Erro 42703 (column activity_category does not exist).

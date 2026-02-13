@@ -66,41 +66,69 @@ export async function POST(request: Request) {
       || null;
     const userAgent = request.headers.get('user-agent') || null;
 
+    const activityPayload = {
+      userId: user.id,
+      activityType: 'login',
+      activityCategory: 'authentication',
+      description: 'User logged in successfully',
+      ipAddress,
+      userAgent,
+      status: 'success',
+      details: { source: 'api/auth/login' }
+    };
+
     try {
       await pool.query(
         `INSERT INTO user_activity_log
           (user_id, activity_type, activity_category, description, ip_address, user_agent, status, details)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
         [
-          user.id,
-          'login',
-          'authentication',
-          'User logged in successfully',
-          ipAddress,
-          userAgent,
-          'success',
-          { source: 'api/auth/login' }
+          activityPayload.userId,
+          activityPayload.activityType,
+          activityPayload.activityCategory,
+          activityPayload.description,
+          activityPayload.ipAddress,
+          activityPayload.userAgent,
+          activityPayload.status,
+          activityPayload.details
         ]
       );
     } catch (error: any) {
-      if (error?.code !== '42703') {
-        throw error;
+      try {
+        await pool.query(
+          `INSERT INTO user_activity_log
+            (user_id, activity_type, description, ip_address, user_agent, status, details)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+          [
+            activityPayload.userId,
+            activityPayload.activityType,
+            activityPayload.description,
+            activityPayload.ipAddress,
+            activityPayload.userAgent,
+            activityPayload.status,
+            activityPayload.details
+          ]
+        );
+      } catch (fallbackError: any) {
+        try {
+          await pool.query(
+            `INSERT INTO user_activity_log
+              (user_id, activity_type, description, status)
+             VALUES ($1, $2, $3, $4)`,
+            [
+              activityPayload.userId,
+              activityPayload.activityType,
+              activityPayload.description,
+              activityPayload.status
+            ]
+          );
+        } catch (finalError: any) {
+          console.warn('[auth/login] Failed to log activity:', {
+            error: finalError?.message || finalError,
+            code: finalError?.code,
+          });
+        }
       }
-
-      await pool.query(
-        `INSERT INTO user_activity_log
-          (user_id, activity_type, description, ip_address, user_agent, status, details)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        [
-          user.id,
-          'login',
-          'User logged in successfully',
-          ipAddress,
-          userAgent,
-          'success',
-          { source: 'api/auth/login' }
-        ]
-      );
     }
 
     return NextResponse.json({
