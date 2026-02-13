@@ -2,6 +2,28 @@
 
 ## 2026-02-13
 
+### Correção de Bugs na Importação de Logbook - Horas PIC e IFR Real
+- **Ação:** Corrigido problema de horas PIC não sendo exibidas e possíveis problemas com IFR Real
+- **Resultado:** Horas PIC agora calculadas corretamente independente do case da função importada
+- **Problema Identificado:**
+  - Campo "função" importado com diferentes cases (pic, Pic, PIC)
+  - Frontend usava comparação case-sensitive `flight.function === 'PIC'`
+  - Dados com lowercase não eram contabilizados nas horas PIC
+- **Solução Implementada:**
+  - **Import:** Normalização para uppercase no momento da importação (`.toUpperCase()`)
+  - **Frontend:** Comparação case-insensitive no cálculo de totais
+  - Garante compatibilidade com dados existentes e novos
+- **Arquivos Modificados:**
+  - `/src/app/api/logbook/import/route.ts` (linha 375) - Adiciona `.toUpperCase()` ao campo function
+  - `/src/app/logbook/page.tsx` (linhas 250-262) - Comparação case-insensitive no calculateTotals
+  - `/docs/records/active/LOGBOOK_IMPORT_FEATURE_2026-02-13.md` - Atualização do changelog
+- **Benefícios:**
+  - ✅ Novos imports normalizam função para maiúsculas
+  - ✅ Dados existentes com qualquer case funcionam corretamente
+  - ✅ Horas PIC exibidas corretamente para todos os voos PIC
+  - ✅ Horas IFR Real mantêm funcionamento robusto
+- **Status:** ✅ Completo e testado
+
 ### Correção de Erros de Hidratação (Hydration Errors)
 - **Ação:** Correção de erros de hidratação causados por formatação de datas com toLocaleString/toLocaleDateString
 - **Resultado:** Aplicação não apresenta mais avisos de hidratação no console

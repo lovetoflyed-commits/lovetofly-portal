@@ -330,7 +330,14 @@ Para problemas ou dúvidas:
 
 ## Changelog
 
-### 2026-02-13 - Versão Inicial
+### 2026-02-13 - Correção de Bugs (v1.1)
+- ✅ **Correção:** Função (PIC, INSTRUCTOR) agora normalizada para maiúsculas durante importação
+- ✅ **Correção:** Cálculo de horas PIC agora case-insensitive para lidar com dados existentes
+- ✅ **Melhoria:** Garantia que horas IFR Real sejam calculadas corretamente
+- 🐛 **Bug corrigido:** Caixa de horas PIC não mostrava valores quando função estava em minúsculas
+- 🐛 **Bug corrigido:** Dados importados com "pic", "Pic" ou "PIC" agora funcionam corretamente
+
+### 2026-02-13 - Versão Inicial (v1.0)
 - ✅ Implementação completa de importação
 - ✅ Suporte a Excel e CSV
 - ✅ Validações robustas
@@ -339,3 +346,13 @@ Para problemas ou dúvidas:
 - ✅ Interface drag-and-drop
 - ✅ Integração com página logbook
 - ✅ Documentação completa
+
+## Problemas Conhecidos e Soluções
+
+### Horas PIC não aparecem após importação
+**Causa:** Função importada com casing diferente (ex: "pic" em vez de "PIC")
+**Solução:** Corrigido na v1.1 - função agora normalizada para maiúsculas e cálculo case-insensitive
+
+### Horas IFR Real não importadas
+**Causa:** Possível falha na leitura da coluna "IFR Real"
+**Status:** Verificado e funcionando corretamente com mapeamento flexível de colunas
