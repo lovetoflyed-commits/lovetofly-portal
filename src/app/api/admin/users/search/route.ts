@@ -35,22 +35,15 @@ export async function GET(request: NextRequest) {
     const sqlQuery = `
       SELECT 
         u.id,
-        CASE
-          WHEN u.user_type = 'business' AND bu.business_name IS NOT NULL AND bu.business_name <> ''
-            THEN bu.business_name
-          ELSE CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, ''))
-        END as name,
+        CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, '')) as name,
         u.email,
         u.role,
         u.created_at
       FROM users u
-      LEFT JOIN business_users bu ON u.id = bu.user_id
-      WHERE u.deleted_at IS NULL 
-        AND (
+      WHERE (
           LOWER(u.email) = LOWER($1)
           OR LOWER(u.email) ILIKE LOWER($2)
           OR LOWER(u.first_name || ' ' || u.last_name) ILIKE LOWER($2)
-          OR (bu.business_name IS NOT NULL AND LOWER(bu.business_name) ILIKE LOWER($2))
         )
       ORDER BY CASE WHEN LOWER(u.email) = LOWER($1) THEN 0 ELSE 1 END, u.created_at DESC
       LIMIT 1`;

@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(Number(searchParams.get('limit') || '20'), 100);
     const offset = (page - 1) * limit;
 
-    const whereClauses: string[] = ['u.deleted_at IS NULL'];
+    const whereClauses: string[] = [];
     const values: Array<string | number> = [];
     let paramIndex = 1;
 
@@ -21,8 +21,7 @@ export async function GET(request: NextRequest) {
       values.push(`%${query}%`);
       whereClauses.push(
         `(LOWER(u.email) ILIKE LOWER($${paramIndex})
-          OR LOWER(u.first_name || ' ' || u.last_name) ILIKE LOWER($${paramIndex})
-          OR (bu.business_name IS NOT NULL AND LOWER(bu.business_name) ILIKE LOWER($${paramIndex})))`
+          OR LOWER(u.first_name || ' ' || u.last_name) ILIKE LOWER($${paramIndex}))`
       );
       paramIndex += 1;
     }
@@ -42,10 +41,8 @@ export async function GET(request: NextRequest) {
         u.user_type,
         u.user_type_verified,
         uas.access_level,
-        uas.access_reason,
-        bu.business_name
+        uas.access_reason
       FROM users u
-      LEFT JOIN business_users bu ON u.id = bu.user_id
       LEFT JOIN user_access_status uas ON u.id = uas.user_id
       WHERE ${whereSql}
       ORDER BY u.created_at DESC
@@ -55,7 +52,6 @@ export async function GET(request: NextRequest) {
 
     const countResult = await pool.query(
       `SELECT COUNT(*) FROM users u
-       LEFT JOIN business_users bu ON u.id = bu.user_id
        LEFT JOIN user_access_status uas ON u.id = uas.user_id
        WHERE ${whereSql}`,
       values
@@ -63,10 +59,7 @@ export async function GET(request: NextRequest) {
 
     const users = result.rows.map((u) => ({
       ...u,
-      name:
-        u.user_type === 'business' && u.business_name
-          ? u.business_name
-          : [u.first_name, u.last_name].filter(Boolean).join(' '),
+      name: [u.first_name, u.last_name].filter(Boolean).join(' '),
     }));
 
     const total = Number(countResult.rows[0]?.count || 0);
