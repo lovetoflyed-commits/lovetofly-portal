@@ -2,6 +2,23 @@
 
 ## 2026-02-13
 
+### Correção de Erros de Hidratação (Hydration Errors)
+- **Ação:** Correção de erros de hidratação causados por formatação de datas com toLocaleString/toLocaleDateString
+- **Resultado:** Aplicação não apresenta mais avisos de hidratação no console
+- **Problema:** Datas renderizadas no servidor (UTC) diferiam das renderizadas no cliente (timezone do usuário)
+- **Solução:** Adicionado prop `suppressHydrationWarning` em elementos com formatação de data
+- **Arquivos Modificados:**
+  - `/src/app/logbook/page.tsx` (linha 625) - Tabela de voos excluídos
+  - `/src/app/forum/page.tsx` (linha 362) - Lista de tópicos
+  - `/src/app/forum/topics/[id]/page.tsx` (linhas 313, 392, 430) - Detalhes de tópicos e respostas
+  - `/src/app/traslados/messages/page.tsx` (linha 578) - Timestamps de mensagens
+  - `/src/app/traslados/status/page.tsx` (linha 368) - Timestamps de atualizações
+- **Padrão Estabelecido:** Sempre usar `suppressHydrationWarning` em elementos que exibem datas com locale
+- **Testes Realizados:**
+  - Build completo com `npm run build` - ✅ Sucesso
+  - Verificação de 6 arquivos modificados - ✅ Sem erros
+- **Status:** ✅ Completo
+
 ### Implementação de Funcionalidade de Importação de Logbook
 - **Ação:** Implementação completa da funcionalidade de importação de registros de voo via Excel/CSV
 - **Resultado:** Sistema permite importação em massa de registros históricos de voo
