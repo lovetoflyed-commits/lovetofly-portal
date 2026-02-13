@@ -621,7 +621,7 @@ export default function LogbookPage() {
                             <td className="px-4 py-4 whitespace-nowrap text-center text-gray-900 font-mono">
                               {normalizeTime(log.time_diurno)}
                             </td>
-                            <td className="px-4 py-4 whitespace-nowrap text-gray-600">
+                            <td className="px-4 py-4 whitespace-nowrap text-gray-600" suppressHydrationWarning>
                               {new Date(log.deleted_at).toLocaleString('pt-BR')}
                             </td>
                           </tr>
