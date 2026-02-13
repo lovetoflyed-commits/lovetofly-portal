@@ -23,7 +23,7 @@ Endpoint responsável por processar arquivos de importação.
 
 **Validações Implementadas:**
 - Tamanho máximo: 10MB
-- Tipos aceitos: `.xlsx`, `.xls`, `.csv`
+- Tipos aceitos: `.xlsx`, `.xls`, `.xlt`, `.csv`
 - Autenticação JWT obrigatória
 - Campos obrigatórios: `flight_date`, `aircraft_registration`, pelo menos um campo de tempo de voo
 
@@ -329,6 +329,13 @@ Para problemas ou dúvidas:
 4. Verificar autenticação do usuário
 
 ## Changelog
+
+### 2026-02-13 - Suporte a Formato ANAC (v1.2)
+- ✅ **Novo formato:** Adicionado suporte para arquivos .xlt (Excel Template usado pela ANAC)
+- ✅ **Frontend:** Validação de arquivo e UI atualizados para aceitar .xlt
+- ✅ **Backend:** Validação de extensão e MIME type atualizada
+- 📋 **Formatos aceitos:** .xlsx, .xls, .xlt, .csv
+- 🎯 **Benefício:** Usuários podem importar diretamente arquivos exportados pelo sistema da ANAC
 
 ### 2026-02-13 - Correção de Bugs (v1.1)
 - ✅ **Correção:** Função (PIC, INSTRUCTOR) agora normalizada para maiúsculas durante importação

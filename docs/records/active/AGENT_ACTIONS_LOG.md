@@ -2,6 +2,21 @@
 
 ## 2026-02-13
 
+### Adição de Suporte ao Formato .xlt (ANAC) na Importação de Logbook
+- **Ação:** Adicionado suporte para arquivos .xlt (Excel Template) exportados pela ANAC
+- **Resultado:** Usuários podem importar diretamente arquivos no formato usado pela ANAC
+- **Problema:** Sistema da ANAC exporta dados em formato .xlt, mas importação só aceitava .xlsx, .xls e .csv
+- **Solução Implementada:**
+  - **Frontend:** Atualizada validação de extensões e UI para incluir .xlt
+  - **Backend:** Atualizada regex de validação e mensagens de erro
+  - MIME type 'application/vnd.ms-excel' já cobre tanto .xls quanto .xlt
+- **Arquivos Modificados:**
+  - `/src/app/logbook/components/LogbookImport.tsx` (linhas 65, 69, 229, 255)
+  - `/src/app/api/logbook/import/route.ts` (linhas 182, 186, 188)
+  - `/docs/records/active/LOGBOOK_IMPORT_FEATURE_2026-02-13.md` - Atualização do changelog
+- **Formatos Aceitos:** .xlsx, .xls, .xlt, .csv (máx. 10MB)
+- **Status:** ✅ Completo e funcional
+
 ### Correção de Bugs na Importação de Logbook - Horas PIC e IFR Real
 - **Ação:** Corrigido problema de horas PIC não sendo exibidas e possíveis problemas com IFR Real
 - **Resultado:** Horas PIC agora calculadas corretamente independente do case da função importada
