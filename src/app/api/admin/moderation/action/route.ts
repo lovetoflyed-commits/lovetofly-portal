@@ -21,10 +21,46 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || request.headers.get('x-real-ip')
+      || null;
+    const userAgent = request.headers.get('user-agent') || null;
+
     // Start transaction
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
+
+      const logActivitySafe = async (
+        subjectUserId: number,
+        activityType: string,
+        description: string,
+        details: object,
+        targetId: number
+      ) => {
+        await client.query('SAVEPOINT activity_log');
+        try {
+          await client.query(
+            `INSERT INTO user_activity_log
+              (user_id, activity_type, activity_category, description, details, target_type, target_id, status, ip_address, user_agent)
+             VALUES ($1, $2, 'admin', $3, $4, 'user', $5, 'success', $6, $7)`,
+            [
+              subjectUserId,
+              activityType,
+              description,
+              JSON.stringify(details),
+              targetId,
+              ipAddress,
+              userAgent
+            ]
+          );
+        } catch (activityError) {
+          await client.query('ROLLBACK TO SAVEPOINT activity_log');
+          console.error('Failed to log moderation activity:', activityError);
+        } finally {
+          await client.query('RELEASE SAVEPOINT activity_log');
+        }
+      };
 
       // Handle restore action
       if (actionType === 'restore') {
@@ -34,22 +70,56 @@ export async function POST(request: NextRequest) {
           [userId]
         );
 
-        // Restore user to active status
-        await client.query(
-          `UPDATE user_access_status 
-           SET access_level = 'active', restore_date = NULL, changed_at = NOW(), changed_by = $2
-           WHERE user_id = $1`,
-          [userId, adminId || null]
-        );
-
-        // Record restoration action
+        // Create restore record in user_moderation table
         const modResult = await client.query(
           `INSERT INTO user_moderation 
-            (user_id, action_type, reason, severity, issued_by)
-           VALUES ($1, $2, $3, $4, $5)
+            (user_id, action_type, reason, severity, suspension_end_date, issued_by, is_active)
+           VALUES ($1, $2, $3, $4, NULL, $5, true)
            RETURNING id, user_id, action_type, issued_at`,
-          [userId, 'restore', reason || 'User access restored', 'normal', adminId || null]
+          [userId, 'restore', reason, severity, adminId || null]
         );
+
+        // Restore user to active status
+        await client.query(
+          `INSERT INTO user_access_status (user_id, access_level, access_reason, changed_by, restore_date)
+           VALUES ($1, 'active', $2, $3, NULL)
+           ON CONFLICT (user_id) DO UPDATE SET 
+             access_level = 'active',
+             access_reason = EXCLUDED.access_reason,
+             restore_date = NULL,
+             changed_at = NOW(),
+             changed_by = EXCLUDED.changed_by`,
+          [userId, reason, adminId || null]
+        );
+
+        // user_moderation_status is a view and will automatically reflect the state
+
+        const restoreDetails = {
+          actionType,
+          reason,
+          severity,
+          suspensionDays: null,
+          suspensionEndDate: null,
+          adminId: adminId || null
+        };
+
+        await logActivitySafe(
+          Number(userId),
+          'admin_moderation_restore',
+          'Admin restaurou o acesso do usuario',
+          restoreDetails,
+          Number(userId)
+        );
+
+        if (adminId && Number(adminId) !== Number(userId)) {
+          await logActivitySafe(
+            Number(adminId),
+            'admin_moderation_restore',
+            'Admin restaurou o acesso de um usuario',
+            { ...restoreDetails, targetUserId: userId },
+            Number(userId)
+          );
+        }
 
         await client.query('COMMIT');
 
@@ -91,6 +161,35 @@ export async function POST(request: NextRequest) {
            restore_date = EXCLUDED.restore_date`,
         [userId, accessLevel, reason, adminId || null, suspensionEndDate]
       );
+
+      // user_moderation_status is a view and will automatically reflect the counts
+
+      const moderationDetails = {
+        actionType,
+        reason,
+        severity,
+        suspensionDays: suspensionDays || null,
+        suspensionEndDate,
+        adminId: adminId || null
+      };
+
+      await logActivitySafe(
+        Number(userId),
+        `admin_moderation_${actionType}`,
+        `Admin aplicou moderacao: ${actionType}`,
+        moderationDetails,
+        Number(userId)
+      );
+
+      if (adminId && Number(adminId) !== Number(userId)) {
+        await logActivitySafe(
+          Number(adminId),
+          `admin_moderation_${actionType}`,
+          `Admin aplicou moderacao: ${actionType}`,
+          { ...moderationDetails, targetUserId: userId },
+          Number(userId)
+        );
+      }
 
       await client.query('COMMIT');
 

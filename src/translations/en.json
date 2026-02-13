@@ -474,6 +474,7 @@
       "applied": "Discount applied"
     },
     "statusOptions": {
+      "all": "All statuses",
       "new": "New",
       "inReview": "In review",
       "scheduled": "Scheduled",
@@ -509,6 +510,7 @@
     "accessDeniedTitle": "Access denied — Transfer Pilots",
     "accessDeniedBody": "Only admins and authorized staff can manage pilots.",
     "statusOptions": {
+      "all": "All statuses",
       "pending": "Pending",
       "approved": "Approved",
       "rejected": "Rejected",

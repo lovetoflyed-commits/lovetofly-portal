@@ -293,7 +293,9 @@ export async function PATCH(
           RETURNING id, first_name, last_name, email, role, aviation_role,
             plan, cpf, birth_date, mobile_phone, address_street, address_number,
             address_complement, address_neighborhood, address_city, address_state,
-            address_zip, address_country, created_at, updated_at
+            address_zip, address_country, user_type, user_type_verified, cnpj,
+            is_hangar_owner, badges, licencas, habilitacoes, curso_atual,
+            created_at, updated_at
         `;
         const result = await client.query(userQuery, userValues);
         updatedUser = result.rows[0] || null;

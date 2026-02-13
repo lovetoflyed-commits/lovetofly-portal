@@ -1,5 +1,25 @@
 # Agent Actions Log (Atualização obrigatória)
 
+## 2026-02-13
+- Ação: Movidos AGENT_ACTIONS_LOG.md e AGENT_LOGBOOK_2026-01-29.md de logbook/ para docs/records/active.
+- Resultado: Arquivos agora estão em docs/records/active conforme solicitado.
+- Erros: Sem erros.
+- Investigação: Confirmação dos caminhos atuais e destino correto informado.
+- Correção: Não aplicável.
+- Verificação: Presença dos arquivos em docs/records/active.
+- Ação: Correção do erro 500 no carregamento de /admin/users e ajuste do componente de gestão de usuários.
+- Resultado: Endpoint /api/admin/users retorna dados com sucesso e a página /admin/users carrega sem falhas.
+- Erros: 500 (Internal Server Error) ao carregar /api/admin/users; possível falha de compilação por componente client/server.
+- Investigação:
+  * Verificação do endpoint /api/admin/users com foco em colunas inexistentes no schema.
+  * Revisão de importação do componente UserManagementPanel em rota client.
+- Correção:
+  * Ajustado SELECT de /api/admin/users para buscar dados de acesso/moderação em tabelas corretas (user_access_status, user_moderation_status, user_last_activity) via LEFT JOIN.
+  * Adicionado "use client" em src/components/UserManagementPanel.tsx para compatibilidade com uso em página client.
+- Verificação:
+  * /api/admin/users retorna 200 com paginação.
+  * /admin/users renderiza painel e remove erro 500 no console.
+
 ## 2026-02-10
 - Ação: Correção de erro "applications table does not exist" no Business Dashboard.
 - Resultado: Dashboard stats agora lida graciosamente com tabelas ausentes ou erros de query.

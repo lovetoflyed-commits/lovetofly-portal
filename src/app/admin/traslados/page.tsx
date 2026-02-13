@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -52,9 +53,10 @@ interface ApprovedPilot {
 export default function AdminTrasladosPage() {
   const { t, language } = useLanguage();
   const { user, token } = useAuth();
+  const activeTab = 'requests';
   const [requests, setRequests] = useState<TrasladoRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('new');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({ total: 0, totalPages: 1, limit: 20 });
@@ -64,6 +66,21 @@ export default function AdminTrasladosPage() {
   const [statusUpdate, setStatusUpdate] = useState('new');
   const [assignedTo, setAssignedTo] = useState<number | ''>('');
   const [approvedPilots, setApprovedPilots] = useState<ApprovedPilot[]>([]);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [requestSummary, setRequestSummary] = useState({
+    total: 0,
+    new: 0,
+    in_review: 0,
+    scheduled: 0,
+    completed: 0,
+    cancelled: 0,
+  });
+  const [pilotSummary, setPilotSummary] = useState({
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+    inactive: 0,
+  });
 
   const normalizedSearch = searchTerm.trim();
   const requestAssignee = (request: TrasladoRequest) => {
@@ -76,6 +93,7 @@ export default function AdminTrasladosPage() {
   };
 
   const statusOptions = [
+    { value: 'all', label: t('adminTransfers.statusOptions.all') },
     { value: 'new', label: t('adminTransfers.statusOptions.new') },
     { value: 'in_review', label: t('adminTransfers.statusOptions.inReview') },
     { value: 'scheduled', label: t('adminTransfers.statusOptions.scheduled') },
@@ -113,6 +131,62 @@ export default function AdminTrasladosPage() {
   useEffect(() => {
     fetchApprovedPilots();
   }, [token]);
+
+  useEffect(() => {
+    fetchSummary();
+  }, [token]);
+
+  const fetchSummaryTotal = async (url: string) => {
+    if (!token) return 0;
+    const res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!res.ok) return 0;
+    const data = await res.json();
+    return Number(data.pagination?.total ?? 0);
+  };
+
+  const fetchSummary = async () => {
+    if (!token) return;
+    setSummaryLoading(true);
+    try {
+      const requestStatuses = ['all', 'new', 'in_review', 'scheduled', 'completed', 'cancelled'];
+      const requestTotals = await Promise.all(
+        requestStatuses.map((status) =>
+          fetchSummaryTotal(`/api/admin/traslados?status=${status}&limit=1`)
+        )
+      );
+
+      setRequestSummary({
+        total: requestTotals[0] ?? 0,
+        new: requestTotals[1] ?? 0,
+        in_review: requestTotals[2] ?? 0,
+        scheduled: requestTotals[3] ?? 0,
+        completed: requestTotals[4] ?? 0,
+        cancelled: requestTotals[5] ?? 0,
+      });
+
+      const pilotStatuses = ['pending', 'approved', 'rejected', 'inactive'];
+      const pilotTotals = await Promise.all(
+        pilotStatuses.map((status) =>
+          fetchSummaryTotal(`/api/admin/traslados/pilots?status=${status}&limit=1`)
+        )
+      );
+
+      setPilotSummary({
+        pending: pilotTotals[0] ?? 0,
+        approved: pilotTotals[1] ?? 0,
+        rejected: pilotTotals[2] ?? 0,
+        inactive: pilotTotals[3] ?? 0,
+      });
+    } catch (error) {
+      console.error('Error fetching summary:', error);
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
 
   const fetchRequests = async () => {
     setLoading(true);
@@ -196,6 +270,21 @@ export default function AdminTrasladosPage() {
     }
   };
 
+  const paymentSummary = useMemo(() => {
+    return requests.reduce(
+      (acc, request) => {
+        const amount = request.fee_amount_cents ?? request.fee_base_amount_cents ?? 0;
+        if (!request.fee_status || !amount) return acc;
+        const status = request.fee_status.toLowerCase();
+        if (status === 'paid') acc.paid += amount;
+        if (status !== 'paid') acc.pending += amount;
+        if (status === 'refunded') acc.refunded += amount;
+        return acc;
+      },
+      { paid: 0, pending: 0, refunded: 0 }
+    );
+  }, [requests]);
+
   return (
     <div className="min-h-screen bg-slate-50 py-8">
       <div className="max-w-7xl mx-auto px-4">
@@ -232,6 +321,129 @@ export default function AdminTrasladosPage() {
                 </option>
               ))}
             </select>
+          </div>
+        </div>
+
+        <div className="mb-6 flex flex-wrap gap-2">
+          <Link
+            href="/admin"
+            className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+          >
+            Dashboard Admin
+          </Link>
+          <Link
+            href="/admin/traslados"
+            className={`rounded-full border px-3 py-1 text-xs font-semibold ${activeTab === 'requests'
+              ? 'border-blue-600 bg-blue-50 text-blue-700'
+              : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+          >
+            Solicitações
+          </Link>
+          <Link
+            href="/admin/traslados/pilots"
+            className={`rounded-full border px-3 py-1 text-xs font-semibold ${activeTab === 'pilots'
+              ? 'border-blue-600 bg-blue-50 text-blue-700'
+              : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+          >
+            Pilotos
+          </Link>
+          <Link
+            href="/admin/traslados/owners"
+            className={`rounded-full border px-3 py-1 text-xs font-semibold ${activeTab === 'owners'
+              ? 'border-blue-600 bg-blue-50 text-blue-700'
+              : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+          >
+            Proprietários/Operadoras
+          </Link>
+          <Link
+            href="/admin/traslados/messages"
+            className={`rounded-full border px-3 py-1 text-xs font-semibold ${activeTab === 'messages'
+              ? 'border-blue-600 bg-blue-50 text-blue-700'
+              : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+          >
+            Mensagens
+          </Link>
+          <Link
+            href="/admin/traslados/status"
+            className={`rounded-full border px-3 py-1 text-xs font-semibold ${activeTab === 'status'
+              ? 'border-blue-600 bg-blue-50 text-blue-700'
+              : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+          >
+            Status da operação
+          </Link>
+        </div>
+
+        <div className="mb-8 grid gap-4 md:grid-cols-4">
+          <div className="rounded-lg bg-white p-4 shadow">
+            <div className="text-xs uppercase text-slate-500">Traslados totais</div>
+            <div className="mt-2 text-2xl font-bold text-blue-900">
+              {summaryLoading ? '...' : requestSummary.total}
+            </div>
+            <div className="mt-1 text-xs text-slate-500">
+              Sem resposta: {summaryLoading ? '...' : requestSummary.new}
+            </div>
+          </div>
+          <div className="rounded-lg bg-white p-4 shadow">
+            <div className="text-xs uppercase text-slate-500">Em andamento</div>
+            <div className="mt-2 text-2xl font-bold text-blue-900">
+              {summaryLoading ? '...' : requestSummary.scheduled}
+            </div>
+            <div className="mt-1 text-xs text-slate-500">
+              Em análise: {summaryLoading ? '...' : requestSummary.in_review}
+            </div>
+          </div>
+          <div className="rounded-lg bg-white p-4 shadow">
+            <div className="text-xs uppercase text-slate-500">Concluídos</div>
+            <div className="mt-2 text-2xl font-bold text-emerald-700">
+              {summaryLoading ? '...' : requestSummary.completed}
+            </div>
+            <div className="mt-1 text-xs text-slate-500">
+              Recusados: {summaryLoading ? '...' : requestSummary.cancelled}
+            </div>
+          </div>
+          <div className="rounded-lg bg-white p-4 shadow">
+            <div className="text-xs uppercase text-slate-500">Pilotos</div>
+            <div className="mt-2 text-2xl font-bold text-blue-900">
+              {summaryLoading ? '...' : pilotSummary.approved}
+            </div>
+            <div className="mt-1 text-xs text-slate-500">
+              Elegíveis: {summaryLoading ? '...' : pilotSummary.approved} • Não elegíveis: {summaryLoading ? '...' : pilotSummary.rejected + pilotSummary.inactive}
+            </div>
+          </div>
+        </div>
+
+        <div className="mb-8 grid gap-4 md:grid-cols-3">
+          <div className="rounded-lg bg-white p-4 shadow">
+            <div className="text-xs uppercase text-slate-500">Receita gerada (taxas)</div>
+            <div className="mt-2 text-xl font-bold text-emerald-700">
+              {formatCurrency(paymentSummary.paid)}
+            </div>
+            <div className="mt-1 text-xs text-slate-500">
+              Saldo a receber: {formatCurrency(paymentSummary.pending)} • Reembolsos: {formatCurrency(paymentSummary.refunded)}
+            </div>
+          </div>
+          <div className="rounded-lg bg-white p-4 shadow">
+            <div className="text-xs uppercase text-slate-500">Gestão rápida</div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Link href="/admin/traslados/pilots" className="rounded-full border border-blue-200 px-3 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50">
+                Pilotos
+              </Link>
+              <Link href="/admin/traslados/owners" className="rounded-full border border-blue-200 px-3 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50">
+                Proprietários/Operadoras
+              </Link>
+              <Link href="/admin/traslados/messages" className="rounded-full border border-blue-200 px-3 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50">
+                Mensagens
+              </Link>
+              <Link href="/admin/traslados/status" className="rounded-full border border-blue-200 px-3 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50">
+                Status da operação
+              </Link>
+            </div>
+          </div>
+          <div className="rounded-lg bg-white p-4 shadow">
+            <div className="text-xs uppercase text-slate-500">Pilotos aprovados</div>
+            <div className="mt-2 text-sm text-slate-600">
+              {approvedPilots.length === 0 ? 'Nenhum piloto aprovado disponível.' : `${approvedPilots.length} pilotos aprovados disponíveis.`}
+            </div>
           </div>
         </div>
 
@@ -275,6 +487,12 @@ export default function AdminTrasladosPage() {
                     >
                       {t('adminTransfers.viewDetails')}
                     </button>
+                    <Link
+                      href={`/admin/traslados/messages?requestId=TR-${request.id}`}
+                      className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+                    >
+                      Mensagens
+                    </Link>
                   </div>
                 </div>
               </div>

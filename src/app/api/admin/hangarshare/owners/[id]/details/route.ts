@@ -9,39 +9,45 @@ export async function GET(
     const { id } = await params;
     const ownerId = id;
 
-    // Fetch owner details with user info
+    const ownerColumnsResult = await pool.query(
+      "SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'hangar_owners'"
+    );
+    const ownerColumns = new Set(ownerColumnsResult.rows.map((row: any) => row.column_name));
+    const ownerCol = (name: string) => (ownerColumns.has(name) ? `ho.${name}` : `NULL AS ${name}`);
+
+    // Fetch owner details with user info (handle optional columns safely)
     const ownerResult = await pool.query(`
       SELECT 
         ho.id,
         ho.user_id,
-        ho.company_name,
-        ho.cnpj,
-        ho.phone,
-        ho.address,
-        ho.address_country,
-        ho.address_zip,
-        ho.address_street,
-        ho.address_number,
-        ho.address_complement,
-        ho.address_neighborhood,
-        ho.address_city,
-        ho.address_state,
-        ho.phone_country_code,
-        ho.phone_mobile,
-        ho.phone_landline,
-        ho.website,
-        ho.social_instagram,
-        ho.social_facebook,
-        ho.social_linkedin,
-        ho.social_youtube,
-        ho.description,
-        ho.owner_type,
-        ho.cpf,
-        ho.pix_key,
-        ho.pix_key_type,
-        ho.is_verified,
-        ho.verification_status,
-        ho.created_at,
+        ${ownerCol('company_name')},
+        ${ownerCol('cnpj')},
+        ${ownerCol('phone')},
+        ${ownerCol('address')},
+        ${ownerCol('address_country')},
+        ${ownerCol('address_zip')},
+        ${ownerCol('address_street')},
+        ${ownerCol('address_number')},
+        ${ownerCol('address_complement')},
+        ${ownerCol('address_neighborhood')},
+        ${ownerCol('address_city')},
+        ${ownerCol('address_state')},
+        ${ownerCol('phone_country_code')},
+        ${ownerCol('phone_mobile')},
+        ${ownerCol('phone_landline')},
+        ${ownerCol('website')},
+        ${ownerCol('social_instagram')},
+        ${ownerCol('social_facebook')},
+        ${ownerCol('social_linkedin')},
+        ${ownerCol('social_youtube')},
+        ${ownerCol('description')},
+        ${ownerCol('owner_type')},
+        ${ownerCol('cpf')},
+        ${ownerCol('pix_key')},
+        ${ownerCol('pix_key_type')},
+        ${ownerCol('is_verified')},
+        ${ownerCol('verification_status')},
+        ${ownerCol('created_at')},
         u.first_name,
         u.last_name,
         u.email

@@ -250,10 +250,10 @@ export default function OwnerVerificationPage() {
       setEditOwner((prev) =>
         prev
           ? {
-              ...prev,
-              address_country: prev.address_country || selectedCountry,
-              phone_country_code: prev.phone_country_code || dial,
-            }
+            ...prev,
+            address_country: prev.address_country || selectedCountry,
+            phone_country_code: prev.phone_country_code || dial,
+          }
           : prev
       );
     }
@@ -281,9 +281,21 @@ export default function OwnerVerificationPage() {
     const fetchOwner = async () => {
       try {
         inFlightRef.current = ownerId;
-        const res = await fetch(`/api/admin/hangarshare/owners/${ownerId}/details`);
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('Token de autenticação ausente. Faça login novamente.');
+        }
+
+        const res = await fetch(`/api/admin/hangarshare/owners/${ownerId}/details`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         if (!res.ok) {
-          throw new Error('Erro ao carregar dados do proprietário');
+          const errorBody = await res.text().catch(() => '');
+          throw new Error(
+            `Erro ao carregar dados do proprietário (${res.status}). ${errorBody || res.statusText}`
+          );
         }
         const data = await res.json();
         setOwner(data.owner || null);
@@ -293,6 +305,7 @@ export default function OwnerVerificationPage() {
         hasFetchedRef.current = ownerId;
       } catch (error) {
         console.error('Failed to load owner details:', error);
+        alert(error instanceof Error ? error.message : 'Erro ao carregar dados do proprietário');
       } finally {
         if (inFlightRef.current === ownerId) {
           inFlightRef.current = null;
@@ -438,11 +451,11 @@ export default function OwnerVerificationPage() {
         prev.map((item) =>
           item.id === reuploadDoc.id
             ? {
-                ...item,
-                status: data.document?.upload_status,
-                reuploadDeadline: data.document?.reupload_deadline,
-                reuploadReason: reuploadReason.trim(),
-              }
+              ...item,
+              status: data.document?.upload_status,
+              reuploadDeadline: data.document?.reupload_deadline,
+              reuploadReason: reuploadReason.trim(),
+            }
             : item
         )
       );
@@ -526,11 +539,11 @@ export default function OwnerVerificationPage() {
           return prev.map((item) =>
             item.id === doc.id
               ? {
-                  ...item,
-                  url: updatedDoc.file_path,
-                  name: updatedDoc.document_name,
-                  status: updatedDoc.upload_status,
-                }
+                ...item,
+                url: updatedDoc.file_path,
+                name: updatedDoc.document_name,
+                status: updatedDoc.upload_status,
+              }
               : item
           );
         }
@@ -564,13 +577,13 @@ export default function OwnerVerificationPage() {
       setEditOwner((prev) =>
         prev
           ? {
-              ...prev,
-              address_zip: maskCEP(cleaned),
-              address_street: data.street || prev.address_street,
-              address_neighborhood: data.neighborhood || prev.address_neighborhood,
-              address_city: data.city || prev.address_city,
-              address_state: data.state || prev.address_state,
-            }
+            ...prev,
+            address_zip: maskCEP(cleaned),
+            address_street: data.street || prev.address_street,
+            address_neighborhood: data.neighborhood || prev.address_neighborhood,
+            address_city: data.city || prev.address_city,
+            address_state: data.state || prev.address_state,
+          }
           : prev
       );
     } catch (error) {
@@ -748,10 +761,10 @@ export default function OwnerVerificationPage() {
                       setEditOwner((prev) =>
                         prev
                           ? {
-                              ...prev,
-                              cnpj: maskCNPJ(e.target.value),
-                              cpf: cleanNumber(e.target.value).length > 0 ? '' : prev.cpf,
-                            }
+                            ...prev,
+                            cnpj: maskCNPJ(e.target.value),
+                            cpf: cleanNumber(e.target.value).length > 0 ? '' : prev.cpf,
+                          }
                           : prev
                       )
                     }
@@ -775,10 +788,10 @@ export default function OwnerVerificationPage() {
                       setEditOwner((prev) =>
                         prev
                           ? {
-                              ...prev,
-                              cpf: maskCPF(e.target.value),
-                              cnpj: cleanNumber(e.target.value).length > 0 ? '' : prev.cnpj,
-                            }
+                            ...prev,
+                            cpf: maskCPF(e.target.value),
+                            cnpj: cleanNumber(e.target.value).length > 0 ? '' : prev.cnpj,
+                          }
                           : prev
                       )
                     }

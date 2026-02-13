@@ -15,9 +15,15 @@ export async function GET(request: NextRequest) {
     const limit = Number(searchParams.get('limit') || '20');
     const offset = (page - 1) * limit;
 
-    const whereClauses = ['tr.status = $1'];
-    const values: Array<string | number> = [status];
-    let paramIndex = 2;
+    const whereClauses: string[] = [];
+    const values: Array<string | number> = [];
+    let paramIndex = 1;
+
+    if (status !== 'all') {
+      whereClauses.push(`tr.status = $${paramIndex}`);
+      values.push(status);
+      paramIndex += 1;
+    }
 
     if (query) {
       values.push(`%${query}%`);
@@ -33,7 +39,7 @@ export async function GET(request: NextRequest) {
       paramIndex += 1;
     }
 
-    const whereSql = whereClauses.join(' AND ');
+    const whereSql = whereClauses.length > 0 ? whereClauses.join(' AND ') : 'TRUE';
 
     const result = await pool.query(
       `SELECT 

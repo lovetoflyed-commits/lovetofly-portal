@@ -6,16 +6,16 @@
 -- Stores moderation actions (warnings, strikes, suspensions, bans)
 CREATE TABLE IF NOT EXISTS user_moderation (
   id SERIAL PRIMARY KEY,
-  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   action_type VARCHAR(20) NOT NULL CHECK (action_type IN ('warning', 'strike', 'suspend', 'ban')),
   reason TEXT NOT NULL,
   severity VARCHAR(20) DEFAULT 'normal' CHECK (severity IN ('low', 'normal', 'high', 'critical')),
   is_active BOOLEAN DEFAULT true,
   suspension_end_date TIMESTAMP WITH TIME ZONE,
-  issued_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  issued_by UUID REFERENCES users(id) ON DELETE SET NULL,
   issued_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   resolved_at TIMESTAMP WITH TIME ZONE,
-  resolved_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  resolved_by UUID REFERENCES users(id) ON DELETE SET NULL,
   resolution_notes TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -31,7 +31,7 @@ CREATE INDEX IF NOT EXISTS idx_user_moderation_issued_at ON user_moderation(issu
 -- Tracks user activities (login, logout, actions)
 CREATE TABLE IF NOT EXISTS user_activity_log (
   id SERIAL PRIMARY KEY,
-  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   activity_type VARCHAR(50) NOT NULL,
   description TEXT,
   ip_address INET,
@@ -48,6 +48,8 @@ CREATE INDEX IF NOT EXISTS idx_activity_log_user_date ON user_activity_log(user_
 
 -- ==================== USER LAST ACTIVITY VIEW ====================
 -- Quick view to see last activity of each user
+-- NOTE: Excludes admin-initiated activities (activity_category = 'admin') 
+-- so that staff edits don't count as user activity
 CREATE OR REPLACE VIEW user_last_activity AS
 SELECT 
   u.id,
@@ -57,7 +59,9 @@ SELECT
   MAX(al.created_at) as last_activity_at,
   EXTRACT(DAY FROM NOW() - MAX(al.created_at)) as days_inactive
 FROM users u
-LEFT JOIN user_activity_log al ON u.id = al.user_id
+LEFT JOIN user_activity_log al ON u.id = al.user_id 
+  AND al.activity_category != 'admin' -- Exclude admin-initiated activities
+WHERE u.deleted_at IS NULL
 GROUP BY u.id, u.email, u.first_name, u.last_name;
 
 -- ==================== ACTIVE MODERATION VIEW ====================
@@ -82,11 +86,11 @@ GROUP BY u.id, u.email, u.first_name, u.last_name;
 -- Tracks user access status (independent from role, for temporary restrictions)
 CREATE TABLE IF NOT EXISTS user_access_status (
   id SERIAL PRIMARY KEY,
-  user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
   access_level VARCHAR(20) DEFAULT 'active' CHECK (access_level IN ('active', 'warning', 'restricted', 'suspended', 'banned')),
   access_reason TEXT,
   changed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  changed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  changed_by UUID REFERENCES users(id) ON DELETE SET NULL,
   restore_date TIMESTAMP WITH TIME ZONE,
   last_checked TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

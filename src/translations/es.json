@@ -474,6 +474,7 @@
       "applied": "Descuento aplicado"
     },
     "statusOptions": {
+      "all": "Todos los estados",
       "new": "Nuevo",
       "inReview": "En análisis",
       "scheduled": "Agendado",
@@ -509,6 +510,7 @@
     "accessDeniedTitle": "Acceso denegado — Pilotos Traslados",
     "accessDeniedBody": "Solo administradores y personal autorizado pueden gestionar pilotos.",
     "statusOptions": {
+      "all": "Todos los estados",
       "pending": "Pendiente",
       "approved": "Aprobado",
       "rejected": "Rechazado",

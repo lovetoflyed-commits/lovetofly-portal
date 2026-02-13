@@ -5,9 +5,10 @@ import * as jwt from 'jsonwebtoken';
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 export interface JWTPayload {
-  id: number;
+  id?: number; // Legacy field (some old code uses this)
+  userId?: string; // UUID from token (primary field used in new code)
   email: string;
-  name: string;
+  name?: string;
   role?: string;
   iat: number;
   exp: number;

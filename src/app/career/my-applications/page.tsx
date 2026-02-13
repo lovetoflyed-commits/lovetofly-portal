@@ -25,6 +25,13 @@ export default function MyApplicationsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Message states
+  const [showMessageModal, setShowMessageModal] = useState(false);
+  const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
+  const [messageSubject, setMessageSubject] = useState('');
+  const [messageContent, setMessageContent] = useState('');
+  const [sendingMessage, setSendingMessage] = useState(false);
+
   useEffect(() => {
     if (!token) {
       setLoading(false);
@@ -141,6 +148,76 @@ export default function MyApplicationsPage() {
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
+  const handleOpenMessageModal = (app: Application) => {
+    setSelectedApplication(app);
+    setMessageSubject(`Sobre minha candid atura para ${app.jobTitle}`);
+    setMessageContent('');
+    setShowMessageModal(true);
+  };
+
+  const handleSendMessage = async () => {
+    if (!token || !selectedApplication) return;
+
+    if (!messageSubject.trim() || !messageContent.trim()) {
+      alert('Por favor, preencha o assunto e a mensagem.');
+      return;
+    }
+
+    setSendingMessage(true);
+    try {
+      // First, get company/job information to find the recipient
+      const jobResponse = await fetch(`/api/career/applications/${selectedApplication.id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!jobResponse.ok) {
+        throw new Error('Não foi possível obter informações da vaga');
+      }
+
+      const jobData = await jobResponse.json();
+      const companyUserId = jobData.data?.company_user_id;
+
+      if (!companyUserId) {
+        throw new Error('Não foi possível identificar o destinatário');
+      }
+
+      const response = await fetch('/api/messages/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          recipientUserId: companyUserId,
+          module: 'career',
+          subject: messageSubject,
+          message: messageContent,
+          priority: 'normal',
+          relatedEntityType: 'job_application',
+          relatedEntityId: selectedApplication.id,
+        }),
+      });
+
+      if (response.ok) {
+        alert('Mensagem enviada com sucesso!');
+        setShowMessageModal(false);
+        setMessageSubject('');
+        setMessageContent('');
+        setSelectedApplication(null);
+      } else {
+        const data = await response.json();
+        alert(data.message || 'Não foi possível enviar a mensagem.');
+      }
+    } catch (error: any) {
+      console.error('Error sending message:', error);
+      alert(error.message || 'Não foi possível enviar a mensagem.');
+    } finally {
+      setSendingMessage(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex">
       <Sidebar onFeatureClick={() => { }} disabled={false} />
@@ -163,8 +240,8 @@ export default function MyApplicationsPage() {
             <button
               onClick={() => setFilterStatus('all')}
               className={`px-4 py-2 rounded-lg font-bold transition ${filterStatus === 'all'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
                 }`}
             >
               Todas ({applications.length})
@@ -172,8 +249,8 @@ export default function MyApplicationsPage() {
             <button
               onClick={() => setFilterStatus('Recebida')}
               className={`px-4 py-2 rounded-lg font-bold transition ${filterStatus === 'Recebida'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
                 }`}
             >
               Recebida ({applications.filter(a => a.status === 'Recebida').length})
@@ -181,8 +258,8 @@ export default function MyApplicationsPage() {
             <button
               onClick={() => setFilterStatus('Em Análise')}
               className={`px-4 py-2 rounded-lg font-bold transition ${filterStatus === 'Em Análise'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
                 }`}
             >
               Em Análise ({applications.filter(a => a.status === 'Em Análise').length})
@@ -190,8 +267,8 @@ export default function MyApplicationsPage() {
             <button
               onClick={() => setFilterStatus('Entrevista Marcada')}
               className={`px-4 py-2 rounded-lg font-bold transition ${filterStatus === 'Entrevista Marcada'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
                 }`}
             >
               Entrevista ({applications.filter(a => a.status === 'Entrevista Marcada').length})
@@ -268,10 +345,7 @@ export default function MyApplicationsPage() {
 
                       <div className="flex gap-2">
                         <button
-                          onClick={() => {
-                            /* TODO: Implement messaging feature */
-                            alert('Funcionalidade de mensagem em desenvolvimento');
-                          }}
+                          onClick={() => handleOpenMessageModal(app)}
                           className="px-4 py-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 font-bold transition"
                         >
                           📧 Enviar Mensagem
@@ -311,6 +385,91 @@ export default function MyApplicationsPage() {
           )}
         </div>
       </div>
+
+      {/* Message Modal */}
+      {showMessageModal && selectedApplication && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-slate-200">
+              <div className="flex justify-between items-center">
+                <h3 className="text-2xl font-bold text-blue-900">Enviar Mensagem à Empresa</h3>
+                <button
+                  onClick={() => setShowMessageModal(false)}
+                  className="text-slate-400 hover:text-slate-600 text-3xl leading-none"
+                  disabled={sendingMessage}
+                >
+                  ×
+                </button>
+              </div>
+              <p className="text-sm text-slate-600 mt-2">
+                Enviando para: <span className="font-bold">{selectedApplication.companyName}</span>
+              </p>
+              <p className="text-sm text-slate-600">
+                Referente à: <span className="font-bold">{selectedApplication.jobTitle}</span>
+              </p>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">
+                  Assunto
+                </label>
+                <input
+                  type="text"
+                  value={messageSubject}
+                  onChange={(e) => setMessageSubject(e.target.value)}
+                  placeholder="Ex: Dúvida sobre o processo seletivo"
+                  maxLength={255}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  {messageSubject.length}/255 caracteres
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">
+                  Mensagem
+                </label>
+                <textarea
+                  value={messageContent}
+                  onChange={(e) => setMessageContent(e.target.value)}
+                  placeholder="Digite sua mensagem...\n\nEx: Olá, gostaria de obter mais informações sobre o processo seletivo e próximas etapas."
+                  rows={8}
+                  maxLength={10000}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  {messageContent.length}/10000 caracteres
+                </p>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-800">
+                  💡 <span className="font-bold">Dica:</span> Seja profissional e objetivo. Evite enviar múltiplas mensagens sobre a mesma dúvida.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-slate-200 flex gap-3">
+              <button
+                onClick={() => setShowMessageModal(false)}
+                className="flex-1 py-3 border border-slate-300 text-slate-700 font-bold rounded-lg hover:bg-slate-50 transition"
+                disabled={sendingMessage}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSendMessage}
+                disabled={sendingMessage || !messageSubject.trim() || !messageContent.trim()}
+                className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition"
+              >
+                {sendingMessage ? 'Enviando...' : 'Enviar Mensagem'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

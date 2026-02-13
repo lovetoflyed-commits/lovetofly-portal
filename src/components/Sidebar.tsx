@@ -2,7 +2,7 @@
 
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useState, useEffect } from 'react';
 
@@ -15,7 +15,8 @@ type SidebarProps = {
 
 export default function Sidebar({ onFeatureClick, disabled }: SidebarProps) {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const router = useRouter();
+  const { user, logout } = useAuth();
   const [isClient, setIsClient] = useState(false);
   // Estado para controlar qual seção está expandida
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
@@ -24,6 +25,10 @@ export default function Sidebar({ onFeatureClick, disabled }: SidebarProps) {
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  const handleLogout = () => {
+    logout();
+  };
 
   const menuSections = [
     {
@@ -136,16 +141,26 @@ export default function Sidebar({ onFeatureClick, disabled }: SidebarProps) {
     <aside className="w-64 bg-blue-800 text-white min-h-screen border-r border-blue-900">
       <div className="p-6">
         <div className="text-white font-black text-xl tracking-wider mb-8">
-          LOVE TO FLY
+          Se é Aviação,
+          <br />
+          Está Tudo Aqui!
         </div>
         <div className="mb-6 p-4 bg-blue-900/80 rounded-lg">
           <div className="text-sm font-medium text-blue-200">Bem-vindo(a),</div>
           <div className="text-base font-bold text-white">{user?.name || 'Carregando...'}</div>
-          {user?.plan && (
-            <div className="mt-2 inline-block px-2 py-1 bg-yellow-400 text-yellow-900 text-xs font-bold rounded">
-              {user.plan.toUpperCase()}
-            </div>
-          )}
+          <div className="mt-2 flex items-center gap-2">
+            {user?.plan && (
+              <div className="inline-block px-2 py-1 bg-yellow-400 text-yellow-900 text-xs font-bold rounded">
+                {user.plan.toUpperCase()}
+              </div>
+            )}
+            <button
+              onClick={handleLogout}
+              className="px-2 py-1 bg-red-500/20 hover:bg-red-500/40 text-red-200 hover:text-white text-xs font-medium rounded transition-all duration-200"
+            >
+              Sair
+            </button>
+          </div>
         </div>
         <nav className="space-y-4">
           {menuSections.map((section) => {

@@ -22,7 +22,7 @@
   - ✅ Emails (Resend)
   - ✅ Database (Neon PostgreSQL)
 
-### ⚠️ Charts (READY TO DEPLOY)
+### ⚠️ Charts (NOT TO DEPLOY)
 - **Status:** Prepared but not yet uploaded
 - **Size:** 715MB (1,900 PDF files)
 - **Location:** `/Users/edsonassumpcao/Desktop/lovetofly-portal/dist/charts/`
@@ -188,7 +188,7 @@ These features work but show "no charts available":
 
 ---
 
-## 🎉 Success!
+## 🎉 Success
 
 Your Love to Fly Portal is **99% deployed**!
 

@@ -36,6 +36,7 @@ interface HangarListing {
   photos: Photo[] | string[]; // Support both old and new formats
   isActive: boolean;
   verificationStatus?: string;
+  ownerId: number;
   ownerName: string;
   ownerEmail: string;
   ownerPhone: string;
@@ -104,7 +105,7 @@ export default function HangarListingDetailPage() {
   const [hangar, setHangar] = useState<HangarListing | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
+
   // Booking states
   const [showBooking, setShowBooking] = useState(false);
   const [checkIn, setCheckIn] = useState('');
@@ -117,6 +118,12 @@ export default function HangarListingDetailPage() {
   const [reviewStats, setReviewStats] = useState<any>(null);
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [editingReview, setEditingReview] = useState<any>(null);
+
+  // Message states
+  const [showMessageModal, setShowMessageModal] = useState(false);
+  const [messageSubject, setMessageSubject] = useState('');
+  const [messageContent, setMessageContent] = useState('');
+  const [sendingMessage, setSendingMessage] = useState(false);
 
   useEffect(() => {
     const fetchHangar = async () => {
@@ -143,7 +150,7 @@ export default function HangarListingDetailPage() {
   useEffect(() => {
     const fetchReviews = async () => {
       if (!params.id) return;
-      
+
       setLoadingReviews(true);
       try {
         const response = await fetch(`/api/hangarshare/reviews?listing_id=${params.id}`);
@@ -257,6 +264,53 @@ export default function HangarListingDetailPage() {
     } catch (error) {
       console.error('Error reporting listing:', error);
       alert('Não foi possível enviar a denúncia.');
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!token) {
+      router.push('/login?redirect=' + encodeURIComponent(`/hangarshare/listing/${params.id}`));
+      return;
+    }
+
+    if (!messageSubject.trim() || !messageContent.trim()) {
+      alert('Por favor, preencha o assunto e a mensagem.');
+      return;
+    }
+
+    setSendingMessage(true);
+    try {
+      const response = await fetch('/api/messages/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          recipientUserId: hangar?.ownerId,
+          module: 'hangarshare',
+          subject: messageSubject,
+          message: messageContent,
+          priority: 'normal',
+          relatedEntityType: 'hangar_listing',
+          relatedEntityId: Number(params.id),
+        }),
+      });
+
+      if (response.ok) {
+        alert('Mensagem enviada com sucesso!');
+        setShowMessageModal(false);
+        setMessageSubject('');
+        setMessageContent('');
+      } else {
+        const data = await response.json();
+        alert(data.message || 'Não foi possível enviar a mensagem.');
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('Não foi possível enviar a mensagem.');
+    } finally {
+      setSendingMessage(false);
     }
   };
 
@@ -392,8 +446,8 @@ export default function HangarListingDetailPage() {
 
             {/* Photos Gallery */}
             {hangar.photos && hangar.photos.length > 0 && (
-              <PhotoGallery 
-                photos={hangar.photos as Photo[]} 
+              <PhotoGallery
+                photos={hangar.photos as Photo[]}
                 title={`Fotos do Hangar ${hangar.hangarNumber}`}
               />
             )}
@@ -494,7 +548,14 @@ export default function HangarListingDetailPage() {
                 )}
               </div>
               {user && (
-                <div className="mt-6 pt-4 border-t border-slate-200">
+                <div className="mt-6 pt-4 border-t border-slate-200 space-y-3">
+                  <button
+                    onClick={() => setShowMessageModal(true)}
+                    className="w-full py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-2"
+                  >
+                    <span>✉️</span>
+                    <span>Enviar Mensagem ao Proprietário</span>
+                  </button>
                   <button
                     onClick={handleReport}
                     className="w-full py-2 bg-red-50 text-red-700 border border-red-200 rounded-lg hover:bg-red-100 transition"
@@ -557,7 +618,7 @@ export default function HangarListingDetailPage() {
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl shadow-lg p-6 sticky top-8">
               <h3 className="text-xl font-bold text-blue-900 mb-4">Fazer Reserva</h3>
-              
+
               {!showBooking ? (
                 <button
                   onClick={handleBooking}
@@ -606,15 +667,15 @@ export default function HangarListingDetailPage() {
                   {calculation && (
                     <div className="border-t border-slate-200 pt-4 mt-4">
                       <h4 className="font-bold text-slate-900 mb-3">Detalhamento do Valor</h4>
-                      
+
                       <div className="space-y-2 mb-4">
-                          {calculation.breakdown.map((item, index) => (
+                        {calculation.breakdown.map((item, index) => (
                           <div key={index} className="flex justify-between text-sm">
                             <span className="text-slate-600">
-                                {item.quantity}x {item.period} @ R$ {formatMoney(item.rate)}
+                              {item.quantity}x {item.period} @ R$ {formatMoney(item.rate)}
                             </span>
                             <span className="font-bold text-slate-900">
-                                R$ {formatMoney(item.subtotal)}
+                              R$ {formatMoney(item.subtotal)}
                             </span>
                           </div>
                         ))}
@@ -679,6 +740,90 @@ export default function HangarListingDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Message Modal */}
+      {showMessageModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-slate-200">
+              <div className="flex justify-between items-center">
+                <h3 className="text-2xl font-bold text-blue-900">Enviar Mensagem</h3>
+                <button
+                  onClick={() => setShowMessageModal(false)}
+                  className="text-slate-400 hover:text-slate-600 text-3xl leading-none"
+                >
+                  ×
+                </button>
+              </div>
+              <p className="text-sm text-slate-600 mt-2">
+                Enviando mensagem para: <span className="font-bold">{hangar?.ownerName}</span>
+              </p>
+              <p className="text-sm text-slate-600">
+                Referente ao: <span className="font-bold">Hangar {hangar?.hangarNumber} - {hangar?.icao}</span>
+              </p>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">
+                  Assunto
+                </label>
+                <input
+                  type="text"
+                  value={messageSubject}
+                  onChange={(e) => setMessageSubject(e.target.value)}
+                  placeholder="Ex: Interesse em alugar o hangar"
+                  maxLength={255}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  {messageSubject.length}/255 caracteres
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">
+                  Mensagem
+                </label>
+                <textarea
+                  value={messageContent}
+                  onChange={(e) => setMessageContent(e.target.value)}
+                  placeholder="Digite sua mensagem...\n\nEx: Olá, tenho interesse em alugar seu hangar. Gostaria de mais informações sobre disponibilidade e valores."
+                  rows={8}
+                  maxLength={10000}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  {messageContent.length}/10000 caracteres
+                </p>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-800">
+                  💡 <span className="font-bold">Dica:</span> Seja claro e objetivo. Inclua informações como período desejado, tipo de aeronave e necessidades específicas.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-slate-200 flex gap-3">
+              <button
+                onClick={() => setShowMessageModal(false)}
+                className="flex-1 py-3 border border-slate-300 text-slate-700 font-bold rounded-lg hover:bg-slate-50 transition"
+                disabled={sendingMessage}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSendMessage}
+                disabled={sendingMessage || !messageSubject.trim() || !messageContent.trim()}
+                className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition"
+              >
+                {sendingMessage ? 'Enviando...' : 'Enviar Mensagem'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

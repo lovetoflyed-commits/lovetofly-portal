@@ -40,6 +40,11 @@ export async function POST(
       );
     }
 
+    const ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || request.headers.get('x-real-ip')
+      || null;
+    const userAgent = request.headers.get('user-agent') || null;
+
     const body = await request.json();
     const { notes } = body;
 
@@ -103,6 +108,29 @@ export async function POST(
 
         console.log(`[VERIFICATION COMPLETE] Owner ${document.owner_id} fully verified`);
       }
+    }
+
+    if (document.user_id) {
+      await pool.query(
+        `INSERT INTO user_activity_log
+          (user_id, activity_type, activity_category, description, details, target_type, target_id, status, ip_address, user_agent)
+         VALUES ($1, $2, 'admin', $3, $4, 'document', $5, 'success', $6, $7)`,
+        [
+          document.user_id,
+          'admin_document_approve',
+          'Admin aprovou documento',
+          JSON.stringify({
+            documentId: document.id,
+            documentType: document.document_type,
+            ownerId: document.owner_id || null,
+            notes: notes || null,
+            adminId: decoded.userId
+          }),
+          document.id,
+          ipAddress,
+          userAgent
+        ]
+      );
     }
 
     // TODO: Send email notification to user

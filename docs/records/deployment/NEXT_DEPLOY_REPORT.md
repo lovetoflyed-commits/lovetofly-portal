@@ -36,7 +36,7 @@ src/app/api/auth/register/route.ts                         [MODIFIED]
 src/app/api/user/profile/route.ts                          [MODIFIED]
 ```
 
-**Summary:** 
+**Summary:**
 - Photo system enhancements (upload, delete, listing updates)
 - Admin verification improvements
 - User profile PATCH endpoint

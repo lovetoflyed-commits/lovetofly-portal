@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -30,7 +32,7 @@ interface ModerationAction {
 }
 
 export default function UserManagementPanel() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -82,16 +84,17 @@ export default function UserManagementPanel() {
         t: Date.now().toString() // Cache buster
       });
 
-      const res = await fetch(`/api/admin/users/search?${params}`, {
+      const res = await fetch(`/api/admin/users?${params}`, {
         cache: 'no-store',
         headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
           'Cache-Control': 'no-cache',
         }
       });
       if (res.ok) {
         const data = await res.json();
         setUsers(data.users);
-        setTotalPages(data.pagination.pages);
+        setTotalPages(data.pagination?.pages || 1);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -111,6 +114,11 @@ export default function UserManagementPanel() {
       return;
     }
 
+    if (!user?.id) {
+      alert('Missing admin user context. Please log in again.');
+      return;
+    }
+
     setActionLoading(true);
     try {
       const res = await fetch('/api/admin/moderation/action', {
@@ -122,7 +130,7 @@ export default function UserManagementPanel() {
           reason: moderationData.reason,
           severity: moderationData.severity,
           suspensionDays: moderationData.suspensionDays,
-          adminId: 1 // TODO: Get from auth context
+          adminId: user.id
         })
       });
 

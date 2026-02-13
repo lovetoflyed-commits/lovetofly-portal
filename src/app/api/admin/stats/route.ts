@@ -1,8 +1,59 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/config/db';
+import { verifyToken } from '@/utils/auth';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // ============ Authentication ============
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { message: 'Token não fornecido' },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.substring(7);
+    const decoded = verifyToken(token);
+    if (!decoded?.id && !decoded?.userId) {
+      return NextResponse.json(
+        { message: 'Token inválido ou expirado' },
+        { status: 401 }
+      );
+    }
+
+    // Use id (primary) or userId (fallback) from token payload
+    const userIdFromToken = decoded.id || decoded.userId;
+
+    // Check if user has admin/staff privileges
+    const adminCheck = await pool.query(
+      'SELECT role, email FROM users WHERE id = $1',
+      [userIdFromToken]
+    );
+
+    if (adminCheck.rows.length === 0) {
+      return NextResponse.json(
+        { message: 'Usuário não encontrado' },
+        { status: 404 }
+      );
+    }
+
+    const userRole = adminCheck.rows[0].role;
+    const userEmail = adminCheck.rows[0].email;
+    
+    const hasAdminAccess = 
+      userRole === 'master' || 
+      userRole === 'admin' || 
+      userRole === 'staff' || 
+      userEmail === 'lovetofly.ed@gmail.com';
+
+    if (!hasAdminAccess) {
+      return NextResponse.json(
+        { message: 'Acesso negado' },
+        { status: 403 }
+      );
+    }
+
     console.log('[ADMIN STATS] Starting query...');
     const getCount = async (query: string, params: Array<string | number | Date> = []) => {
       const result = await pool.query(query, params);
@@ -55,7 +106,11 @@ export async function GET() {
       marketingLeads,
       marketingLeadsToday,
       totalVisits,
-      visitsToday
+      visitsToday,
+      totalMessages,
+      unreadMessages,
+      pendingReports,
+      messagesToday
     ] = await Promise.all([
       // Pending verifications (unverified hangar owners)
       safeCount(
@@ -200,6 +255,30 @@ export async function GET() {
         { query: 'SELECT COALESCE(SUM(visit_count), 0) as total FROM portal_analytics WHERE date = $1', params: [today] },
         undefined,
         'visits today'
+      ),
+      // Total messages
+      safeCount(
+        { query: 'SELECT COUNT(*) FROM portal_messages' },
+        undefined,
+        'total messages'
+      ),
+      // Unread messages (admin context)
+      safeCount(
+        { query: "SELECT COUNT(*) FROM portal_messages WHERE is_read = false AND sender_type != 'admin'" },
+        undefined,
+        'unread messages'
+      ),
+      // Pending reports
+      safeCount(
+        { query: "SELECT COUNT(*) FROM portal_message_reports WHERE status = 'pending'" },
+        undefined,
+        'pending reports'
+      ),
+      // Messages sent today
+      safeCount(
+        { query: 'SELECT COUNT(*) FROM portal_messages WHERE created_at >= $1', params: [today] },
+        undefined,
+        'messages today'
       )
     ]);
 
@@ -231,7 +310,11 @@ export async function GET() {
       marketingLeads,
       marketingLeadsToday,
       totalVisits,
-      visitsToday
+      visitsToday,
+      totalMessages,
+      unreadMessages,
+      pendingReports,
+      messagesToday
     }, { status: 200 });
   } catch (error) {
     console.error('Erro ao buscar stats admin:', error);

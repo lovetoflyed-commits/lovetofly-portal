@@ -4,11 +4,16 @@ import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import NotificationDropdown from './NotificationDropdown';
+import { useMessages } from '@/hooks/useMessages';
+import { MessageCircle } from 'lucide-react';
 
 export default function Header() {
   const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+
+  // Messages unread count with polling
+  const { unreadCount: messagesUnreadCount, hasUrgent } = useMessages();
 
   useEffect(() => {
     if (user) {
@@ -35,7 +40,7 @@ export default function Header() {
 
       fetchUnreadCount();
       // Poll only on initial load, not periodically
-      return () => {};
+      return () => { };
     }
   }, [user]);
 
@@ -92,6 +97,20 @@ export default function Header() {
           <div className="flex items-center space-x-4">
             {user ? (
               <>
+                {/* Messages Bell */}
+                <Link
+                  href="/profile/messages"
+                  className="relative text-gray-700 hover:text-blue-900 transition-colors"
+                >
+                  <MessageCircle className="w-6 h-6" />
+                  {messagesUnreadCount > 0 && (
+                    <span className={`absolute -top-1 -right-1 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center ${hasUrgent ? 'bg-red-600 animate-pulse' : 'bg-blue-600'
+                      }`}>
+                      {messagesUnreadCount > 9 ? '9+' : messagesUnreadCount}
+                    </span>
+                  )}
+                </Link>
+
                 {/* Notifications Bell */}
                 <div className="relative">
                   <button

@@ -15,23 +15,31 @@ export async function GET(request: NextRequest) {
     }
 
     const role = String(user.role || '').toLowerCase();
-    if (!['master', 'admin', 'staff', 'moderator', 'super_admin'].includes(role)) {
-      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    if (!['master', 'admin', 'staff'].includes(role)) {
+      console.error('[reports] Role check failed:', { role: user.role, userId: user.id });
+      return NextResponse.json({ message: 'Forbidden - Admin access required' }, { status: 403 });
     }
 
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status') || 'pending';
+    const status = searchParams.get('status');
 
-    const result = await pool.query(
-      `SELECT r.*, 
-              COALESCE(u.full_name, CONCAT(u.first_name, ' ', u.last_name)) as reporter_name,
-              u.email as reporter_email
-       FROM content_reports r
-       JOIN users u ON u.id = r.reporter_user_id
-       WHERE r.status = $1
-       ORDER BY r.created_at DESC`,
-      [status]
-    );
+    let query = `
+      SELECT r.*, 
+             COALESCE(u.full_name, CONCAT(u.first_name, ' ', u.last_name)) as reporter_name,
+             u.email as reporter_email
+      FROM content_reports r
+      JOIN users u ON u.id = r.reporter_user_id`;
+    
+    const params: any[] = [];
+    
+    if (status && status !== 'all') {
+      query += ` WHERE r.status = $1`;
+      params.push(status);
+    }
+    
+    query += ` ORDER BY r.created_at DESC`;
+
+    const result = await pool.query(query, params);
 
     return NextResponse.json({ reports: result.rows });
   } catch (error) {

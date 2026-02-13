@@ -5,10 +5,11 @@ import jwt from 'jsonwebtoken';
 // GET /api/career/jobs/[id] - Get single job
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const jobId = params.id;
+    const { id } = await Promise.resolve(params);
+    const jobId = id;
 
     const result = await pool.query(
       `SELECT 
@@ -54,9 +55,10 @@ export async function GET(
 // PATCH /api/career/jobs/[id] - Update job (business owner only)
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await Promise.resolve(params);
     // Verify authentication
     const authHeader = request.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -70,7 +72,7 @@ export async function PATCH(
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: number };
     const userId = decoded.userId;
 
-    const jobId = params.id;
+    const jobId = id;
 
     // Check if user is admin/master
     const userCheck = await pool.query(
@@ -168,9 +170,10 @@ export async function PATCH(
 // DELETE /api/career/jobs/[id] - Delete/close job (business owner only)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await Promise.resolve(params);
     // Verify authentication
     const authHeader = request.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -184,7 +187,7 @@ export async function DELETE(
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: number };
     const userId = decoded.userId;
 
-    const jobId = params.id;
+    const jobId = id;
 
     // Check if user is admin/master
     const userCheck = await pool.query(

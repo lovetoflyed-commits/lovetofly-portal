@@ -1,79 +1,81 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/config/db';
+import jwt from 'jsonwebtoken';
 
-// GET /api/admin/users/search?q=email_or_name&page=1&limit=20
+// GET /api/admin/users/search?email=user@example.com
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const query = searchParams.get('q') || '';
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
-    const offset = (page - 1) * limit;
-
-    // Build WHERE clause once - exclude soft-deleted users
-    let whereClause = 'u.deleted_at IS NULL';
-    const params: any[] = [];
-
-    if (query.trim()) {
-      whereClause += ` AND (
-        LOWER(u.email) ILIKE $${params.length + 1} 
-        OR LOWER(u.first_name) ILIKE $${params.length + 1}
-        OR LOWER(u.last_name) ILIKE $${params.length + 1}
-        OR LOWER(bu.business_name) ILIKE $${params.length + 1}
-      )`;
-      params.push(`%${query}%`);
+    // Validate authentication
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    // Combined query with window function for total count - eliminates separate count query
+    const token = authHeader.substring(7);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default-secret') as any;
+
+    // Check admin permissions
+    if (!['master', 'admin', 'staff'].includes(decoded.role) && decoded.email !== 'master@lovetofly.com') {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
+
+    const searchParams = request.nextUrl.searchParams;
+    const email = searchParams.get('email')?.trim() || '';
+    const query = searchParams.get('q')?.trim() || '';
+    const searchTerm = email || query;
+
+    if (!searchTerm) {
+      return NextResponse.json(
+        { message: 'Email or search term required' },
+        { status: 400 }
+      );
+    }
+
+    // Search by email primarily, fallback to general search
     const sqlQuery = `
       SELECT 
         u.id,
         CASE
           WHEN u.user_type = 'business' AND bu.business_name IS NOT NULL AND bu.business_name <> ''
             THEN bu.business_name
-          ELSE CONCAT(u.first_name, ' ', u.last_name)
+          ELSE CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, ''))
         END as name,
         u.email,
         u.role,
-        u.aviation_role,
-        u.plan,
-        u.created_at,
-        u.user_type,
-        CASE
-          WHEN u.user_type = 'business'
-            THEN (u.user_type_verified OR bu.is_verified OR bu.verification_status = 'approved')
-          ELSE u.user_type_verified
-        END as user_type_verified,
-        bu.business_name,
-        bu.verification_status as business_verification_status,
-        uas.access_level,
-        uas.access_reason,
-        ums.active_warnings,
-        ums.active_strikes,
-        ums.is_banned,
-        ula.last_activity_at,
-        ula.days_inactive,
-        COUNT(*) OVER () as total_count
+        u.created_at
       FROM users u
       LEFT JOIN business_users bu ON u.id = bu.user_id
-      LEFT JOIN user_access_status uas ON u.id = uas.user_id
-      LEFT JOIN user_moderation_status ums ON u.id = ums.id
-      LEFT JOIN user_last_activity ula ON u.id = ula.id
-      WHERE ${whereClause}
-      ORDER BY u.created_at DESC
-      LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+      WHERE u.deleted_at IS NULL 
+        AND (
+          LOWER(u.email) = LOWER($1)
+          OR LOWER(u.email) ILIKE LOWER($2)
+          OR LOWER(u.first_name || ' ' || u.last_name) ILIKE LOWER($2)
+          OR (bu.business_name IS NOT NULL AND LOWER(bu.business_name) ILIKE LOWER($2))
+        )
+      ORDER BY CASE WHEN LOWER(u.email) = LOWER($1) THEN 0 ELSE 1 END, u.created_at DESC
+      LIMIT 1`;
 
-    params.push(limit, offset);
-    const result = await pool.query(sqlQuery, params);
-    const total = result.rows.length > 0 ? parseInt(result.rows[0].total_count) : 0;
+    const result = await pool.query(sqlQuery, [searchTerm, `%${searchTerm}%`]);
+
+    if (result.rows.length === 0) {
+      console.log(`[Search Users] User not found for email/query: ${searchTerm}`);
+      return NextResponse.json({
+        data: { user: null },
+        message: 'User not found'
+      }, { status: 404 });
+    }
+
+    const user = result.rows[0];
+    console.log(`[Search Users] Found user ${user.id} with email ${user.email}`);
 
     return NextResponse.json({
-      users: result.rows,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit)
+      data: {
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role
+        }
       }
     });
   } catch (error) {

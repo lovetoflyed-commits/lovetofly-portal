@@ -32,32 +32,28 @@ export default function MainHeader() {
           onClick={() => router.push("/")}
         >
           <img
-            src="/logo-pac.png"
-            alt="Love to Fly"
+            src="/aviation-central-hub-logo.png"
+            alt="Aviation Central Hub"
             className="w-full h-full object-contain block"
           />
         </div>
         {/* Second column: Title and Subtitle */}
         <div className="flex-1 flex flex-col items-center justify-center">
-          <h1 className="font-black text-3xl md:text-4xl tracking-wide text-white text-center">PORTAL DA AVIAÇÃO CIVIL</h1>
-          <p className="text-sm uppercase tracking-[0.2em] text-white font-semibold mt-1">O SEU PORTAL DA AVIAÇÃO CIVIL</p>
+          <h1 className="font-black text-3xl md:text-4xl tracking-wide text-white text-center">Central Hub Aviation</h1>
+          <p className="text-sm uppercase tracking-[0.2em] text-white font-semibold mt-1">Sua aviação mais simples, segura e conectada</p>
         </div>
-        {/* Third column: Buttons */}
-        <div className="flex items-center gap-2">
-          {user && (
-            <span className="text-xs bg-orange-500 text-white px-3 py-1 rounded-full font-bold uppercase">{userPlan}</span>
-          )}
-          {user && (
-            <span className="text-sm hidden sm:inline text-white">Olá, {user.name}</span>
-          )}
-          {user ? (
-            <button onClick={logout} className="px-4 py-2 rounded-lg bg-orange-500 text-white font-bold shadow-sm hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm">Sair</button>
-          ) : (
-            <>
-              <button onClick={() => router.push('/login')} className="px-4 py-2 rounded-lg bg-orange-500 text-white font-bold shadow-sm hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm">Entrar</button>
-              <button onClick={() => router.push('/register')} className="px-4 py-2 rounded-lg bg-gray-300 text-gray-800 font-bold shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 text-sm">Cadastrar</button>
-            </>
-          )}
+        {/* Third column: Badge image and label */}
+        <div className="flex items-start justify-end gap-0 h-32 min-w-64 w-64">
+          <div className="text-[10px] leading-tight text-blue-100 font-semibold uppercase tracking-wide text-right -mr-3">
+            API integracao
+            <br />
+            Autorizada pelo:
+          </div>
+          <img
+            src="/DECEA_logo.png"
+            alt="DECEA"
+            className="w-full h-full object-contain block -ml-1"
+          />
         </div>
       </div>
     </header>

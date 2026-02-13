@@ -30,6 +30,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Initialize user and token from localStorage
   const [user, setUser] = useState<User | null>(() => {
     if (typeof window !== 'undefined') {
+      // First check if token is valid
+      const storedToken = localStorage.getItem('token');
+      if (storedToken) {
+        try {
+          const payload = JSON.parse(atob(storedToken.split('.')[1]));
+          if (!payload.role) {
+            // Old token - don't load user either
+            return null;
+          }
+        } catch (e) {
+          return null;
+        }
+      }
+
       const storedUser = localStorage.getItem('user');
       return storedUser ? JSON.parse(storedUser) : null;
     }
@@ -38,7 +52,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const [token, setToken] = useState<string | null>(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('token');
+      const storedToken = localStorage.getItem('token');
+
+      // Validate token has role property - force re-login if old token
+      if (storedToken) {
+        try {
+          const payload = JSON.parse(atob(storedToken.split('.')[1]));
+          if (!payload.role) {
+            // Old token without role - clear it
+            console.log('[AuthContext] Old token detected without role, clearing...');
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            return null;
+          }
+        } catch (e) {
+          // Invalid token format - clear it
+          console.error('[AuthContext] Invalid token format, clearing...');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          return null;
+        }
+      }
+
+      return storedToken;
     }
     return null;
   });

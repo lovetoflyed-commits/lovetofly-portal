@@ -4,9 +4,10 @@ import jwt from 'jsonwebtoken';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await Promise.resolve(params);
     const authHeader = request.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       console.error('Missing or invalid auth header');
@@ -76,6 +77,7 @@ export async function GET(
         j.company_id as "companyId",
         c.id as "company_id",
         c.name as "companyName",
+        c.user_id as "company_user_id",
         c.logo_url as "companyLogoUrl",
         c.location as "companyLocation"
       FROM applications a
@@ -110,9 +112,10 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await Promise.resolve(params);
     const authHeader = request.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       console.error('Missing or invalid auth header');
@@ -135,7 +138,7 @@ export async function PATCH(
       return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
     }
 
-    const applicationId = params.id;
+    const applicationId = id;
     const body = await request.json();
 
     // Verify the application belongs to the user

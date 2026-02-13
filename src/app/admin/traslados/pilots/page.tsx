@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -32,6 +33,7 @@ interface Pilot {
 export default function AdminTrasladosPilotsPage() {
   const { t } = useLanguage();
   const { user, token } = useAuth();
+  const activeTab = 'pilots';
   const [pilots, setPilots] = useState<Pilot[]>([]);
   const [documents, setDocuments] = useState<PilotDocument[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,10 +45,13 @@ export default function AdminTrasladosPilotsPage() {
   const [statusUpdate, setStatusUpdate] = useState('pending');
   const [adminNotes, setAdminNotes] = useState('');
   const [saving, setSaving] = useState(false);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summary, setSummary] = useState({ pending: 0, approved: 0, rejected: 0, inactive: 0 });
 
   const normalizedSearch = searchTerm.trim();
 
   const statusOptions = [
+    { value: 'all', label: t('adminTransfersPilots.statusOptions.all') },
     { value: 'pending', label: t('adminTransfersPilots.statusOptions.pending') },
     { value: 'approved', label: t('adminTransfersPilots.statusOptions.approved') },
     { value: 'rejected', label: t('adminTransfersPilots.statusOptions.rejected') },
@@ -65,6 +70,46 @@ export default function AdminTrasladosPilotsPage() {
   useEffect(() => {
     fetchPilots();
   }, [statusFilter, page, normalizedSearch, token]);
+
+  useEffect(() => {
+    fetchSummary();
+  }, [token]);
+
+  const fetchSummaryTotal = async (url: string) => {
+    if (!token) return 0;
+    const res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!res.ok) return 0;
+    const data = await res.json();
+    return Number(data.pagination?.total ?? 0);
+  };
+
+  const fetchSummary = async () => {
+    if (!token) return;
+    setSummaryLoading(true);
+    try {
+      const statuses = ['pending', 'approved', 'rejected', 'inactive'];
+      const totals = await Promise.all(
+        statuses.map((status) =>
+          fetchSummaryTotal(`/api/admin/traslados/pilots?status=${status}&limit=1`)
+        )
+      );
+
+      setSummary({
+        pending: totals[0] ?? 0,
+        approved: totals[1] ?? 0,
+        rejected: totals[2] ?? 0,
+        inactive: totals[3] ?? 0,
+      });
+    } catch (error) {
+      console.error('Error fetching pilot summary:', error);
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
 
   const fetchPilots = async () => {
     setLoading(true);
@@ -176,6 +221,76 @@ export default function AdminTrasladosPilotsPage() {
                 </option>
               ))}
             </select>
+          </div>
+        </div>
+
+        <div className="mb-6 flex flex-wrap gap-2">
+          <Link
+            href="/admin"
+            className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+          >
+            Dashboard Admin
+          </Link>
+          <Link
+            href="/admin/traslados"
+            className={`rounded-full border px-3 py-1 text-xs font-semibold ${activeTab === 'requests'
+              ? 'border-blue-600 bg-blue-50 text-blue-700'
+              : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+          >
+            Solicitações
+          </Link>
+          <Link
+            href="/admin/traslados/pilots"
+            className={`rounded-full border px-3 py-1 text-xs font-semibold ${activeTab === 'pilots'
+              ? 'border-blue-600 bg-blue-50 text-blue-700'
+              : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+          >
+            Pilotos
+          </Link>
+          <Link
+            href="/admin/traslados/owners"
+            className={`rounded-full border px-3 py-1 text-xs font-semibold ${activeTab === 'owners'
+              ? 'border-blue-600 bg-blue-50 text-blue-700'
+              : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+          >
+            Proprietários/Operadoras
+          </Link>
+          <Link
+            href="/admin/traslados/messages"
+            className={`rounded-full border px-3 py-1 text-xs font-semibold ${activeTab === 'messages'
+              ? 'border-blue-600 bg-blue-50 text-blue-700'
+              : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+          >
+            Mensagens
+          </Link>
+          <Link
+            href="/admin/traslados/status"
+            className={`rounded-full border px-3 py-1 text-xs font-semibold ${activeTab === 'status'
+              ? 'border-blue-600 bg-blue-50 text-blue-700'
+              : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+          >
+            Status da operação
+          </Link>
+        </div>
+
+        <div className="mb-8 grid gap-4 md:grid-cols-3">
+          <div className="rounded-lg bg-white p-4 shadow">
+            <div className="text-xs uppercase text-slate-500">Em verificacao</div>
+            <div className="mt-2 text-2xl font-bold text-blue-900">
+              {summaryLoading ? '...' : summary.pending}
+            </div>
+          </div>
+          <div className="rounded-lg bg-white p-4 shadow">
+            <div className="text-xs uppercase text-slate-500">Elegiveis</div>
+            <div className="mt-2 text-2xl font-bold text-emerald-700">
+              {summaryLoading ? '...' : summary.approved}
+            </div>
+          </div>
+          <div className="rounded-lg bg-white p-4 shadow">
+            <div className="text-xs uppercase text-slate-500">Nao elegiveis</div>
+            <div className="mt-2 text-2xl font-bold text-rose-700">
+              {summaryLoading ? '...' : summary.rejected + summary.inactive}
+            </div>
           </div>
         </div>
 

@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import { checkCriticalRateLimit, getClientIdentifier } from '@/lib/ratelimit';
 import { isValidCNPJ, isValidCPF } from '@/utils/masks';
 import * as Sentry from '@sentry/nextjs';
+import { sendWelcomeMessage } from '@/utils/systemMessages';
 
 export async function POST(request: Request) {
   try {
@@ -184,6 +185,13 @@ async function handleIndividualRegistration(userData: any) {
       true  // Individual users are immediately verified
     ]
   );
+
+  const userId = newUser.rows[0].id;
+
+  // Send welcome message (don't block registration if it fails)
+  sendWelcomeMessage(userId).catch(err => {
+    console.error('Failed to send welcome message:', err);
+  });
 
   return NextResponse.json({
     message: 'Usuário criado com sucesso!',
@@ -368,6 +376,11 @@ async function handleBusinessRegistration(userData: any) {
 
     // Commit transaction
     await pool.query('COMMIT');
+
+    // Send welcome message (don't block registration if it fails)
+    sendWelcomeMessage(userId).catch(err => {
+      console.error('Failed to send welcome message:', err);
+    });
 
     return NextResponse.json({
       message: 'Empresa registrada com sucesso! Aguardando verificação.',

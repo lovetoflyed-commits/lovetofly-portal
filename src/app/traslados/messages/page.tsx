@@ -1,6 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { loadStripe } from '@stripe/stripe-js';
 import { CardElement, Elements, useElements, useStripe } from '@stripe/react-stripe-js';
 
@@ -46,6 +48,8 @@ interface FeePreview {
   discount_reason: string | null;
   total_cents: number;
 }
+
+type TrasladosMessagesMode = 'portal' | 'admin';
 
 function PaymentForm({
   clientSecret,
@@ -116,8 +120,10 @@ function PaymentForm({
   );
 }
 
-export default function TrasladosMessagesPage() {
+function TrasladosMessagesContent({ mode = 'portal' }: { mode?: TrasladosMessagesMode }) {
   const { t, language } = useLanguage();
+  const isAdmin = mode === 'admin';
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const [requestId, setRequestId] = useState('');
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
@@ -163,8 +169,8 @@ export default function TrasladosMessagesPage() {
     const baseAmount = 'base_amount_cents' in fee && fee.base_amount_cents != null
       ? fee.base_amount_cents
       : 'amount_cents' in fee
-      ? fee.amount_cents
-      : 0;
+        ? fee.amount_cents
+        : 0;
     const discountAmount = 'discount_cents' in fee && fee.discount_cents != null ? fee.discount_cents : 0;
     const totalAmount = 'total_cents' in fee ? fee.total_cents : 'amount_cents' in fee ? fee.amount_cents : 0;
     const discountReason = ('discount_reason' in fee ? fee.discount_reason : null) ?? null;
@@ -354,13 +360,71 @@ export default function TrasladosMessagesPage() {
     setFeePreview(null);
   }, [requestId]);
 
+  useEffect(() => {
+    const requestParam = searchParams.get('requestId');
+    if (requestParam && !requestId) {
+      setRequestId(requestParam);
+    }
+  }, [requestId, searchParams]);
+
   return (
     <AuthGuard>
-      <div className="flex min-h-screen bg-slate-50">
-        <Sidebar />
-        <div className="flex-1 flex flex-col">
-          <Header />
-          <main className="flex-1 p-8">
+      <div className={isAdmin ? 'min-h-screen bg-slate-50 py-8' : 'flex min-h-screen bg-slate-50'}>
+        {!isAdmin && <Sidebar />}
+        <div className={isAdmin ? 'max-w-7xl mx-auto px-4' : 'flex-1 flex flex-col'}>
+          {!isAdmin && <Header />}
+          {isAdmin && (
+            <div className="mb-8">
+              <div className="text-xs uppercase text-slate-500">
+                <Link href="/admin" className="hover:text-slate-700">Admin</Link>
+                <span className="mx-2">/</span>
+                <Link href="/admin/traslados" className="hover:text-slate-700">Traslados</Link>
+                <span className="mx-2">/</span>
+                <span>Mensagens</span>
+              </div>
+              <h1 className="mt-3 text-3xl font-black text-blue-900">Mensagens de Traslados</h1>
+              <p className="mt-2 text-sm text-slate-600">Centralize conversas e confirmacoes por protocolo.</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Link
+                  href="/admin"
+                  className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                >
+                  Dashboard Admin
+                </Link>
+                <Link
+                  href="/admin/traslados"
+                  className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                >
+                  Solicitações
+                </Link>
+                <Link
+                  href="/admin/traslados/pilots"
+                  className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                >
+                  Pilotos
+                </Link>
+                <Link
+                  href="/admin/traslados/owners"
+                  className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                >
+                  Proprietários/Operadoras
+                </Link>
+                <Link
+                  href="/admin/traslados/messages"
+                  className="rounded-full border border-blue-600 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700"
+                >
+                  Mensagens
+                </Link>
+                <Link
+                  href="/admin/traslados/status"
+                  className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                >
+                  Status da operação
+                </Link>
+              </div>
+            </div>
+          )}
+          <main className={isAdmin ? '' : 'flex-1 p-8'}>
             <div className="mx-auto max-w-5xl space-y-8">
               <section className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
                 <h1 className="text-3xl font-bold text-slate-900">{t('transfersMessages.title')}</h1>
@@ -547,5 +611,13 @@ export default function TrasladosMessagesPage() {
         </div>
       </div>
     </AuthGuard>
+  );
+}
+
+export default function TrasladosMessagesPage({ mode = 'portal' }: { mode?: TrasladosMessagesMode }) {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-50 p-8">Carregando...</div>}>
+      <TrasladosMessagesContent mode={mode} />
+    </Suspense>
   );
 }

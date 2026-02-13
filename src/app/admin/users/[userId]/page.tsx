@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { maskCEP } from '@/utils/masks';
@@ -37,6 +37,13 @@ export default function UserProfilePage() {
   const hasFetchedRef = useRef(false);
   const inFlightRef = useRef(false);
 
+  // Activity log pagination and filters
+  const [activityPage, setActivityPage] = useState(1);
+  const [activityFilter, setActivityFilter] = useState('all');
+  const [activityCategoryFilter, setActivityCategoryFilter] = useState('all');
+  const [expandedActivity, setExpandedActivity] = useState<number | null>(null);
+  const activitiesPerPage = 20;
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     (window as any).__disableAutoRefresh = true;
@@ -45,40 +52,41 @@ export default function UserProfilePage() {
     };
   }, []);
 
-  useEffect(() => {
-    if (hasFetchedRef.current) {
-      setLoading(false);
-      return;
-    }
+  const fetchProfile = useCallback(async (force = false) => {
+    if (typeof window === 'undefined') return;
 
     if (inFlightRef.current) {
       return;
     }
 
-    if (profile) {
+    if (!force && hasFetchedRef.current) {
+      setLoading(false);
       return;
     }
 
-    const fetchProfile = async () => {
-      try {
-        inFlightRef.current = true;
-        const res = await fetch(`/api/admin/users/${userId}/profile`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined
-        });
-        if (!res.ok) throw new Error('Failed to fetch profile');
-        const data = await res.json();
-        setProfile(data);
-        hasFetchedRef.current = true;
-      } catch (error) {
-        console.error('Error:', error);
-      } finally {
-        inFlightRef.current = false;
-        setLoading(false);
+    try {
+      inFlightRef.current = true;
+      if (!force) {
+        setLoading(true);
       }
-    };
-
-    fetchProfile();
+      const res = await fetch(`/api/admin/users/${userId}/profile`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined
+      });
+      if (!res.ok) throw new Error('Failed to fetch profile');
+      const data = await res.json();
+      setProfile(data);
+      hasFetchedRef.current = true;
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      inFlightRef.current = false;
+      setLoading(false);
+    }
   }, [userId, token]);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
 
   useEffect(() => {
     if (profile?.user) {
@@ -207,6 +215,7 @@ export default function UserProfilePage() {
 
       const data = await res.json();
       setProfile((prev) => prev ? { ...prev, user: data.user || prev.user } : prev);
+      await fetchProfile(true);
       setIsEditingUser(false);
     } catch (error) {
       console.error('Error saving user profile:', error);
@@ -249,6 +258,7 @@ export default function UserProfilePage() {
 
       const data = await res.json();
       setProfile((prev) => prev ? { ...prev, hangarOwner: data.hangarOwner || prev.hangarOwner } : prev);
+      await fetchProfile(true);
       setIsEditingHangar(false);
     } catch (error) {
       console.error('Error saving hangar owner:', error);
@@ -291,6 +301,7 @@ export default function UserProfilePage() {
 
       const data = await res.json();
       setProfile((prev) => prev ? { ...prev, businessUser: data.businessUser || prev.businessUser } : prev);
+      await fetchProfile(true);
       setIsEditingBusiness(false);
     } catch (error) {
       console.error('Error saving business profile:', error);
@@ -626,6 +637,279 @@ export default function UserProfilePage() {
                   </div>
                 </div>
               </div>
+
+              {/* Edit Section */}
+              <div className="bg-white border border-gray-200 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-gray-900">Edit User Profile</h3>
+                  <button
+                    onClick={() => setIsEditingUser(!isEditingUser)}
+                    className="px-3 py-2 text-sm bg-slate-100 text-slate-700 rounded-lg font-semibold hover:bg-slate-200"
+                  >
+                    {isEditingUser ? 'Cancel' : 'Edit'}
+                  </button>
+                </div>
+
+                {isEditingUser && editUser && (
+                  <div className="space-y-6">
+                    {/* Personal Information */}
+                    <div>
+                      <h4 className="font-bold text-gray-800 mb-4">Personal Information</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700">First Name</label>
+                          <input
+                            value={editUser.first_name || ''}
+                            onChange={(e) => setEditUser((prev: any) => ({ ...prev, first_name: e.target.value }))}
+                            className="w-full border border-gray-200 rounded px-3 py-2"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700">Last Name</label>
+                          <input
+                            value={editUser.last_name || ''}
+                            onChange={(e) => setEditUser((prev: any) => ({ ...prev, last_name: e.target.value }))}
+                            className="w-full border border-gray-200 rounded px-3 py-2"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700">Email</label>
+                          <input
+                            type="email"
+                            value={editUser.email || ''}
+                            onChange={(e) => setEditUser((prev: any) => ({ ...prev, email: e.target.value }))}
+                            className="w-full border border-gray-200 rounded px-3 py-2"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700">Phone</label>
+                          <input
+                            value={editUser.mobile_phone || ''}
+                            onChange={(e) => setEditUser((prev: any) => ({ ...prev, mobile_phone: e.target.value }))}
+                            className="w-full border border-gray-200 rounded px-3 py-2"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700">CPF</label>
+                          <input
+                            value={editUser.cpf || ''}
+                            onChange={(e) => setEditUser((prev: any) => ({ ...prev, cpf: e.target.value }))}
+                            className="w-full border border-gray-200 rounded px-3 py-2"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700">Birth Date</label>
+                          <input
+                            type="date"
+                            value={editUser.birth_date ? new Date(editUser.birth_date).toISOString().split('T')[0] : ''}
+                            onChange={(e) => setEditUser((prev: any) => ({ ...prev, birth_date: e.target.value }))}
+                            className="w-full border border-gray-200 rounded px-3 py-2"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Account Information */}
+                    <div>
+                      <h4 className="font-bold text-gray-800 mb-4">Account Settings</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700">Role</label>
+                          <select
+                            value={editUser.role || 'user'}
+                            onChange={(e) => setEditUser((prev: any) => ({ ...prev, role: e.target.value }))}
+                            className="w-full border border-gray-200 rounded px-3 py-2"
+                          >
+                            <option value="user">User</option>
+                            <option value="admin">Admin</option>
+                            <option value="master">Master</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700">Plan</label>
+                          <select
+                            value={editUser.plan || 'free'}
+                            onChange={(e) => setEditUser((prev: any) => ({ ...prev, plan: e.target.value }))}
+                            className="w-full border border-gray-200 rounded px-3 py-2"
+                          >
+                            <option value="free">Free</option>
+                            <option value="standard">Standard</option>
+                            <option value="premium">Premium</option>
+                            <option value="pro">Pro</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700">User Type</label>
+                          <select
+                            value={editUser.user_type || 'individual'}
+                            onChange={(e) => setEditUser((prev: any) => ({ ...prev, user_type: e.target.value }))}
+                            className="w-full border border-gray-200 rounded px-3 py-2"
+                          >
+                            <option value="individual">Individual</option>
+                            <option value="business">Business</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700">Type Verified</label>
+                          <select
+                            value={editUser.user_type_verified ? 'true' : 'false'}
+                            onChange={(e) => setEditUser((prev: any) => ({ ...prev, user_type_verified: e.target.value === 'true' }))}
+                            className="w-full border border-gray-200 rounded px-3 py-2"
+                          >
+                            <option value="false">Pending</option>
+                            <option value="true">Verified</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700">Hangar Owner</label>
+                          <select
+                            value={editUser.is_hangar_owner ? 'true' : 'false'}
+                            onChange={(e) => setEditUser((prev: any) => ({ ...prev, is_hangar_owner: e.target.value === 'true' }))}
+                            className="w-full border border-gray-200 rounded px-3 py-2"
+                          >
+                            <option value="false">No</option>
+                            <option value="true">Yes</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Aviation Information */}
+                    <div>
+                      <h4 className="font-bold text-gray-800 mb-4">Aviation Information</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700">Aviation Role</label>
+                          <input
+                            value={editUser.aviation_role || ''}
+                            onChange={(e) => setEditUser((prev: any) => ({ ...prev, aviation_role: e.target.value }))}
+                            className="w-full border border-gray-200 rounded px-3 py-2"
+                            placeholder="e.g., Pilot, Student, Instructor"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700">Licenses</label>
+                          <input
+                            value={editUser.licencas || ''}
+                            onChange={(e) => setEditUser((prev: any) => ({ ...prev, licencas: e.target.value }))}
+                            className="w-full border border-gray-200 rounded px-3 py-2"
+                            placeholder="e.g., PPL, CPL"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700">Ratings</label>
+                          <input
+                            value={editUser.habilitacoes || ''}
+                            onChange={(e) => setEditUser((prev: any) => ({ ...prev, habilitacoes: e.target.value }))}
+                            className="w-full border border-gray-200 rounded px-3 py-2"
+                            placeholder="e.g., IFR, Multi-engine"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700">Current Course</label>
+                          <input
+                            value={editUser.curso_atual || ''}
+                            onChange={(e) => setEditUser((prev: any) => ({ ...prev, curso_atual: e.target.value }))}
+                            className="w-full border border-gray-200 rounded px-3 py-2"
+                            placeholder="e.g., CPL training"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Address Information */}
+                    <div>
+                      <h4 className="font-bold text-gray-800 mb-4">Address Information</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700">ZIP Code (CEP)</label>
+                          <input
+                            value={editUser.address_zip || ''}
+                            onChange={(e) => {
+                              const value = maskCEP(e.target.value);
+                              setEditUser((prev: any) => ({ ...prev, address_zip: value }));
+                              if (value.replace(/\D/g, '').length === 8) {
+                                fetchAddressByCEP(value);
+                              }
+                            }}
+                            className="w-full border border-gray-200 rounded px-3 py-2"
+                            placeholder="00000-000"
+                            maxLength={9}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700">Street</label>
+                          <input
+                            value={editUser.address_street || ''}
+                            onChange={(e) => setEditUser((prev: any) => ({ ...prev, address_street: e.target.value }))}
+                            className="w-full border border-gray-200 rounded px-3 py-2"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700">Number</label>
+                          <input
+                            value={editUser.address_number || ''}
+                            onChange={(e) => setEditUser((prev: any) => ({ ...prev, address_number: e.target.value }))}
+                            className="w-full border border-gray-200 rounded px-3 py-2"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700">Complement</label>
+                          <input
+                            value={editUser.address_complement || ''}
+                            onChange={(e) => setEditUser((prev: any) => ({ ...prev, address_complement: e.target.value }))}
+                            className="w-full border border-gray-200 rounded px-3 py-2"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700">Neighborhood</label>
+                          <input
+                            value={editUser.address_neighborhood || ''}
+                            onChange={(e) => setEditUser((prev: any) => ({ ...prev, address_neighborhood: e.target.value }))}
+                            className="w-full border border-gray-200 rounded px-3 py-2"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700">City</label>
+                          <input
+                            value={editUser.address_city || ''}
+                            onChange={(e) => setEditUser((prev: any) => ({ ...prev, address_city: e.target.value }))}
+                            className="w-full border border-gray-200 rounded px-3 py-2"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700">State</label>
+                          <input
+                            value={editUser.address_state || ''}
+                            onChange={(e) => setEditUser((prev: any) => ({ ...prev, address_state: e.target.value }))}
+                            className="w-full border border-gray-200 rounded px-3 py-2"
+                            maxLength={2}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700">Country</label>
+                          <input
+                            value={editUser.address_country || ''}
+                            onChange={(e) => setEditUser((prev: any) => ({ ...prev, address_country: e.target.value }))}
+                            className="w-full border border-gray-200 rounded px-3 py-2"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Save Button */}
+                    <div className="flex justify-end">
+                      <button
+                        onClick={handleSaveUser}
+                        disabled={saving}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:bg-slate-300"
+                      >
+                        Save Changes
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -684,136 +968,239 @@ export default function UserProfilePage() {
           {/* Activities Tab */}
           {activeTab === 'activities' && (
             <div>
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Complete Activity Log ({activities.length})</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-gray-900">Registro de Atividades ({activities.length} total)</h3>
+                <div className="flex gap-2">
+                  <select
+                    value={activityFilter}
+                    onChange={(e) => { setActivityFilter(e.target.value); setActivityPage(1); }}
+                    className="px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="all">Todos os Tipos</option>
+                    <option value="login">Login no Sistema</option>
+                    <option value="logout">Logout do Sistema</option>
+                    <option value="admin_user_update">Alteração de Perfil por Admin</option>
+                    <option value="admin_business_update">Alteração de Empresa por Admin</option>
+                    <option value="admin_hangar_update">Alteração de Hangar por Admin</option>
+                    <option value="admin_moderation">Moderação e Status do Usuário</option>
+                    <option value="admin_document_review">Aprovações/Rejeições de Documentos</option>
+                    <option value="data_management">Gerenciamento de Dados</option>
+                    <option value="course">Atividades de Curso</option>
+                    <option value="flight_plan">Planos de Voo</option>
+                    <option value="comments">Comentários</option>
+                    <option value="hangar">Atividades de Hangar</option>
+                  </select>
+                  <select
+                    value={activityCategoryFilter}
+                    onChange={(e) => { setActivityCategoryFilter(e.target.value); setActivityPage(1); }}
+                    className="px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="all">Todas as Categorias</option>
+                    <option value="authentication">Autenticação (Login/Logout)</option>
+                    <option value="admin">Ações Administrativas</option>
+                    <option value="data_management">Gerenciamento de Dados</option>
+                    <option value="course">Cursos e Treinamentos</option>
+                    <option value="flight_plan">Planejamento de Voo</option>
+                    <option value="comments">Comentários e Discussões</option>
+                    <option value="hangar">Operações de Hangar</option>
+                  </select>
+                </div>
+              </div>
+
               {activities.length === 0 ? (
-                <p className="text-gray-600">No activities recorded</p>
-              ) : (
-                <div className="space-y-4">
-                  {activities.map((activity) => {
-                    const getActivityIcon = (type: string) => {
-                      if (type.includes('login')) return '🔓';
-                      if (type.includes('logout')) return '🔒';
-                      if (type.includes('add') || type.includes('create')) return '➕';
-                      if (type.includes('edit') || type.includes('update')) return '✏️';
-                      if (type.includes('delete')) return '🗑️';
-                      if (type.includes('comment')) return '💬';
-                      return '📝';
-                    };
+                <p className="text-gray-600 text-center py-8">Nenhuma atividade registrada</p>
+              ) : (() => {
+                const getActivityIcon = (type: string) => {
+                  if (type.includes('login')) return '🔓';
+                  if (type.includes('logout')) return '🔒';
+                  if (type.includes('approve')) return '✅';
+                  if (type.includes('reject')) return '❌';
+                  if (type.includes('moderation')) return '🛡️';
+                  if (type.includes('add') || type.includes('create')) return '➕';
+                  if (type.includes('edit') || type.includes('update')) return '✏️';
+                  if (type.includes('delete')) return '🗑️';
+                  if (type.includes('comment')) return '💬';
+                  return '📝';
+                };
 
-                    const getCategoryColor = (category: string) => {
-                      const colors: Record<string, { bg: string; border: string; text: string }> = {
-                        'authentication': { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-800' },
-                        'data_management': { bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-800' },
-                        'comments': { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-800' },
-                        'course': { bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-800' },
-                        'flight_plan': { bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-800' },
-                        'hangar': { bg: 'bg-pink-50', border: 'border-pink-200', text: 'text-pink-800' },
-                      };
-                      return colors[category] || { bg: 'bg-gray-50', border: 'border-gray-200', text: 'text-gray-800' };
-                    };
+                const getCategoryBadgeClass = (category: string) => {
+                  const classes: Record<string, string> = {
+                    'authentication': 'bg-blue-100 text-blue-800',
+                    'admin': 'bg-red-100 text-red-800',
+                    'data_management': 'bg-purple-100 text-purple-800',
+                    'comments': 'bg-green-100 text-green-800',
+                    'course': 'bg-yellow-100 text-yellow-800',
+                    'flight_plan': 'bg-orange-100 text-orange-800',
+                    'hangar': 'bg-pink-100 text-pink-800',
+                  };
+                  return classes[category] || 'bg-gray-100 text-gray-800';
+                };
 
-                    const getStatusColor = (status: string) => {
-                      if (status === 'success') return 'bg-green-100 text-green-800';
-                      if (status === 'failed') return 'bg-red-100 text-red-800';
-                      return 'bg-yellow-100 text-yellow-800';
-                    };
+                const getStatusBadgeClass = (status: string) => {
+                  if (status === 'success') return 'bg-green-100 text-green-800';
+                  if (status === 'failed') return 'bg-red-100 text-red-800';
+                  return 'bg-yellow-100 text-yellow-800';
+                };
 
-                    const categoryColor = getCategoryColor(activity.activity_category);
+                // Apply filters
+                const filteredActivities = activities.filter((activity) => {
+                  const typeMatch = activityFilter === 'all'
+                    || activity.activity_type === activityFilter
+                    || (activityFilter === 'login' && (activity.activity_type === 'login' || activity.activity_type === 'logout'))
+                    || (activityFilter === 'admin_moderation' && activity.activity_type?.startsWith('admin_moderation_'))
+                    || (activityFilter === 'admin_document_review'
+                      && (activity.activity_type === 'admin_document_approve' || activity.activity_type === 'admin_document_reject'));
+                  const categoryMatch = activityCategoryFilter === 'all' || activity.activity_category === activityCategoryFilter;
+                  return typeMatch && categoryMatch;
+                });
 
-                    return (
-                      <div
-                        key={activity.id}
-                        className={`border-2 rounded-lg p-4 ${categoryColor.bg} ${categoryColor.border} border-l-4 transition hover:shadow-md`}
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            {/* Header with icon, type, and category */}
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="text-2xl">{getActivityIcon(activity.activity_type)}</span>
-                              <div className="flex flex-col gap-1">
-                                <p className="font-bold text-gray-900 text-lg">
-                                  {activity.activity_type.replace(/_/g, ' ').toUpperCase()}
-                                </p>
-                                <div className="flex items-center gap-2">
-                                  <span className={`px-2 py-1 rounded text-xs font-semibold ${categoryColor.text}`}>
+                // Pagination
+                const totalPages = Math.ceil(filteredActivities.length / activitiesPerPage);
+                const startIndex = (activityPage - 1) * activitiesPerPage;
+                const endIndex = startIndex + activitiesPerPage;
+                const paginatedActivities = filteredActivities.slice(startIndex, endIndex);
+
+                return (
+                  <>
+                    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                      <table className="w-full text-sm">
+                        <thead className="bg-gray-50 border-b border-gray-200">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider w-12"></th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Tipo</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Categoria</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Descrição</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider w-40">Data/Hora</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {paginatedActivities.map((activity) => (
+                            <React.Fragment key={activity.id}>
+                              <tr
+                                onClick={() => setExpandedActivity(expandedActivity === activity.id ? null : activity.id)}
+                                className="hover:bg-gray-50 cursor-pointer transition"
+                              >
+                                <td className="px-4 py-3 text-center text-xl">
+                                  {getActivityIcon(activity.activity_type)}
+                                </td>
+                                <td className="px-4 py-3 font-medium text-gray-900">
+                                  {activity.activity_type.replace(/_/g, ' ')}
+                                </td>
+                                <td className="px-4 py-3">
+                                  <span className={`px-2 py-1 rounded text-xs font-semibold ${getCategoryBadgeClass(activity.activity_category)}`}>
                                     {activity.activity_category?.replace(/_/g, ' ').toUpperCase() || 'GENERAL'}
                                   </span>
+                                </td>
+                                <td className="px-4 py-3 text-gray-700">
+                                  {activity.description || '—'}
+                                </td>
+                                <td className="px-4 py-3">
                                   {activity.status && (
-                                    <span className={`px-2 py-1 rounded text-xs font-semibold ${getStatusColor(activity.status)}`}>
-                                      {activity.status.toUpperCase()}
+                                    <span className={`px-2 py-1 rounded text-xs font-semibold ${getStatusBadgeClass(activity.status)}`}>
+                                      {activity.status}
                                     </span>
                                   )}
-                                </div>
-                              </div>
-                            </div>
+                                </td>
+                                <td className="px-4 py-3 text-gray-600 text-xs whitespace-nowrap">
+                                  <div>{new Date(activity.created_at).toLocaleDateString('pt-BR')}</div>
+                                  <div className="text-gray-500">{new Date(activity.created_at).toLocaleTimeString('pt-BR')}</div>
+                                </td>
+                              </tr>
+                              {expandedActivity === activity.id && (
+                                <tr className="bg-gray-50">
+                                  <td colSpan={6} className="px-4 py-4">
+                                    <div className="space-y-3 text-sm">
+                                      {/* Target Information */}
+                                      {activity.target_type && (
+                                        <div>
+                                          <span className="font-semibold text-gray-700">Alvo:</span>{' '}
+                                          <span className="text-gray-900">{activity.target_type}</span>
+                                          {activity.target_id && <span className="text-gray-600"> (ID: {activity.target_id})</span>}
+                                        </div>
+                                      )}
 
-                            {/* Description */}
-                            {activity.description && (
-                              <p className="text-gray-800 mb-3 ml-10">{activity.description}</p>
-                            )}
+                                      {/* Data Changes */}
+                                      {(activity.old_value || activity.new_value) && (
+                                        <div className="bg-white p-3 rounded border border-gray-200">
+                                          {activity.old_value && (
+                                            <div className="text-red-700 mb-2">
+                                              <strong>Anterior:</strong> {activity.old_value}
+                                            </div>
+                                          )}
+                                          {activity.new_value && (
+                                            <div className="text-green-700">
+                                              <strong>Atual:</strong> {activity.new_value}
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
 
-                            {/* Target information */}
-                            {activity.target_type && (
-                              <div className="ml-10 text-sm text-gray-700 mb-2">
-                                <strong>Target:</strong> {activity.target_type}
-                                {activity.target_id && <span> (ID: {activity.target_id})</span>}
-                              </div>
-                            )}
+                                      {/* Additional Details */}
+                                      {activity.details && (
+                                        <details className="bg-white p-3 rounded border border-gray-200">
+                                          <summary className="cursor-pointer font-semibold text-gray-700">Ver Detalhes JSON</summary>
+                                          <pre className="mt-2 p-2 bg-gray-50 rounded text-xs overflow-x-auto">
+                                            {JSON.stringify(activity.details, null, 2)}
+                                          </pre>
+                                        </details>
+                                      )}
 
-                            {/* Data changes */}
-                            {(activity.old_value || activity.new_value) && (
-                              <div className="ml-10 text-sm mb-3 bg-white rounded p-2 border border-gray-300">
-                                {activity.old_value && (
-                                  <div className="text-red-700">
-                                    <strong>Previous:</strong> {activity.old_value}
-                                  </div>
-                                )}
-                                {activity.new_value && (
-                                  <div className="text-green-700">
-                                    <strong>Current:</strong> {activity.new_value}
-                                  </div>
-                                )}
-                              </div>
-                            )}
-
-                            {/* Additional details from JSON */}
-                            {activity.details && (
-                              <div className="ml-10 text-sm text-gray-600 mb-2">
-                                <details>
-                                  <summary className="cursor-pointer font-semibold">Additional Details</summary>
-                                  <pre className="mt-2 p-2 bg-white rounded border text-xs overflow-x-auto">
-                                    {JSON.stringify(activity.details, null, 2)}
-                                  </pre>
-                                </details>
-                              </div>
-                            )}
-
-                            {/* IP and User Agent */}
-                            <div className="ml-10 text-xs text-gray-500 space-y-1 mt-2">
-                              {activity.ip_address && <p>🌐 IP: {activity.ip_address}</p>}
-                              {activity.user_agent && (
-                                <p className="truncate" title={activity.user_agent}>
-                                  🖥️ Device: {activity.user_agent}
-                                </p>
+                                      {/* Technical Info */}
+                                      <div className="text-xs text-gray-500 space-y-1 bg-white p-3 rounded border border-gray-200">
+                                        {activity.ip_address && (
+                                          <div>🌐 <strong>Endereço IP:</strong> {activity.ip_address}</div>
+                                        )}
+                                        {activity.user_agent && (
+                                          <div className="break-all">🖥️ <strong>Navegador:</strong> {activity.user_agent}</div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </td>
+                                </tr>
                               )}
-                            </div>
-                          </div>
+                            </React.Fragment>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
 
-                          {/* Timestamp */}
-                          <div className="text-right whitespace-nowrap">
-                            <div className="font-semibold text-gray-900">
-                              {new Date(activity.created_at).toLocaleDateString('pt-BR')}
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              {new Date(activity.created_at).toLocaleTimeString('pt-BR')}
-                            </div>
-                          </div>
+                    {/* Pagination Controls */}
+                    {totalPages > 1 && (
+                      <div className="flex items-center justify-between mt-4">
+                        <div className="text-sm text-gray-600">
+                          Exibindo {startIndex + 1}-{Math.min(endIndex, filteredActivities.length)} de {filteredActivities.length} atividades
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setActivityPage(Math.max(1, activityPage - 1))}
+                            disabled={activityPage === 1}
+                            className="px-3 py-1 border border-gray-300 rounded text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            ← Anterior
+                          </button>
+                          <span className="px-3 py-1 text-sm text-gray-700">
+                            Página {activityPage} de {totalPages}
+                          </span>
+                          <button
+                            onClick={() => setActivityPage(Math.min(totalPages, activityPage + 1))}
+                            disabled={activityPage === totalPages}
+                            className="px-3 py-1 border border-gray-300 rounded text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Próxima →
+                          </button>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
+                    )}
+
+                    {filteredActivities.length === 0 && (
+                      <div className="text-center py-8 text-gray-600">
+                        Nenhuma atividade encontrada com os filtros selecionados
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           )}
 

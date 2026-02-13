@@ -4,14 +4,14 @@
 
 CREATE TABLE IF NOT EXISTS content_reports (
   id SERIAL PRIMARY KEY,
-  reporter_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  reporter_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   content_type VARCHAR(30) NOT NULL,
   content_id INTEGER NOT NULL,
   reason VARCHAR(255) NOT NULL,
   details TEXT,
   status VARCHAR(20) NOT NULL DEFAULT 'pending',
   admin_notes TEXT,
-  reviewed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  reviewed_by UUID REFERENCES users(id) ON DELETE SET NULL,
   reviewed_at TIMESTAMP,
   created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

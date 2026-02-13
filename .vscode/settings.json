@@ -79,12 +79,14 @@
     },
     "python.analysis.typeCheckingMode": "basic",
     "vscode-edge-devtools.browserFlavor": "Default",
-    "files.autoSave": "afterDelay",
+    "files.autoSave": "off",
     "workbench.browser.openLocalhostLinks": true,
     "workbench.commandPalette.experimental.suggestCommands": true,
     "workbench.commandPalette.preserveInput": true,
     "workbench.commandPalette.showAskInChat": false,
     "chat.tools.terminal.autoApprove": {
         "lsof": true
-    }
+    },
+    "terminal.integrated.accessibleViewFocusOnCommandExecution": true,
+    "terminal.sourceControlRepositoriesKind": "both"
 }

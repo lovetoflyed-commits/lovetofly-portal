@@ -56,6 +56,7 @@ export async function GET(
         h.status as "status",
         h.created_at as "createdAt",
         h.updated_at as "updatedAt",
+        h.owner_id as "ownerId",
         u.first_name || ' ' || u.last_name as "ownerName",
         u.email as "ownerEmail",
         u.mobile_phone as "ownerPhone",

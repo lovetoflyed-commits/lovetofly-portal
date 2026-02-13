@@ -2,17 +2,96 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/config/db';
 import { requireAdmin, getAdminUser, logAdminAction } from '@/utils/adminAuth';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const authError = await requireAdmin(request);
+  if (authError) return authError;
+
   try {
+    const { searchParams } = new URL(request.url);
+    const query = searchParams.get('q')?.trim() || '';
+    const page = Number(searchParams.get('page') || '1');
+    const limit = Math.min(Number(searchParams.get('limit') || '20'), 100);
+    const offset = (page - 1) * limit;
+
+    const whereClauses: string[] = ['u.deleted_at IS NULL'];
+    const values: Array<string | number> = [];
+    let paramIndex = 1;
+
+    if (query) {
+      values.push(`%${query}%`);
+      whereClauses.push(
+        `(LOWER(u.email) ILIKE LOWER($${paramIndex})
+          OR LOWER(u.first_name || ' ' || u.last_name) ILIKE LOWER($${paramIndex})
+          OR (bu.business_name IS NOT NULL AND LOWER(bu.business_name) ILIKE LOWER($${paramIndex})))`
+      );
+      paramIndex += 1;
+    }
+
+    const whereSql = whereClauses.join(' AND ');
+
     const result = await pool.query(
-      'SELECT id, first_name, last_name, email, role, aviation_role, plan, created_at FROM users WHERE deleted_at IS NULL ORDER BY created_at DESC'
+      `SELECT
+        u.id,
+        u.first_name,
+        u.last_name,
+        u.email,
+        u.role,
+        u.aviation_role,
+        u.plan,
+        u.created_at,
+        u.user_type,
+        u.user_type_verified,
+        uas.access_level,
+        uas.access_reason,
+        ums.active_warnings,
+        ums.active_strikes,
+        ums.is_banned,
+        ula.last_activity_at,
+        ula.days_inactive,
+        bu.business_name
+      FROM users u
+      LEFT JOIN business_users bu ON u.id = bu.user_id
+      LEFT JOIN user_access_status uas ON u.id = uas.user_id
+      LEFT JOIN user_moderation_status ums ON u.id = ums.id
+      LEFT JOIN user_last_activity ula ON u.id = ula.id
+      WHERE ${whereSql}
+      ORDER BY u.created_at DESC
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+      [...values, limit, offset]
     );
-    // Map to include full name
-    const users = result.rows.map(u => ({
+
+    const countResult = await pool.query(
+      `SELECT COUNT(*) FROM users u
+       LEFT JOIN business_users bu ON u.id = bu.user_id
+       LEFT JOIN user_access_status uas ON u.id = uas.user_id
+       LEFT JOIN user_moderation_status ums ON u.id = ums.id
+       LEFT JOIN user_last_activity ula ON u.id = ula.id
+       WHERE ${whereSql}`,
+      values
+    );
+
+    const users = result.rows.map((u) => ({
       ...u,
-      name: [u.first_name, u.last_name].filter(Boolean).join(' ')
+      name:
+        u.user_type === 'business' && u.business_name
+          ? u.business_name
+          : [u.first_name, u.last_name].filter(Boolean).join(' '),
     }));
-    return NextResponse.json({ users }, { status: 200 });
+
+    const total = Number(countResult.rows[0]?.count || 0);
+
+    return NextResponse.json(
+      {
+        users,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.max(1, Math.ceil(total / limit)),
+        },
+      },
+      { status: 200 }
+    );
   } catch (error) {
     console.error('Erro ao buscar usuários:', error);
     return NextResponse.json({ message: 'Erro ao buscar usuários' }, { status: 500 });

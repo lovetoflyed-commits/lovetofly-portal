@@ -159,7 +159,11 @@ export default function AdminDashboardPage() {
     marketingLeads: 0,
     marketingLeadsToday: 0,
     totalVisits: 0,
-    visitsToday: 0
+    visitsToday: 0,
+    totalMessages: 0,
+    unreadMessages: 0,
+    pendingReports: 0,
+    messagesToday: 0
   });
 
   useEffect(() => {
@@ -176,17 +180,39 @@ export default function AdminDashboardPage() {
     }
 
     const fetchStats = () => {
-      fetch('/api/admin/stats')
-      .then((res) => res.json())
-      .then((data) => setStats(data))
-        .catch((err) => console.error('Failed to fetch admin stats:', err));
+      if (!token) {
+        console.log('[Admin Stats] No token available yet');
+        return;
+      }
+
+      fetch('/api/admin/stats', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      })
+        .then((res) => {
+          if (!res.ok) {
+            console.error('[Admin Stats] API returned status:', res.status);
+            return null;
+          }
+          return res.json();
+        })
+        .then((data) => {
+          if (data) {
+            console.log('[Admin Stats] Received stats:', data);
+            setStats(data);
+          }
+        })
+        .catch((err) => console.error('[Admin Stats] Failed to fetch:', err));
     };
 
-    // Initial fetch
-    fetchStats();
+    // Initial fetch when token is available
+    if (token) {
+      fetchStats();
+    }
 
-    return () => {};
-  }, [user, router]);
+    return () => { };
+  }, [user, token, router]);
 
   useEffect(() => {
     if (!token) return;
@@ -591,9 +617,9 @@ export default function AdminDashboardPage() {
       ],
       alert: 'Atenção a conflitos ou SLAs nas reservas ativas.',
       note: 'Mantenha a agenda atualizada.',
-        items: [
-          { label: 'Visão Geral', href: '/admin/bookings' }
-        ]
+      items: [
+        { label: 'Visão Geral', href: '/admin/bookings' }
+      ]
     },
     {
       key: 'listings',
@@ -625,9 +651,9 @@ export default function AdminDashboardPage() {
       ],
       alert: stats.newUsersToday > 0 ? `${stats.newUsersToday} novos usuários hoje!` : 'Monitore crescimento de usuários.',
       note: 'Dados atualizados em tempo real.',
-        items: [
-          { label: 'Diretório', href: '/admin/users' }
-        ]
+      items: [
+        { label: 'Diretório', href: '/admin/users' }
+      ]
     },
     {
       key: 'moderation',
@@ -641,9 +667,30 @@ export default function AdminDashboardPage() {
       ],
       alert: 'Revise novos relatórios com agilidade.',
       note: 'Mantenha o tratamento de violações consistente.',
-        items: [
-          { label: 'Fila', href: '/admin/moderation' }
-        ]
+      items: [
+        { label: 'Fila', href: '/admin/moderation' }
+      ]
+    },
+    {
+      key: 'communications',
+      title: 'Comunicações',
+      icon: '💬',
+      href: '/admin/communications',
+      priority: 'high',
+      metrics: [
+        { label: 'Não Lidas', value: stats.unreadMessages },
+        { label: 'Denúncias Pendentes', value: stats.pendingReports }
+      ],
+      alert: stats.pendingReports > 0 ? `${stats.pendingReports} denúncias aguardam análise.` : 'Sistema de mensagens operacional.',
+      note: 'Dashboard completo: envio, broadcast, relatórios e estatísticas.',
+      items: [
+        { label: 'Dashboard', href: '/admin/communications' },
+        { label: 'Caixa de Entrada', href: '/admin/communications?tab=inbox' },
+        { label: 'Enviar Mensagem', href: '/admin/communications?tab=send' },
+        { label: 'Broadcast', href: '/admin/communications?tab=broadcast' },
+        { label: 'Denúncias', href: '/admin/communications?tab=reports' },
+        { label: 'Estatísticas', href: '/admin/communications?tab=stats' }
+      ]
     },
     {
       key: 'finance',
@@ -652,10 +699,10 @@ export default function AdminDashboardPage() {
       href: '/admin/finance',
       priority: 'low',
       metrics: [
-        { label: 'Receita Total', value: `R$ ${stats.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` },
+        { label: 'Receita Total', value: `R$ ${(stats.totalRevenue ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` },
         { label: 'Faturas Pendentes', value: stats.pendingInvoices }
       ],
-      alert: stats.totalRevenue > 0 ? `Receita acumulada: R$ ${stats.totalRevenue.toLocaleString('pt-BR')}` : 'Revise o cronograma de pagamentos.',
+      alert: (stats.totalRevenue ?? 0) > 0 ? `Receita acumulada: R$ ${(stats.totalRevenue ?? 0).toLocaleString('pt-BR')}` : 'Revise o cronograma de pagamentos.',
       note: 'Garanta conciliação sempre atualizada.',
       items: [
         { label: 'Visão Geral', href: '/admin/finance' }
@@ -724,27 +771,27 @@ export default function AdminDashboardPage() {
     const valueStr = String(value).toLowerCase();
 
     // Red: Late, overdue, urgent, escalations, disputes, errors, conflicts
-    if (labelLower.includes('late') || labelLower.includes('overdue') || 
-        labelLower.includes('urgent') || labelLower.includes('escalações') || 
-        labelLower.includes('escalations') || labelLower.includes('disputa') || 
-        labelLower.includes('disputes') || labelLower.includes('erros') || 
-        labelLower.includes('errors') || labelLower.includes('conflito') ||
-        labelLower.includes('conflicts')) {
+    if (labelLower.includes('late') || labelLower.includes('overdue') ||
+      labelLower.includes('urgent') || labelLower.includes('escalações') ||
+      labelLower.includes('escalations') || labelLower.includes('disputa') ||
+      labelLower.includes('disputes') || labelLower.includes('erros') ||
+      labelLower.includes('errors') || labelLower.includes('conflito') ||
+      labelLower.includes('conflicts')) {
       return 'text-red-600 font-black';
     }
 
     // Yellow: Pending, awaiting, queue items
-    if (labelLower.includes('pendente') || labelLower.includes('pending') || 
-        labelLower.includes('aguardando') || labelLower.includes('awaiting') ||
-        labelLower.includes('solicitações') || labelLower.includes('casos abertos')) {
+    if (labelLower.includes('pendente') || labelLower.includes('pending') ||
+      labelLower.includes('aguardando') || labelLower.includes('awaiting') ||
+      labelLower.includes('solicitações') || labelLower.includes('casos abertos')) {
       return 'text-yellow-600 font-black';
     }
 
     // Green: Active, positive metrics, KPIs, availability
-    if (labelLower.includes('ativa') || labelLower.includes('active') || 
-        labelLower.includes('kpi') || labelLower.includes('disponibilidade') ||
-        labelLower.includes('availability') || labelLower.includes('campanhas') ||
-        labelLower.includes('campaigns') || labelLower.includes('leads')) {
+    if (labelLower.includes('ativa') || labelLower.includes('active') ||
+      labelLower.includes('kpi') || labelLower.includes('disponibilidade') ||
+      labelLower.includes('availability') || labelLower.includes('campanhas') ||
+      labelLower.includes('campaigns') || labelLower.includes('leads')) {
       return 'text-green-600 font-black';
     }
 
@@ -793,8 +840,8 @@ export default function AdminDashboardPage() {
               <p className="text-slate-600 mt-1 text-sm">Acesso completo; sinais críticos visíveis com navegação na barra lateral.</p>
             </div>
             <div className="hidden md:flex items-center gap-3 text-sm text-slate-600">
-              <Link 
-                href="/" 
+              <Link
+                href="/"
                 className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors font-semibold"
               >
                 ← Voltar ao Portal
@@ -925,27 +972,27 @@ export default function AdminDashboardPage() {
                                 }}
                                 className="text-left flex-1"
                               >
-                              <p className="text-sm font-semibold text-slate-900">{item.title}</p>
-                              <p className="mt-1 text-xs text-slate-400">{new Date(item.created_at).toLocaleString('pt-BR')}</p>
-                              <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px]">
-                                <span className={`rounded-full px-2 py-0.5 font-semibold ${item.is_read ? 'bg-slate-100 text-slate-500' : 'bg-blue-100 text-blue-700'}`}>
-                                  {item.is_read ? 'Lida' : 'Nova'}
-                                </span>
-                                <span className="rounded-full bg-slate-100 px-2 py-0.5 font-semibold text-slate-500">
-                                  Prioridade: {item.priority}
-                                </span>
-                                {item.type === 'staff_task' && item.metadata?.taskStatus && (
-                                  <span className="rounded-full bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-700">
-                                    Status: {item.metadata.taskStatus}
+                                <p className="text-sm font-semibold text-slate-900">{item.title}</p>
+                                <p className="mt-1 text-xs text-slate-400">{new Date(item.created_at).toLocaleString('pt-BR')}</p>
+                                <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px]">
+                                  <span className={`rounded-full px-2 py-0.5 font-semibold ${item.is_read ? 'bg-slate-100 text-slate-500' : 'bg-blue-100 text-blue-700'}`}>
+                                    {item.is_read ? 'Lida' : 'Nova'}
                                   </span>
-                                )}
-                                {item.type === 'staff_task' && item.metadata?.dueDate && (
-                                  <span className="rounded-full bg-amber-50 px-2 py-0.5 font-semibold text-amber-700">
-                                    Prazo: {new Date(item.metadata.dueDate).toLocaleDateString('pt-BR')}
+                                  <span className="rounded-full bg-slate-100 px-2 py-0.5 font-semibold text-slate-500">
+                                    Prioridade: {item.priority}
                                   </span>
-                                )}
-                              </div>
-                              <p className="mt-2 text-sm text-slate-600">{truncateText(item.message, 140)}</p>
+                                  {item.type === 'staff_task' && item.metadata?.taskStatus && (
+                                    <span className="rounded-full bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-700">
+                                      Status: {item.metadata.taskStatus}
+                                    </span>
+                                  )}
+                                  {item.type === 'staff_task' && item.metadata?.dueDate && (
+                                    <span className="rounded-full bg-amber-50 px-2 py-0.5 font-semibold text-amber-700">
+                                      Prazo: {new Date(item.metadata.dueDate).toLocaleDateString('pt-BR')}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="mt-2 text-sm text-slate-600">{truncateText(item.message, 140)}</p>
                               </button>
                             </div>
                             <div className="flex flex-col items-end gap-2">
@@ -1038,9 +1085,9 @@ export default function AdminDashboardPage() {
                         </div>
                         <p className="text-xs text-slate-500 mt-2">{truncateText(task.description, 110)}</p>
                         <div className="mt-2">
-                          <progress 
-                            value={task.progress_percent} 
-                            max={100} 
+                          <progress
+                            value={task.progress_percent}
+                            max={100}
                             className="w-full h-2 rounded-full [&::-webkit-progress-bar]:bg-slate-200 [&::-webkit-progress-value]:bg-emerald-500 [&::-moz-progress-bar]:bg-emerald-500"
                             aria-label={`Progresso da tarefa: ${task.progress_percent}%`}
                           />
@@ -1100,10 +1147,10 @@ export default function AdminDashboardPage() {
                       <span className="text-xl" aria-hidden>{module.icon}</span>
                       <div>
                         <p className="text-sm font-bold text-slate-900">{module.title}</p>
-                              <p className="text-xs text-slate-500">Prioridade: {priorityLabel(module.priority)}</p>
+                        <p className="text-xs text-slate-500">Prioridade: {priorityLabel(module.priority)}</p>
                       </div>
                     </div>
-                          <Link href={module.href} className="text-xs font-semibold text-blue-700 hover:text-blue-900">Abrir →</Link>
+                    <Link href={module.href} className="text-xs font-semibold text-blue-700 hover:text-blue-900">Abrir →</Link>
                   </div>
 
                   <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
