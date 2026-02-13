@@ -97,8 +97,8 @@ export async function GET(request: NextRequest) {
         reporter.first_name || ' ' || COALESCE(reporter.last_name, '') as reporter_name
       FROM portal_message_reports r
       INNER JOIN portal_messages m ON r.message_id = m.id
-      LEFT JOIN users sender ON m.sender_user_id = sender.id
-      LEFT JOIN users reporter ON r.reporter_user_id = reporter.id
+      LEFT JOIN users sender ON m.sender_user_id::uuid = sender.id
+      LEFT JOIN users reporter ON r.reporter_user_id::uuid = reporter.id
       WHERE ${whereClause}
       ORDER BY 
         CASE r.status

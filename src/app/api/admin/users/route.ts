@@ -43,17 +43,10 @@ export async function GET(request: NextRequest) {
         u.user_type_verified,
         uas.access_level,
         uas.access_reason,
-        ums.active_warnings,
-        ums.active_strikes,
-        ums.is_banned,
-        ula.last_activity_at,
-        ula.days_inactive,
         bu.business_name
       FROM users u
       LEFT JOIN business_users bu ON u.id = bu.user_id
       LEFT JOIN user_access_status uas ON u.id = uas.user_id
-      LEFT JOIN user_moderation_status ums ON u.id = ums.id
-      LEFT JOIN user_last_activity ula ON u.id = ula.id
       WHERE ${whereSql}
       ORDER BY u.created_at DESC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
@@ -64,8 +57,6 @@ export async function GET(request: NextRequest) {
       `SELECT COUNT(*) FROM users u
        LEFT JOIN business_users bu ON u.id = bu.user_id
        LEFT JOIN user_access_status uas ON u.id = uas.user_id
-       LEFT JOIN user_moderation_status ums ON u.id = ums.id
-       LEFT JOIN user_last_activity ula ON u.id = ula.id
        WHERE ${whereSql}`,
       values
     );

@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
         u.email as user_email,
         COALESCE(u.full_name, CONCAT(u.first_name, ' ', u.last_name)) as user_name
        FROM bad_conduct_alerts bca
-       JOIN users u ON bca.user_id = u.id
+       JOIN users u ON bca.user_id::uuid = u.id
        WHERE u.deleted_at IS NULL
        ORDER BY 
          CASE bca.severity

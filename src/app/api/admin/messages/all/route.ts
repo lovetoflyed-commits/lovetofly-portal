@@ -130,8 +130,8 @@ export async function GET(request: NextRequest) {
         r.email as recipient_email,
         r.avatar_url as recipient_photo
       FROM portal_messages m
-      LEFT JOIN users s ON m.sender_user_id = s.id
-      LEFT JOIN users r ON m.recipient_user_id = r.id
+      LEFT JOIN users s ON m.sender_user_id::uuid = s.id
+      LEFT JOIN users r ON m.recipient_user_id::uuid = r.id
       WHERE ${whereClause}
       ORDER BY m.sent_at DESC
       LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}
@@ -143,8 +143,8 @@ export async function GET(request: NextRequest) {
     const countQuery = `
       SELECT COUNT(*) as total
       FROM portal_messages m
-      LEFT JOIN users s ON m.sender_user_id = s.id
-      LEFT JOIN users r ON m.recipient_user_id = r.id
+      LEFT JOIN users s ON m.sender_user_id::uuid = s.id
+      LEFT JOIN users r ON m.recipient_user_id::uuid = r.id
       WHERE ${whereClause}
     `;
     const countResult = await pool.query(countQuery, params.slice(0, paramCount));
