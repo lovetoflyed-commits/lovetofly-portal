@@ -1,6 +1,18 @@
 # Agent Actions Log (Atualização obrigatória)
 
 ## 2026-02-13
+- Ação: Hotfix para login quando coluna activity_category não existe em user_activity_log.
+- Resultado: Login volta a funcionar mesmo sem a coluna no banco.
+- Erros: Erro 42703 (column activity_category does not exist).
+- Investigação: Falha ocorria nos inserts de login em /api/auth/login e /api/login.
+- Correção: Fallback de INSERT sem activity_category quando o erro 42703 é detectado.
+- Verificação: Login retorna sucesso sem 500.
+- Ação: Commit e push para deploy via GitHub (Netlify auto-deploy) sem charts e artefatos relacionados.
+- Resultado: Commit "PORTAL UPDATES" criado e enviado para origin/main.
+- Erros: Sem erros.
+- Investigação: Revisão do status git e exclusão explícita de arquivos de charts antes do commit.
+- Correção: Não aplicável.
+- Verificação: git push origin main concluído com sucesso.
 - Ação: Movidos AGENT_ACTIONS_LOG.md e AGENT_LOGBOOK_2026-01-29.md de logbook/ para docs/records/active.
 - Resultado: Arquivos agora estão em docs/records/active conforme solicitado.
 - Erros: Sem erros.

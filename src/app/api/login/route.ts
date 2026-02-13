@@ -38,21 +38,42 @@ export async function POST(request: Request) {
       || null;
     const userAgent = request.headers.get('user-agent') || null;
 
-    await pool.query(
-      `INSERT INTO user_activity_log
-        (user_id, activity_type, activity_category, description, ip_address, user_agent, status, details)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [
-        user.id,
-        'login',
-        'authentication',
-        'User logged in successfully',
-        ipAddress,
-        userAgent,
-        'success',
-        { source: 'api/login' }
-      ]
-    );
+    try {
+      await pool.query(
+        `INSERT INTO user_activity_log
+          (user_id, activity_type, activity_category, description, ip_address, user_agent, status, details)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [
+          user.id,
+          'login',
+          'authentication',
+          'User logged in successfully',
+          ipAddress,
+          userAgent,
+          'success',
+          { source: 'api/login' }
+        ]
+      );
+    } catch (error: any) {
+      if (error?.code !== '42703') {
+        throw error;
+      }
+
+      await pool.query(
+        `INSERT INTO user_activity_log
+          (user_id, activity_type, description, ip_address, user_agent, status, details)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [
+          user.id,
+          'login',
+          'User logged in successfully',
+          ipAddress,
+          userAgent,
+          'success',
+          { source: 'api/login' }
+        ]
+      );
+    }
 
     // 5. Retorna sucesso e o token
     const response = NextResponse.json({ 
