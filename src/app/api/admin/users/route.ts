@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
       paramIndex += 1;
     }
 
-    const whereSql = whereClauses.join(' AND ');
+    const whereSql = whereClauses.length > 0 ? 'WHERE ' + whereClauses.join(' AND ') : '';
 
     const result = await pool.query(
       `SELECT
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
         uas.access_reason
       FROM users u
       LEFT JOIN user_access_status uas ON u.id = uas.user_id
-      WHERE ${whereSql}
+      ${whereSql}
       ORDER BY u.created_at DESC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
       [...values, limit, offset]
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
     const countResult = await pool.query(
       `SELECT COUNT(*) FROM users u
        LEFT JOIN user_access_status uas ON u.id = uas.user_id
-       WHERE ${whereSql}`,
+       ${whereSql}`,
       values
     );
 
@@ -107,7 +107,7 @@ export async function PATCH(request: NextRequest) {
 
     // Get old user data for logging
     const oldUserResult = await pool.query(
-      'SELECT id, email, first_name, last_name, role FROM users WHERE id = $1 AND deleted_at IS NULL',
+      'SELECT id, email, first_name, last_name, role FROM users WHERE id = $1',
       [id]
     );
 
@@ -118,7 +118,7 @@ export async function PATCH(request: NextRequest) {
     const oldUser = oldUserResult.rows[0];
 
     const result = await pool.query(
-      'UPDATE users SET role = $1 WHERE id = $2 AND deleted_at IS NULL RETURNING id, first_name, last_name, email, role, aviation_role, plan, created_at',
+      'UPDATE users SET role = $1 WHERE id = $2 RETURNING id, first_name, last_name, email, role, aviation_role, plan, created_at',
       [role, id]
     );
 
