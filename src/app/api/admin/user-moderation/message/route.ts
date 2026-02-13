@@ -28,6 +28,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Convert IDs to strings to match TEXT columns
+    const senderId = String(adminId || user.id || '');
+    const recipientId = String(userId || '');
+    
+    if (!senderId || !recipientId) {
+      return NextResponse.json(
+        { message: 'Invalid user IDs provided' },
+        { status: 400 }
+      );
+    }
+
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -38,7 +49,7 @@ export async function POST(request: NextRequest) {
           (sender_user_id, recipient_user_id, message, sent_at)
          VALUES ($1, $2, $3, NOW())
          RETURNING id, sent_at`,
-        [adminId || user.id, userId, message]
+        [senderId, recipientId, message]
       );
 
       // Log activity
@@ -52,10 +63,10 @@ export async function POST(request: NextRequest) {
           (user_id, activity_type, activity_category, description, details, target_type, target_id, status, ip_address, user_agent)
          VALUES ($1, 'admin_message_sent', 'admin', $2, $3, 'user', $4, 'success', $5, $6)`,
         [
-          adminId || user.id,
+          senderId,
           'Admin enviou mensagem para usuário',
           JSON.stringify({ message: message.substring(0, 100) }),
-          userId,
+          recipientId,
           ipAddress,
           userAgent
         ]

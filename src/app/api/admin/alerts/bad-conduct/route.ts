@@ -79,12 +79,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Convert userId to string to match TEXT column
+    const userIdStr = String(userId || '');
+    if (!userIdStr) {
+      return NextResponse.json(
+        { message: 'Invalid userId provided' },
+        { status: 400 }
+      );
+    }
+
     const result = await pool.query(
       `INSERT INTO bad_conduct_alerts 
         (user_id, alert_type, severity, description, metadata)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [userId, alertType, severity, description, JSON.stringify(metadata || {})]
+      [userIdStr, alertType, severity, description, JSON.stringify(metadata || {})]
     );
 
     return NextResponse.json({ alert: result.rows[0] }, { status: 201 });

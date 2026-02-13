@@ -39,9 +39,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use id (primary) or userId (fallback) from token payload
-    // id is INTEGER for database operations
-    const senderUserId = decoded.id || parseInt(decoded.userId || '0', 10);
+    // Use id or userId from token payload (can be UUID or INTEGER)
+    const senderUserId = decoded.id || decoded.userId;
     if (!senderUserId) {
       console.log('[Broadcast] No valid user ID found in token');
       return NextResponse.json(
@@ -49,12 +48,12 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       );
     }
-    console.log('[Broadcast] Sender user ID:', senderUserId, typeof senderUserId);
+    
+    const senderUserIdStr = String(senderUserId);
+    console.log('[Broadcast] Sender user ID:', senderUserIdStr, 'type:', typeof senderUserId);
 
-    // Check if user has admin/staff privileges  
-    // First check - ensure admin user exists (hardcoded bypass for test admin user with id=1)
-    if (senderUserId !== 1) {
-      // For other users, fetch from database
+    // Check if user has admin/staff privileges
+    try {
       const adminCheck = await pool.query(
         `SELECT u.role, u.email FROM users u WHERE u.id = $1`,
         [senderUserId]
@@ -76,9 +75,12 @@ export async function POST(request: NextRequest) {
           { status: 403 }
         );
       }
-    } else {
-      // Hardcoded check for test admin
-      console.log('[Broadcast] Using hardcoded admin check for test user');
+    } catch (authCheckErr) {
+      console.error('[Broadcast] Auth check error:', authCheckErr);
+      return NextResponse.json(
+        { message: 'Erro ao verificar permissões' },
+        { status: 500 }
+      );
     }
 
     // ============ Parse Body ============
@@ -147,17 +149,18 @@ export async function POST(request: NextRequest) {
 
     for (const targetUser of targetUsers) {
       try {
-        console.log('[Broadcast] Processing user:', targetUser, 'id:', targetUser.id, 'type:', typeof targetUser.id);
+        const targetUserId = String(targetUser.id);
+        console.log('[Broadcast] Processing user:', targetUserId, 'type:', typeof targetUser.id);
         
         // Skip self
-        if (targetUser.id === senderUserId) {
-          console.log('[Broadcast] Skipping self:', targetUser.id);
+        if (targetUserId === senderUserIdStr) {
+          console.log('[Broadcast] Skipping self:', targetUserId);
           continue;
         }
 
         const threadId = uuidv4();
 
-        console.log('[Broadcast] Inserting message for user:', targetUser.id);
+        console.log('[Broadcast] Inserting message for user:', targetUserId);
 
         await pool.query(
           `INSERT INTO portal_messages (
@@ -175,8 +178,8 @@ export async function POST(request: NextRequest) {
           ) VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())`,
           [
             uuidv4(),
-            senderUserId,
-            targetUser.id,
+            senderUserIdStr,
+            targetUserId,
             'admin',
             module.toLowerCase(),
             subject.trim(),
@@ -195,7 +198,7 @@ export async function POST(request: NextRequest) {
         console.log('[Broadcast] Message sent successfully. Sent count:', sentCount);
       } catch (error) {
         console.error(`[Broadcast] Failed to send to user ${targetUser.id}:`, error);
-        failedUsers.push(targetUser.id);
+        failedUsers.push(String(targetUser.id));
       }
     }
 

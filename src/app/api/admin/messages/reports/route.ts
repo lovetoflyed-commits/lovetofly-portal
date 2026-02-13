@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Extract user ID (supports both id and userId fields)
-    const userId = decoded.id || parseInt(decoded.userId || '0', 10);
+    const userId = String(decoded.id || decoded.userId || '');
     if (!userId) {
       console.log('[Reports] No valid user ID found in token');
       return NextResponse.json(

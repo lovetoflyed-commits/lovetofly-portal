@@ -35,9 +35,7 @@ export async function GET(request: NextRequest) {
     }
 
     const rawUserId = decoded.id ?? decoded.userId;
-    const userId = typeof rawUserId === 'number'
-      ? rawUserId
-      : parseInt(String(rawUserId || '0'), 10);
+    const userId = String(rawUserId || '');
     if (!userId) {
       return NextResponse.json(
         { message: 'Token invalido: ID do usuario nao encontrado' },
