@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Plus, Calendar, MapPin, Download, X, Clock, Plane } from 'lucide-react';
+import { Plus, Calendar, MapPin, Download, X, Clock, Plane, Upload } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 import { useAuth } from '@/context/AuthContext';
+import LogbookImport from './components/LogbookImport';
 
 // ANAC CIV Digital compliant data structure
 const FLIGHT_LOGS = [
@@ -109,6 +110,7 @@ const initialFormState: NewFlightForm = {
 export default function LogbookPage() {
   const { user, token } = useAuth();
   const [showForm, setShowForm] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [formData, setFormData] = useState<NewFlightForm>(initialFormState);
   const [flights, setFlights] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -246,14 +248,17 @@ export default function LogbookPage() {
 
   // Calculate totals
   const calculateTotals = (flights: any[]) => {
-    return flights.reduce((acc, flight) => ({
-      totalHours: acc.totalHours + timeToHours(flight.time_diurno) + timeToHours(flight.time_noturno) + timeToHours(flight.time_ifr_real) + timeToHours(flight.time_under_hood),
-      picHours: acc.picHours + (flight.function === 'PIC' ? timeToHours(flight.time_diurno) + timeToHours(flight.time_noturno) + timeToHours(flight.time_ifr_real) + timeToHours(flight.time_under_hood) : 0),
-      instructionHours: acc.instructionHours + (flight.function === 'INSTRUCTOR' ? timeToHours(flight.time_diurno) + timeToHours(flight.time_noturno) + timeToHours(flight.time_ifr_real) + timeToHours(flight.time_under_hood) : 0),
-      ifrHours: acc.ifrHours + timeToHours(flight.time_ifr_real),
-      nightHours: acc.nightHours + timeToHours(flight.time_noturno),
-      totalLandings: acc.totalLandings + flight.day_landings + flight.night_landings
-    }), { totalHours: 0, picHours: 0, instructionHours: 0, ifrHours: 0, nightHours: 0, totalLandings: 0 });
+    return flights.reduce((acc, flight) => {
+      const flightFunction = String(flight.function || '').toUpperCase();
+      return {
+        totalHours: acc.totalHours + timeToHours(flight.time_diurno) + timeToHours(flight.time_noturno) + timeToHours(flight.time_ifr_real) + timeToHours(flight.time_under_hood),
+        picHours: acc.picHours + (flightFunction === 'PIC' ? timeToHours(flight.time_diurno) + timeToHours(flight.time_noturno) + timeToHours(flight.time_ifr_real) + timeToHours(flight.time_under_hood) : 0),
+        instructionHours: acc.instructionHours + (flightFunction === 'INSTRUCTOR' ? timeToHours(flight.time_diurno) + timeToHours(flight.time_noturno) + timeToHours(flight.time_ifr_real) + timeToHours(flight.time_under_hood) : 0),
+        ifrHours: acc.ifrHours + timeToHours(flight.time_ifr_real),
+        nightHours: acc.nightHours + timeToHours(flight.time_noturno),
+        totalLandings: acc.totalLandings + flight.day_landings + flight.night_landings
+      };
+    }, { totalHours: 0, picHours: 0, instructionHours: 0, ifrHours: 0, nightHours: 0, totalLandings: 0 });
   };
 
   const normalizeTime = (value: any): string => {
@@ -312,6 +317,11 @@ export default function LogbookPage() {
                   onClick={() => setShowForm(!showForm)}
                   className="flex items-center gap-2 bg-white text-blue-600 hover:bg-blue-50 px-6 py-3 rounded-lg font-semibold transition-colors shadow-lg">
                   <Plus size={18} /> Novo Registro
+                </button>
+                <button 
+                  onClick={() => setShowImport(true)}
+                  className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors shadow-lg">
+                  <Upload size={18} /> Importar Registros
                 </button>
                 <button className="flex items-center gap-2 bg-blue-700 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
                   <Download size={18} /> Extrato PDF
@@ -614,7 +624,7 @@ export default function LogbookPage() {
                             <td className="px-4 py-4 whitespace-nowrap text-center text-gray-900 font-mono">
                               {normalizeTime(log.time_diurno)}
                             </td>
-                            <td className="px-4 py-4 whitespace-nowrap text-gray-600">
+                            <td className="px-4 py-4 whitespace-nowrap text-gray-600" suppressHydrationWarning>
                               {new Date(log.deleted_at).toLocaleString('pt-BR')}
                             </td>
                           </tr>
@@ -628,6 +638,17 @@ export default function LogbookPage() {
           </div>
         </div>
       </div>
+
+      {/* Import Modal */}
+      {showImport && (
+        <LogbookImport 
+          onClose={() => setShowImport(false)}
+          onImportComplete={() => {
+            fetchFlightLogs();
+          }}
+          token={token}
+        />
+      )}
     </div>
   );
 }

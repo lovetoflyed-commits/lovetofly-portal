@@ -308,7 +308,7 @@ export default function ForumTopicPage() {
                         )}
                       </div>
                       <h1 className="text-2xl font-bold text-gray-900 mt-3">{topic.title}</h1>
-                      <p className="text-sm text-gray-500 mt-1">
+                      <p className="text-sm text-gray-500 mt-1" suppressHydrationWarning>
                         por <span className="font-semibold text-gray-700">{topic.author_name || 'Usuário'}</span> •{' '}
                         {new Date(topic.created_at).toLocaleString('pt-BR')}
                       </p>
@@ -387,7 +387,7 @@ export default function ForumTopicPage() {
                     <div key={reply.id} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
                       <div className="flex items-start justify-between gap-4">
                         <div>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-gray-500" suppressHydrationWarning>
                             <span className="font-semibold text-gray-700">{reply.author_name || 'Usuário'}</span> •{' '}
                             {new Date(reply.created_at).toLocaleString('pt-BR')}
                           </p>
@@ -425,7 +425,7 @@ export default function ForumTopicPage() {
                             <div key={child.id} className="bg-blue-50/50 border border-blue-100 rounded-lg p-4">
                               <div className="flex items-start justify-between gap-4">
                                 <div>
-                                  <p className="text-sm text-gray-500">
+                                  <p className="text-sm text-gray-500" suppressHydrationWarning>
                                     <span className="font-semibold text-gray-700">{child.author_name || 'Usuário'}</span> •{' '}
                                     {new Date(child.created_at).toLocaleString('pt-BR')}
                                   </p>

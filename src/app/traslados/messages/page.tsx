@@ -575,7 +575,7 @@ function TrasladosMessagesContent({ mode = 'portal' }: { mode?: TrasladosMessage
                     {messages.map((message) => (
                       <div key={message.id} className="rounded-xl border border-slate-100 bg-slate-50 p-4">
                         <div className="flex items-center justify-between text-xs text-slate-500">
-                          <span>{new Date(message.created_at).toLocaleString(language === 'en' ? 'en-US' : language === 'es' ? 'es-ES' : 'pt-BR')}</span>
+                          <span suppressHydrationWarning>{new Date(message.created_at).toLocaleString(language === 'en' ? 'en-US' : language === 'es' ? 'es-ES' : 'pt-BR')}</span>
                           <span className="uppercase">{message.sender_role}</span>
                         </div>
                         <div className="mt-2 text-sm text-slate-700">{message.message}</div>

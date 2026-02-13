@@ -358,7 +358,7 @@ export default function ForumPage() {
                           >
                             {topic.title}
                           </Link>
-                          <span className="text-sm text-gray-500 whitespace-nowrap">
+                          <span className="text-sm text-gray-500 whitespace-nowrap" suppressHydrationWarning>
                             {new Date(topic.created_at).toLocaleDateString('pt-BR')}
                           </span>
                         </div>

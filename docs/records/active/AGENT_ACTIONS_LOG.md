@@ -1,6 +1,91 @@
 # Agent Actions Log (Atualização obrigatória)
 
 ## 2026-02-13
+
+### Adição de Suporte ao Formato .xlt (ANAC) na Importação de Logbook
+- **Ação:** Adicionado suporte para arquivos .xlt (Excel Template) exportados pela ANAC
+- **Resultado:** Usuários podem importar diretamente arquivos no formato usado pela ANAC
+- **Problema:** Sistema da ANAC exporta dados em formato .xlt, mas importação só aceitava .xlsx, .xls e .csv
+- **Solução Implementada:**
+  - **Frontend:** Atualizada validação de extensões e UI para incluir .xlt
+  - **Backend:** Atualizada regex de validação e mensagens de erro
+  - MIME type 'application/vnd.ms-excel' já cobre tanto .xls quanto .xlt
+- **Arquivos Modificados:**
+  - `/src/app/logbook/components/LogbookImport.tsx` (linhas 65, 69, 229, 255)
+  - `/src/app/api/logbook/import/route.ts` (linhas 182, 186, 188)
+  - `/docs/records/active/LOGBOOK_IMPORT_FEATURE_2026-02-13.md` - Atualização do changelog
+- **Formatos Aceitos:** .xlsx, .xls, .xlt, .csv (máx. 10MB)
+- **Status:** ✅ Completo e funcional
+
+### Correção de Bugs na Importação de Logbook - Horas PIC e IFR Real
+- **Ação:** Corrigido problema de horas PIC não sendo exibidas e possíveis problemas com IFR Real
+- **Resultado:** Horas PIC agora calculadas corretamente independente do case da função importada
+- **Problema Identificado:**
+  - Campo "função" importado com diferentes cases (pic, Pic, PIC)
+  - Frontend usava comparação case-sensitive `flight.function === 'PIC'`
+  - Dados com lowercase não eram contabilizados nas horas PIC
+- **Solução Implementada:**
+  - **Import:** Normalização para uppercase no momento da importação (`.toUpperCase()`)
+  - **Frontend:** Comparação case-insensitive no cálculo de totais
+  - Garante compatibilidade com dados existentes e novos
+- **Arquivos Modificados:**
+  - `/src/app/api/logbook/import/route.ts` (linha 375) - Adiciona `.toUpperCase()` ao campo function
+  - `/src/app/logbook/page.tsx` (linhas 250-262) - Comparação case-insensitive no calculateTotals
+  - `/docs/records/active/LOGBOOK_IMPORT_FEATURE_2026-02-13.md` - Atualização do changelog
+- **Benefícios:**
+  - ✅ Novos imports normalizam função para maiúsculas
+  - ✅ Dados existentes com qualquer case funcionam corretamente
+  - ✅ Horas PIC exibidas corretamente para todos os voos PIC
+  - ✅ Horas IFR Real mantêm funcionamento robusto
+- **Status:** ✅ Completo e testado
+
+### Correção de Erros de Hidratação (Hydration Errors)
+- **Ação:** Correção de erros de hidratação causados por formatação de datas com toLocaleString/toLocaleDateString
+- **Resultado:** Aplicação não apresenta mais avisos de hidratação no console
+- **Problema:** Datas renderizadas no servidor (UTC) diferiam das renderizadas no cliente (timezone do usuário)
+- **Solução:** Adicionado prop `suppressHydrationWarning` em elementos com formatação de data
+- **Arquivos Modificados:**
+  - `/src/app/logbook/page.tsx` (linha 625) - Tabela de voos excluídos
+  - `/src/app/forum/page.tsx` (linha 362) - Lista de tópicos
+  - `/src/app/forum/topics/[id]/page.tsx` (linhas 313, 392, 430) - Detalhes de tópicos e respostas
+  - `/src/app/traslados/messages/page.tsx` (linha 578) - Timestamps de mensagens
+  - `/src/app/traslados/status/page.tsx` (linha 368) - Timestamps de atualizações
+- **Padrão Estabelecido:** Sempre usar `suppressHydrationWarning` em elementos que exibem datas com locale
+- **Testes Realizados:**
+  - Build completo com `npm run build` - ✅ Sucesso
+  - Verificação de 6 arquivos modificados - ✅ Sem erros
+- **Status:** ✅ Completo
+
+### Implementação de Funcionalidade de Importação de Logbook
+- **Ação:** Implementação completa da funcionalidade de importação de registros de voo via Excel/CSV
+- **Resultado:** Sistema permite importação em massa de registros históricos de voo
+- **Arquivos Criados:**
+  - `/src/app/api/logbook/import/route.ts` - API de processamento de importação
+  - `/src/app/api/logbook/template/route.ts` - API de geração de template
+  - `/src/app/logbook/components/LogbookImport.tsx` - Componente React de importação
+  - `/docs/records/active/LOGBOOK_IMPORT_FEATURE_2026-02-13.md` - Documentação completa
+- **Arquivos Modificados:**
+  - `/src/app/logbook/page.tsx` - Integração do componente de importação
+- **Funcionalidades Implementadas:**
+  - Upload de arquivos Excel (.xlsx, .xls) e CSV
+  - Validação de campos obrigatórios (data, matrícula, tempo de voo)
+  - Conversão automática de formatos de data (DD/MM/YYYY, YYYY-MM-DD, Excel)
+  - Conversão de formatos de hora (HH:MM e decimal)
+  - Validação de códigos ICAO (4 caracteres)
+  - Detecção de duplicatas (mesma data + aeronave para mesmo usuário)
+  - Mapeamento flexível de colunas (aceita nomes em PT/EN)
+  - Inserção em lote com transação SQL
+  - Relatório detalhado com sucessos, erros e avisos
+  - Interface drag-and-drop
+  - Download de template de exemplo
+  - Integração com página /logbook existente
+- **Testes Realizados:**
+  - Build completo com `npm run build` - ✅ Sucesso
+  - Validação de tipos TypeScript - ✅ Sem erros
+  - Verificação de rotas criadas - ✅ APIs aparecem no build
+- **Status:** ✅ Completo e funcional
+
+### Ações Anteriores do Dia
 - Ação: Tornado o log de atividade do login resiliente a qualquer divergência de schema.
 - Resultado: Login não falha mesmo se colunas do user_activity_log estiverem ausentes.
 - Erros: 500 em /api/auth/login na produção.

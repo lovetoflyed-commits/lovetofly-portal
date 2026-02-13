@@ -364,7 +364,7 @@ export default function TrasladosStatusPage({ mode = 'portal' }: { mode?: Trasla
                                         {updates.map((update) => (
                                             <div key={update.id} className="rounded-xl border border-gray-100 bg-gray-50 p-4">
                                                 <div className="flex items-center justify-between text-xs text-gray-500">
-                                                    <span>
+                                                    <span suppressHydrationWarning>
                                                         {new Date(update.created_at).toLocaleString(
                                                             language === 'en' ? 'en-US' : language === 'es' ? 'es-ES' : 'pt-BR'
                                                         )}
