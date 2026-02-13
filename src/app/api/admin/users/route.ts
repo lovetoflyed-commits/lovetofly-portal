@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
         u.created_at,
         u.user_type,
         u.user_type_verified,
-        uas.access_level,
+        COALESCE(uas.access_level, 'active') as access_level,
         uas.access_reason
       FROM users u
       LEFT JOIN user_access_status uas ON u.id = uas.user_id
@@ -52,7 +52,6 @@ export async function GET(request: NextRequest) {
 
     const countResult = await pool.query(
       `SELECT COUNT(*) FROM users u
-       LEFT JOIN user_access_status uas ON u.id = uas.user_id
        ${whereSql}`,
       values
     );
