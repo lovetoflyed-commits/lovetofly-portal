@@ -152,21 +152,6 @@ function validateTime(timeStr: string): boolean {
   return hours >= 0 && hours <= 24 && minutes >= 0 && minutes < 60;
 }
 
-// Check if a flight log already exists (duplicate detection)
-async function isDuplicate(userId: number, flightDate: string, aircraftRegistration: string): Promise<boolean> {
-  try {
-    const result = await pool.query(
-      `SELECT id FROM flight_logs 
-       WHERE user_id = $1 AND flight_date = $2 AND aircraft_registration = $3 AND deleted_at IS NULL`,
-      [userId, flightDate, aircraftRegistration]
-    );
-    return result.rows.length > 0;
-  } catch (error) {
-    console.error('Error checking duplicate:', error);
-    return false;
-  }
-}
-
 export async function POST(request: Request) {
   try {
     // Authenticate user
@@ -242,6 +227,20 @@ export async function POST(request: Request) {
 
     const dataRows = rawData.slice(1); // Skip header row
     
+    // Fetch all existing flight logs for this user once (performance optimization)
+    const existingLogsResult = await pool.query(
+      `SELECT flight_date, aircraft_registration FROM flight_logs 
+       WHERE user_id = $1 AND deleted_at IS NULL`,
+      [decoded.id]
+    );
+    
+    // Create a Set of existing records for fast lookup
+    const existingRecords = new Set(
+      existingLogsResult.rows.map(row => 
+        `${row.flight_date.toISOString().split('T')[0]}|${row.aircraft_registration}`
+      )
+    );
+    
     // Start transaction
     const client = await pool.connect();
     
@@ -283,9 +282,9 @@ export async function POST(request: Request) {
           continue;
         }
 
-        // Check for duplicate
-        const isDup = await isDuplicate(decoded.id, flightDate, String(rowData.aircraft_registration));
-        if (isDup) {
+        // Check for duplicate using in-memory Set (performance optimized)
+        const recordKey = `${flightDate}|${String(rowData.aircraft_registration)}`;
+        if (existingRecords.has(recordKey)) {
           result.warnings.push({ 
             row: rowNum, 
             message: 'Registro duplicado (mesma data e aeronave) - ignorado' 

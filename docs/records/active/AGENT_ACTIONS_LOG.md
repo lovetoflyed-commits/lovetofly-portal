@@ -1,6 +1,37 @@
 # Agent Actions Log (Atualização obrigatória)
 
 ## 2026-02-13
+
+### Implementação de Funcionalidade de Importação de Logbook
+- **Ação:** Implementação completa da funcionalidade de importação de registros de voo via Excel/CSV
+- **Resultado:** Sistema permite importação em massa de registros históricos de voo
+- **Arquivos Criados:**
+  - `/src/app/api/logbook/import/route.ts` - API de processamento de importação
+  - `/src/app/api/logbook/template/route.ts` - API de geração de template
+  - `/src/app/logbook/components/LogbookImport.tsx` - Componente React de importação
+  - `/docs/records/active/LOGBOOK_IMPORT_FEATURE_2026-02-13.md` - Documentação completa
+- **Arquivos Modificados:**
+  - `/src/app/logbook/page.tsx` - Integração do componente de importação
+- **Funcionalidades Implementadas:**
+  - Upload de arquivos Excel (.xlsx, .xls) e CSV
+  - Validação de campos obrigatórios (data, matrícula, tempo de voo)
+  - Conversão automática de formatos de data (DD/MM/YYYY, YYYY-MM-DD, Excel)
+  - Conversão de formatos de hora (HH:MM e decimal)
+  - Validação de códigos ICAO (4 caracteres)
+  - Detecção de duplicatas (mesma data + aeronave para mesmo usuário)
+  - Mapeamento flexível de colunas (aceita nomes em PT/EN)
+  - Inserção em lote com transação SQL
+  - Relatório detalhado com sucessos, erros e avisos
+  - Interface drag-and-drop
+  - Download de template de exemplo
+  - Integração com página /logbook existente
+- **Testes Realizados:**
+  - Build completo com `npm run build` - ✅ Sucesso
+  - Validação de tipos TypeScript - ✅ Sem erros
+  - Verificação de rotas criadas - ✅ APIs aparecem no build
+- **Status:** ✅ Completo e funcional
+
+### Ações Anteriores do Dia
 - Ação: Tornado o log de atividade do login resiliente a qualquer divergência de schema.
 - Resultado: Login não falha mesmo se colunas do user_activity_log estiverem ausentes.
 - Erros: 500 em /api/auth/login na produção.
