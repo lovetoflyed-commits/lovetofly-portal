@@ -21,6 +21,7 @@ export default function BusinessRegisterForm({ onSuccess }: { onSuccess: () => v
 
         // Contact Information
         email: '',
+        invitationCode: '',
         password: '',
         confirmPassword: '',
         businessPhone: '',
@@ -193,6 +194,7 @@ export default function BusinessRegisterForm({ onSuccess }: { onSuccess: () => v
                 cnpj: cleanedCNPJ,
                 businessPhone: formData.businessPhone.replace(/\D/g, ''),
                 headquartersZip: formData.headquartersZip.replace(/\D/g, ''),
+                invitationCode: formData.invitationCode.trim() || null,
                 userType: 'business',
             };
 
@@ -352,6 +354,20 @@ export default function BusinessRegisterForm({ onSuccess }: { onSuccess: () => v
                             value={formData.businessEmail}
                             onChange={handleChange}
                             placeholder="rh@empresa.com.br"
+                            className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">
+                            Código de convite (opcional)
+                        </label>
+                        <input
+                            type="text"
+                            name="invitationCode"
+                            value={formData.invitationCode}
+                            onChange={handleChange}
+                            placeholder="LTF-XXXX-XXXX"
                             className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                         />
                     </div>

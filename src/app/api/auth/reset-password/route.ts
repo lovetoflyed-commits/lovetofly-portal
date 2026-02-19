@@ -46,9 +46,9 @@ export async function POST(request: Request) {
 
     // Find user with valid reset code
     const userResult = await pool.query(
-      `SELECT id, email, reset_code, reset_code_expires 
+      `SELECT id, email, password_reset_code, password_reset_expires 
        FROM users 
-       WHERE email = $1 AND reset_code = $2`,
+       WHERE email = $1 AND password_reset_code = $2`,
       [email.toLowerCase(), resetCode]
     );
 
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
     const user = userResult.rows[0];
 
     // Check if code is expired
-    if (new Date(user.reset_code_expires) < new Date()) {
+    if (new Date(user.password_reset_expires) < new Date()) {
       return NextResponse.json(
         { message: 'Código expirado. Solicite um novo código' },
         { status: 400 }
@@ -77,8 +77,8 @@ export async function POST(request: Request) {
     await pool.query(
       `UPDATE users 
        SET password_hash = $1, 
-           reset_code = NULL, 
-           reset_code_expires = NULL,
+           password_reset_code = NULL, 
+           password_reset_expires = NULL,
            updated_at = NOW()
        WHERE id = $2`,
       [hashedPassword, user.id]

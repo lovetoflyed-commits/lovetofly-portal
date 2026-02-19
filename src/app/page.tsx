@@ -59,7 +59,12 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
         />
       </div>
       <div>
-        <label className="block text-xs font-semibold text-slate-700 mb-1">Senha</label>
+        <div className="flex items-center justify-between mb-1">
+          <label className="block text-xs font-semibold text-slate-700">Senha</label>
+          <Link href="/forgot-password" className="text-xs text-blue-600 font-semibold hover:underline">
+            Esqueceu?
+          </Link>
+        </div>
         <div className="relative">
           <input
             type={showPassword ? 'text' : 'password'}

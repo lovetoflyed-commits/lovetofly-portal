@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import UserTypeSelectionModal from './UserTypeSelectionModal';
 
 interface LandingPageProps {
@@ -49,6 +50,12 @@ export default function LandingPage({ onOpenLogin, onOpenRegister }: LandingPage
               >
                 Entrar
               </button>
+              <Link
+                href="/forgot-password"
+                className="text-xs text-slate-500 hover:text-blue-600 font-semibold transition-colors underline underline-offset-2"
+              >
+                Esqueceu a senha?
+              </Link>
               <button
                 onClick={handleRegisterClick}
                 className="bg-blue-900 text-white px-6 py-2 rounded-lg hover:bg-blue-800 transition-colors text-sm font-bold"

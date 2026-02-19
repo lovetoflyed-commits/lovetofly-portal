@@ -16,6 +16,80 @@ interface UserProfile {
   stats: any;
 }
 
+// Reset Password Button Component
+function ResetPasswordButton({
+  userId,
+  userEmail,
+  token,
+}: {
+  userId: string;
+  userEmail: string;
+  token: string | null;
+}) {
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+
+  const handleResetPassword = async () => {
+    setLoading(true);
+    setMessage('');
+    setError('');
+
+    try {
+      const response = await fetch(`/api/admin/users/${userId}/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.message || 'Failed to generate reset code');
+        return;
+      }
+
+      setMessage(`Reset code sent to ${userEmail}. Code expires in 15 minutes.`);
+      setTimeout(() => setMessage(''), 5000);
+    } catch (err) {
+      setError('Error connecting to server');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded text-sm">
+          {error}
+        </div>
+      )}
+      {message && (
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-2 rounded text-sm">
+          {message}
+        </div>
+      )}
+      <button
+        onClick={handleResetPassword}
+        disabled={loading}
+        className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition disabled:opacity-50 flex items-center justify-center gap-2"
+      >
+        {loading ? (
+          <>
+            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            Sending...
+          </>
+        ) : (
+          '📧 Send Password Reset Code'
+        )}
+      </button>
+    </div>
+  );
+}
+
 export default function UserProfilePage() {
   const params = useParams();
   const userId = params.userId as string;
@@ -636,6 +710,17 @@ export default function UserProfilePage() {
                     <p className="text-gray-900">{new Date(user.updated_at).toLocaleString('pt-BR')}</p>
                   </div>
                 </div>
+              </div>
+
+              {/* Password Management Section */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  🔑 Password Management
+                </h3>
+                <p className="text-sm text-gray-600 mb-3">
+                  Send a password reset code to the user's email address.
+                </p>
+                <ResetPasswordButton userId={userId} userEmail={user.email} token={token} />
               </div>
 
               {/* Edit Section */}

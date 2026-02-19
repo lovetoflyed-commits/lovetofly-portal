@@ -1,0 +1,8 @@
+name,ttl,type,value
+"lovetofly.com.br","3600","NETLIFY","lovetofly-portal.netlify.app"
+"www.lovetofly.com.br","3600","NETLIFY","lovetofly-portal.netlify.app"
+"lovetofly.com.br","3600","TXT","zoho-verification=zb89659584.zmverify.zoho.com"
+"lovetofly.com.br","3600","MX","mx.zoho.com"
+"lovetofly.com.br","3600","MX","mx2.zoho.com"
+"lovetofly.com.br","3600","MX","mx3.zoho.com"
+"lovetofly.com.br","3600","TXT","v=spf1 include:zoho.com ~all"

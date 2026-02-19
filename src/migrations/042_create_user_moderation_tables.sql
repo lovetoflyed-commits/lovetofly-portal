@@ -48,7 +48,8 @@ CREATE INDEX IF NOT EXISTS idx_activity_log_user_date ON user_activity_log(user_
 
 -- ==================== USER LAST ACTIVITY VIEW ====================
 -- Quick view to see last activity of each user
--- NOTE: Filters out admin-initiated activities if activity_category column exists
+-- NOTE: Excludes admin-initiated activities (activity_category = 'admin') 
+-- so that staff edits don't count as user activity
 CREATE OR REPLACE VIEW user_last_activity AS
 SELECT 
   u.id,
@@ -59,6 +60,7 @@ SELECT
   EXTRACT(DAY FROM NOW() - MAX(al.created_at)) as days_inactive
 FROM users u
 LEFT JOIN user_activity_log al ON u.id = al.user_id 
+  AND al.activity_category != 'admin' -- Exclude admin-initiated activities
 WHERE u.deleted_at IS NULL
 GROUP BY u.id, u.email, u.first_name, u.last_name;
 

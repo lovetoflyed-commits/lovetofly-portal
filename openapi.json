@@ -1,0 +1,655 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "PIX Payment Integration API",
+    "description": "Complete PIX (Brazilian instant payment) integration for Love to Fly Portal. Supports hangar bookings and membership upgrades with webhook and reconciliation mechanisms.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Love to Fly Team",
+      "email": "support@lovetofly.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://lovetofly.com",
+      "description": "Production server"
+    },
+    {
+      "url": "http://localhost:3000",
+      "description": "Development server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT token from user authentication"
+      },
+      "CronSecret": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-cron-secret",
+        "description": "Secret for cron job reconciliation"
+      },
+      "WebhookSignature": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "asaas-access-token",
+        "description": "Webhook token configured in Asaas (asaas-access-token header)"
+      }
+    },
+    "schemas": {
+      "PIXPayment": {
+        "type": "object",
+        "required": ["id", "order_type", "order_id", "amount_cents", "status", "expires_at", "created_at"],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Unique payment ID"
+          },
+          "user_id": {
+            "type": "integer",
+            "description": "User who initiated the payment"
+          },
+          "order_type": {
+            "type": "string",
+            "enum": ["hangar_booking", "membership"],
+            "description": "Type of order being paid"
+          },
+          "order_id": {
+            "type": "string",
+            "description": "Reference ID (e.g., 'booking-123' or 'membership-pro')"
+          },
+          "amount_cents": {
+            "type": "integer",
+            "description": "Amount in cents (e.g., 50000 = R$ 500.00)"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "completed", "expired", "failed", "cancelled"],
+            "description": "Current payment status"
+          },
+          "transaction_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "Bank transaction ID from Asaas webhook"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the QR code expires (typically 30 minutes)"
+          },
+          "payment_date": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When payment was confirmed"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "BRCode": {
+        "type": "object",
+        "properties": {
+          "qrCode": {
+            "type": "string",
+            "description": "Base64 encoded QR code image"
+          },
+          "brCode": {
+            "type": "string",
+            "description": "Raw PIX BRCode string for copy-paste"
+          },
+          "txId": {
+            "type": "string",
+            "description": "Transaction ID (matches order_id for reconciliation)"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PaymentStatus": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "order_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "completed", "expired", "failed"]
+          },
+          "amount": {
+            "type": "object",
+            "properties": {
+              "cents": {
+                "type": "integer"
+              },
+              "formatted": {
+                "type": "string",
+                "example": "R$ 500,00"
+              }
+            }
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "payment_date": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
+      },
+      "WebhookPayload": {
+        "type": "object",
+        "description": "Asaas webhook payload for payment confirmation",
+        "properties": {
+          "transactionId": {
+            "type": "string",
+            "description": "Unique transaction identifier from bank"
+          },
+          "txid": {
+            "type": "string",
+            "description": "Alternative field name for transaction ID"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["paid", "confirmed", "settled", "concluido", "pending", "expired"],
+            "description": "Payment status (normalized internally)"
+          },
+          "amount": {
+            "type": "number",
+            "description": "Amount in BRL"
+          },
+          "payer": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "cpf": {
+                "type": "string"
+              }
+            }
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ReconcileTransaction": {
+        "type": "object",
+        "properties": {
+          "transactionId": {
+            "type": "string"
+          },
+          "txid": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["paid", "confirmed", "settled", "pending", "expired"]
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error message"
+          },
+          "details": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/api/payments/pix/create": {
+      "post": {
+        "tags": ["PIX Payment Creation"],
+        "summary": "Create a new PIX payment",
+        "description": "Initiates a PIX payment order and generates a BRCode for user scanning. Returns QR code and raw string for copy-paste.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["orderType", "orderId", "amountCents"],
+                "properties": {
+                  "orderType": {
+                    "type": "string",
+                    "enum": ["hangar_booking", "membership"],
+                    "description": "Type of order"
+                  },
+                  "orderId": {
+                    "type": "string",
+                    "example": "booking-123",
+                    "description": "Unique order reference (e.g., 'booking-123', 'membership-pro')"
+                  },
+                  "amountCents": {
+                    "type": "integer",
+                    "example": 50000,
+                    "description": "Amount in cents (50000 = R$ 500.00)"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "Hangar booking for 3 months",
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Payment created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "order_id": {
+                      "type": "string"
+                    },
+                    "amount": {
+                      "type": "object",
+                      "properties": {
+                        "cents": {
+                          "type": "integer"
+                        },
+                        "formatted": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "brCode": {
+                      "$ref": "#/components/schemas/BRCode"
+                    },
+                    "expires_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/api/payments/pix/status/{orderId}": {
+      "get": {
+        "tags": ["PIX Payment Status"],
+        "summary": "Get payment status",
+        "description": "Check current status of a PIX payment. Used for polling after QR code is scanned.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order reference ID (e.g., 'booking-123')"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payment status retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentStatus"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Payment not found"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/payments/pix/webhook": {
+      "post": {
+        "tags": ["PIX Webhooks"],
+        "summary": "Receive PIX payment confirmation",
+        "description": "Webhook endpoint for Asaas to send payment confirmations. Automatically confirms hangar bookings and membership upgrades when payment is received.",
+        "security": [
+          {
+            "WebhookSignature": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebhookPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Webhook processed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "transaction_id": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid webhook signature"
+          },
+          "400": {
+            "description": "Invalid payload format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/payments/pix/reconcile": {
+      "post": {
+        "tags": ["PIX Reconciliation"],
+        "summary": "Bulk reconciliation of transactions",
+        "description": "Cron-friendly endpoint for reconciling transactions from Asaas API. Can be called periodically to sync payment status.",
+        "security": [
+          {
+            "CronSecret": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "transactions": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/ReconcileTransaction"
+                    },
+                    "description": "List of transactions from Asaas API"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reconciliation completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "processed": {
+                      "type": "integer"
+                    },
+                    "skipped": {
+                      "type": "integer"
+                    },
+                    "failed": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid cron secret"
+          }
+        }
+      }
+    },
+    "/api/admin/pix-reconcile": {
+      "post": {
+        "tags": ["Admin Tools"],
+        "summary": "Admin reconciliation tool",
+        "description": "Manual reconciliation endpoint for administrators. Marks expired payments and confirms pending bookings.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "confirmPendingBookings": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Also confirm pending bookings with completed payments"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Admin reconciliation completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "processed": {
+                      "type": "integer"
+                    },
+                    "skipped": {
+                      "type": "integer"
+                    },
+                    "failed": {
+                      "type": "integer"
+                    },
+                    "summary": {
+                      "type": "object",
+                      "properties": {
+                        "pending": {
+                          "type": "integer"
+                        },
+                        "completed": {
+                          "type": "integer"
+                        },
+                        "expired": {
+                          "type": "integer"
+                        },
+                        "failed": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - admin role required"
+          }
+        }
+      }
+    },
+    "/api/user/membership/confirm-pix-payment": {
+      "post": {
+        "tags": ["Membership Upgrades"],
+        "summary": "Confirm membership upgrade via PIX",
+        "description": "User-facing endpoint to confirm their own membership upgrade after PIX payment. Idempotent - safe to call multiple times.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["orderId"],
+                "properties": {
+                  "orderId": {
+                    "type": "string",
+                    "example": "membership-pro",
+                    "description": "Order ID for the membership upgrade"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Membership confirmation processed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "membership": {
+                      "type": "object",
+                      "properties": {
+                        "plan": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "activated_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid order or payment not found"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "PIX Payment Creation",
+      "description": "Create and manage PIX payment orders"
+    },
+    {
+      "name": "PIX Payment Status",
+      "description": "Monitor payment status for UI polling"
+    },
+    {
+      "name": "PIX Webhooks",
+      "description": "Receive real-time payment confirmations from Asaas"
+    },
+    {
+      "name": "PIX Reconciliation",
+      "description": "Synchronize payment status via scheduled reconciliation"
+    },
+    {
+      "name": "Admin Tools",
+      "description": "Administrative payment management endpoints"
+    },
+    {
+      "name": "Membership Upgrades",
+      "description": "Handle membership upgrade confirmations"
+    }
+  ]
+}

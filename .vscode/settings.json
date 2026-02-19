@@ -40,6 +40,12 @@
         "**/coverage": true,
         "**/dist": true
     },
+    "files.associations": {
+        "**/*.sql": "postgresql"
+    },
+    "[sql]": {
+        "editor.defaultFormatter": null
+    },
     "search.exclude": {
         "**/node_modules": true,
         "**/.next": true,
@@ -68,6 +74,12 @@
         ["clsx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
     ],
     "extensions.recommendations": [],
+    "mssql.linting": false,
+    "mssql.linters": [],
+    "[sql]": {
+        "editor.defaultFormatter": null,
+        "editor.formatOnSave": false
+    },
     
     "// MISC": "=== Other optimizations ===",
     "telemetry.telemetryLevel": "off",

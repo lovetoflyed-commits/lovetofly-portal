@@ -105,9 +105,15 @@ export default function ForgotPasswordPage() {
               <CheckCircle2 className="text-green-500" size={32} />
               <h3 className="text-white font-bold">E-mail Enviado!</h3>
               <p className="text-xs text-slate-400">
-                Verifique sua caixa de entrada (e spam) para redefinir sua senha.
+                Verifique sua caixa de entrada (e spam) para receber o código.
               </p>
             </div>
+            <Link
+              href="/reset-password"
+              className="block w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg transition-colors text-sm"
+            >
+              Inserir Código e Redefinir Senha
+            </Link>
             <Link
               href="/login"
               className="block w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 rounded-lg transition-colors text-sm"

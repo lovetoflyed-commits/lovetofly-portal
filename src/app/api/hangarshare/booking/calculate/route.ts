@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/config/db';
+import { validatePromoCode, applyDiscount } from '@/utils/codeUtils';
 
 interface BreakdownItem {
   period: string;
@@ -11,7 +12,7 @@ interface BreakdownItem {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { hangarId, checkIn, checkOut } = body;
+    const { hangarId, checkIn, checkOut, promoCode } = body;
 
     if (!hangarId || !checkIn || !checkOut) {
       return NextResponse.json(
@@ -206,6 +207,31 @@ export async function POST(request: NextRequest) {
     const fees = subtotal * 0.05;
     const total = subtotal + fees;
 
+    // Validate and apply promo code if provided
+    let discountInfo = null;
+    let discountAmount = 0;
+    let finalSubtotal = subtotal;
+    let finalFees = fees;
+    let finalTotal = total;
+
+    if (promoCode && promoCode.trim()) {
+      const promoInfo = await validatePromoCode(promoCode);
+      if (promoInfo) {
+        const discountResult = applyDiscount(subtotal, promoInfo);
+        discountInfo = {
+          code: promoInfo.code,
+          description: promoInfo.description,
+          discountType: promoInfo.discountType,
+          discountValue: promoInfo.discountValue,
+        };
+        discountAmount = discountResult.discount_amount;
+        finalSubtotal = discountResult.final_subtotal;
+        // Fees are applied on final subtotal
+        finalFees = finalSubtotal * 0.05;
+        finalTotal = finalSubtotal + finalFees;
+      }
+    }
+
     return NextResponse.json({
       success: true,
       calculation: {
@@ -214,9 +240,21 @@ export async function POST(request: NextRequest) {
         hours: diffHours,
         breakdown,
         subtotal,
-        fees,
-        total,
-        savings,
+        discount: discountInfo ? {
+          code: discountInfo.code,
+          description: discountInfo.description,
+          type: discountInfo.discountType,
+          value: discountInfo.discountValue,
+          amount: discountAmount,
+        } : null,
+        subtotalAfterDiscount: finalSubtotal,
+        fees: finalFees,
+        total: finalTotal,
+        savings: discountAmount > 0 ? {
+          comparedTo: 'preço original',
+          amount: discountAmount,
+          percentage: parseFloat(((discountAmount / subtotal) * 100).toFixed(2)),
+        } : null,
       },
     });
   } catch (error) {

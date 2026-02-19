@@ -7,6 +7,7 @@ import { useEffect, useRef, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { PIXPaymentComponent } from '@/components/PIXPaymentComponent';
 
 const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 const stripePromise = publishableKey ? loadStripe(publishableKey) : null;
@@ -86,6 +87,13 @@ function CheckoutContent() {
   const [clientSecret, setClientSecret] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'pix' | null>(null);
+  const [pixPaymentStarted, setPixPaymentStarted] = useState(false);
+  const [promoCode, setPromoCode] = useState('');
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [appliedPromo, setAppliedPromo] = useState<any>(null);
+  const [promoError, setPromoError] = useState('');
+  const [reservationConfirmed, setReservationConfirmed] = useState(false);
   const initializedRef = useRef(false);
 
   useEffect(() => {
@@ -106,6 +114,7 @@ function CheckoutContent() {
         const subtotal = searchParams.get('subtotal');
         const fees = searchParams.get('fees');
         const userId = searchParams.get('userId');
+        const promoCodeParam = searchParams.get('promoCode');
 
         if (!hangarId || !checkIn || !checkOut || !totalPrice || !userId) {
           setError('Dados de reserva inválidos');
@@ -116,6 +125,10 @@ function CheckoutContent() {
         const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
         // Call booking confirm endpoint
+        if (promoCodeParam) {
+          setPromoCode(promoCodeParam.toUpperCase());
+        }
+
         const response = await fetch('/api/hangarshare/booking/confirm', {
           method: 'POST',
           headers: {
@@ -130,6 +143,7 @@ function CheckoutContent() {
             totalPrice: parseFloat(totalPrice),
             subtotal: parseFloat(subtotal || totalPrice),
             fees: parseFloat(fees || '0'),
+            promoCode: appliedPromo?.code || promoCodeParam || null,
           }),
         });
 
@@ -145,6 +159,7 @@ function CheckoutContent() {
         setBookingData({
           ...data.booking,
           totalPrice: parseFloat(totalPrice),
+          hangarId: parseInt(hangarId),
         });
         setClientSecret(data.payment.clientSecret);
       } catch (err: any) {
@@ -160,6 +175,72 @@ function CheckoutContent() {
   const handlePaymentSuccess = (paymentIntent: any) => {
     // Redirect to success page
     router.push(`/hangarshare/booking/success?paymentId=${paymentIntent.id}`);
+  };
+
+  const handlePixPaymentComplete = (paymentId: number, transactionId: string) => {
+    // For PIX, redirect to success page with PIX payment ID
+    router.push(`/hangarshare/booking/success?pixPaymentId=${paymentId}&transactionId=${transactionId}`);
+  };
+
+  const handleApplyPromo = async () => {
+    if (!promoCode.trim()) {
+      setPromoError('Digite um código de promoção');
+      return;
+    }
+
+    setPromoLoading(true);
+    setPromoError('');
+
+    try {
+      const response = await fetch('/api/hangarshare/booking/calculate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          hangarId: bookingData.hangarId || parseInt(searchParams.get('hangarId') || '0'),
+          checkIn: bookingData.checkIn,
+          checkOut: bookingData.checkOut,
+          promoCode: promoCode.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Código inválido');
+      }
+
+      const data = await response.json();
+      if (data.calculation.discount) {
+        setAppliedPromo(data.calculation.discount);
+        setPromoCode('');
+        // Update booking data with discount
+        setBookingData((prev: any) => ({
+          ...prev,
+          subtotal: data.calculation.subtotal,
+          discount: data.calculation.discount,
+          discountAmount: data.calculation.discount.amount,
+          fees: data.calculation.fees,
+          totalPrice: data.calculation.total,
+        }));
+      } else {
+        setPromoError('Código inválido ou expirado');
+      }
+    } catch (err: any) {
+      setPromoError(err.message);
+    } finally {
+      setPromoLoading(false);
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setAppliedPromo(null);
+    setPromoCode('');
+    setPromoError('');
+    // Will need to recalculate total without discount (this requires API call or reset to original)
+  };
+
+  const handleConfirmReservation = () => {
+    // Promo code is now optional - user can proceed without applying one
+    setReservationConfirmed(true);
   };
 
   if (loading) {
@@ -202,7 +283,7 @@ function CheckoutContent() {
         </button>
 
         <div className="bg-white rounded-xl shadow-lg p-8">
-          <h1 className="text-3xl font-black text-blue-900 mb-6">Confirmar Pagamento</h1>
+          <h1 className="text-3xl font-black text-blue-900 mb-6">{reservationConfirmed ? 'Confirmar Pagamento' : 'Confirmar Reserva'}</h1>
 
           {/* Booking Summary */}
           <div className="bg-slate-50 rounded-lg p-6 mb-8 border border-slate-200">
@@ -224,6 +305,22 @@ function CheckoutContent() {
                 <span className="text-slate-600">Noites:</span>
                 <span className="font-bold">{bookingData.nights}</span>
               </div>
+              <div className="flex justify-between text-slate-600">
+                <span>Subtotal:</span>
+                <span>R$ {(bookingData.subtotal || bookingData.totalPrice).toFixed(2)}</span>
+              </div>
+              {bookingData.discount && appliedPromo && (
+                <div className="flex justify-between text-green-600 font-semibold">
+                  <span>Desconto ({appliedPromo.code}):</span>
+                  <span>-R$ {bookingData.discountAmount?.toFixed(2) || appliedPromo.amount?.toFixed(2)}</span>
+                </div>
+              )}
+              {bookingData.fees && (
+                <div className="flex justify-between text-slate-600">
+                  <span>Taxa:</span>
+                  <span>R$ {bookingData.fees.toFixed(2)}</span>
+                </div>
+              )}
               <div className="border-t border-slate-200 pt-2 mt-2 flex justify-between font-bold text-lg">
                 <span>Total:</span>
                 <span className="text-green-600">R$ {bookingData.totalPrice.toFixed(2)}</span>
@@ -231,19 +328,162 @@ function CheckoutContent() {
             </div>
           </div>
 
-          {/* Payment Form */}
-          {clientSecret && (
+          {/* Promo Code Section (Before Confirmation) */}
+          {!reservationConfirmed && (
+            <div className="mb-8">
+              {!appliedPromo ? (
+                <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
+                  <h3 className="font-bold text-amber-900 mb-3">🏷️ Tem um código de desconto? (Opcional)</h3>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={promoCode}
+                      onChange={(e) => {
+                        setPromoCode(e.target.value.toUpperCase());
+                        setPromoError('');
+                      }}
+                      onKeyPress={(e) => e.key === 'Enter' && handleApplyPromo()}
+                      placeholder="Digite o código..."
+                      className="flex-1 px-3 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-400 outline-none"
+                    />
+                    <button
+                      onClick={handleApplyPromo}
+                      disabled={promoLoading || !promoCode.trim()}
+                      className="px-4 py-2 bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700 disabled:bg-slate-300 disabled:cursor-not-allowed"
+                    >
+                      {promoLoading ? 'Validando...' : 'Aplicar'}
+                    </button>
+                  </div>
+                  {promoError && (
+                    <p className="text-red-600 text-sm mt-2">❌ {promoError}</p>
+                  )}
+                </div>
+              ) : (
+                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-bold text-green-900">✓ Desconto aplicado!</h3>
+                      <p className="text-sm text-green-700 mt-1">
+                        Código <span className="font-mono bg-green-100 px-2 py-1 rounded">{appliedPromo.code}</span> economiza
+                        <span className="font-bold ml-1">R$ {appliedPromo.amount?.toFixed(2) || bookingData.discountAmount?.toFixed(2)}</span>
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleRemovePromo}
+                      className="text-green-600 hover:text-red-600 font-semibold text-sm"
+                    >
+                      Remover
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Confirm Reservation Button */}
+          {!reservationConfirmed && (
+            <button
+              onClick={handleConfirmReservation}
+              className="w-full py-4 mb-6 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition text-lg"
+            >
+              Confirmar Reserva
+            </button>
+          )}
+
+          {/* Payment Method Selection - Shown After Confirmation */}
+          {reservationConfirmed && !pixPaymentStarted && !paymentMethod && (
+            <div className="mb-8">
+              <p className="text-sm font-semibold text-slate-900 mb-4">Escolha a forma de pagamento:</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <button
+                  onClick={() => setPaymentMethod('stripe')}
+                  className="p-4 rounded-lg border-2 border-slate-200 hover:border-blue-400 transition text-left hover:bg-blue-50"
+                >
+                  <div className="font-semibold text-slate-900">💳 Cartão de Crédito</div>
+                  <div className="text-xs text-slate-600 mt-1">Via Stripe</div>
+                </button>
+                <button
+                  onClick={() => setPaymentMethod('pix')}
+                  className="p-4 rounded-lg border-2 border-slate-200 hover:border-green-400 transition text-left hover:bg-green-50"
+                >
+                  <div className="font-semibold text-slate-900">📱 PIX</div>
+                  <div className="text-xs text-slate-600 mt-1">Instantâneo, sem taxas</div>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Go Back Button - Only show if not confirmed yet */}
+          {!reservationConfirmed && (
+            <button
+              onClick={() => router.back()}
+              className="w-full py-3 mt-4 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50"
+            >
+              Voltar
+            </button>
+          )}
+
+          {/* PIX Payment Flow */}
+          {pixPaymentStarted && paymentMethod === 'pix' && clientSecret && (
+            <div className="mb-8">
+              <PIXPaymentComponent
+                orderId={`booking-${bookingData.id}`}
+                orderType="hangar_booking"
+                amountCents={Math.round(bookingData.totalPrice * 100)}
+                description={`Reserva de Hangar ${bookingData.hangarNumber} - ${bookingData.nights} noites`}
+                onPaymentComplete={handlePixPaymentComplete}
+                autoRefresh={true}
+                refreshInterval={8000}
+              />
+              <button
+                onClick={() => {
+                  setPixPaymentStarted(false);
+                  setPaymentMethod(null);
+                }}
+                className="mt-4 w-full px-4 py-2 rounded-lg border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50"
+              >
+                Voltar
+              </button>
+            </div>
+          )}
+
+          {/* Stripe Payment Form */}
+          {reservationConfirmed && paymentMethod === 'stripe' && clientSecret && !pixPaymentStarted && (
             <Elements stripe={stripePromise} options={{ clientSecret }}>
               <CheckoutForm
                 clientSecret={clientSecret}
                 bookingData={bookingData}
                 onSuccess={handlePaymentSuccess}
               />
+              <button
+                onClick={() => setPaymentMethod(null)}
+                className="mt-4 w-full px-4 py-2 rounded-lg border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50"
+              >
+                Voltar
+              </button>
             </Elements>
           )}
 
+          {/* Show confirmation button to start PIX payment */}
+          {reservationConfirmed && paymentMethod === 'pix' && !pixPaymentStarted && (
+            <div className="space-y-3">
+              <button
+                onClick={() => setPixPaymentStarted(true)}
+                className="w-full py-4 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition"
+              >
+                Continuar com PIX
+              </button>
+              <button
+                onClick={() => setPaymentMethod(null)}
+                className="w-full px-4 py-2 rounded-lg border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50"
+              >
+                Voltar
+              </button>
+            </div>
+          )}
+
           <p className="text-xs text-slate-500 mt-6 text-center">
-            Seus dados de cartão são processados com segurança pelo Stripe
+            Seus dados de pagamento são processados com segurança
           </p>
         </div>
       </div>

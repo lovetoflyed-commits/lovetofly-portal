@@ -54,6 +54,14 @@ interface BookingCalculation {
     subtotal: number;
   }[];
   subtotal: number;
+  discount?: {
+    code: string;
+    description?: string;
+    type: string;
+    value: number;
+    amount: number;
+  } | null;
+  subtotalAfterDiscount?: number;
   fees: number;
   total: number;
   savings?: {
@@ -112,6 +120,8 @@ export default function HangarListingDetailPage() {
   const [checkOut, setCheckOut] = useState('');
   const [calculatingPrice, setCalculatingPrice] = useState(false);
   const [calculation, setCalculation] = useState<BookingCalculation | null>(null);
+  const [promoCode, setPromoCode] = useState('');
+  const [promoError, setPromoError] = useState('');
 
   // Reviews states
   const [reviews, setReviews] = useState<any[]>([]);
@@ -180,7 +190,7 @@ export default function HangarListingDetailPage() {
     setEditingReview(matched || null);
   }, [searchParams, reviews]);
 
-  const calculatePrice = async () => {
+  const calculatePrice = async (overridePromo?: string | null) => {
     if (!checkIn || !checkOut) {
       alert('Selecione as datas de entrada e saída');
       return;
@@ -195,7 +205,10 @@ export default function HangarListingDetailPage() {
     }
 
     setCalculatingPrice(true);
+    setPromoError('');
     try {
+      const promoSource = typeof overridePromo === 'string' ? overridePromo : promoCode;
+      const promoToApply = promoSource.trim();
       const response = await fetch('/api/hangarshare/booking/calculate', {
         method: 'POST',
         headers: {
@@ -205,6 +218,7 @@ export default function HangarListingDetailPage() {
           hangarId: params.id,
           checkIn,
           checkOut,
+          promoCode: promoToApply || undefined,
         }),
       });
 
@@ -214,6 +228,10 @@ export default function HangarListingDetailPage() {
 
       const data = await response.json();
       setCalculation(data.calculation);
+
+      if (promoToApply && !data.calculation?.discount) {
+        setPromoError('Código inválido ou expirado');
+      }
     } catch (err: any) {
       alert(err.message);
     } finally {
@@ -656,12 +674,54 @@ export default function HangarListingDetailPage() {
                   </div>
 
                   <button
-                    onClick={calculatePrice}
+                    onClick={() => calculatePrice()}
                     disabled={calculatingPrice || !checkIn || !checkOut}
                     className="w-full py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition"
                   >
                     {calculatingPrice ? 'Calculando...' : 'Calcular Valor'}
                   </button>
+
+                  <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
+                    <h4 className="font-bold text-amber-900 mb-2">🏷️ Código promocional</h4>
+                    <p className="text-xs text-amber-800 mb-3">Opcional - deixe em branco se nao tiver codigo.</p>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={promoCode}
+                        onChange={(e) => {
+                          setPromoCode(e.target.value.toUpperCase());
+                          setPromoError('');
+                        }}
+                        onKeyDown={(e) => e.key === 'Enter' && calculatePrice()}
+                        placeholder="Digite o código..."
+                        className="flex-1 px-3 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-400 outline-none"
+                      />
+                      <button
+                        onClick={() => calculatePrice()}
+                        disabled={calculatingPrice || !promoCode.trim() || !checkIn || !checkOut}
+                        className="px-4 py-2 bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700 disabled:bg-slate-300 disabled:cursor-not-allowed"
+                      >
+                        {calculatingPrice ? 'Validando...' : 'Aplicar'}
+                      </button>
+                    </div>
+                    {promoError && (
+                      <p className="text-red-600 text-sm mt-2">❌ {promoError}</p>
+                    )}
+                    {calculation?.discount && (
+                      <div className="flex items-center justify-between mt-3 text-sm text-green-700">
+                        <span>✓ {calculation.discount.code} aplicado</span>
+                        <button
+                          onClick={() => {
+                            setPromoCode('');
+                            calculatePrice('');
+                          }}
+                          className="text-green-700 hover:text-red-600 font-semibold"
+                        >
+                          Remover
+                        </button>
+                      </div>
+                    )}
+                  </div>
 
                   {/* Price Breakdown */}
                   {calculation && (
@@ -697,6 +757,18 @@ export default function HangarListingDetailPage() {
                           <span className="text-slate-600">Subtotal</span>
                           <span className="text-slate-900">R$ {calculation.subtotal.toFixed(2)}</span>
                         </div>
+                        {calculation.discount && (
+                          <div className="flex justify-between mb-2 text-green-700 font-semibold">
+                            <span>Desconto ({calculation.discount.code})</span>
+                            <span>-R$ {calculation.discount.amount.toFixed(2)}</span>
+                          </div>
+                        )}
+                        {typeof calculation.subtotalAfterDiscount === 'number' && calculation.discount && (
+                          <div className="flex justify-between mb-2">
+                            <span className="text-slate-600">Subtotal com desconto</span>
+                            <span className="text-slate-900">R$ {calculation.subtotalAfterDiscount.toFixed(2)}</span>
+                          </div>
+                        )}
                         <div className="flex justify-between mb-2">
                           <span className="text-slate-600">Taxa de serviço (5%)</span>
                           <span className="text-slate-900">R$ {calculation.fees.toFixed(2)}</span>
@@ -722,6 +794,9 @@ export default function HangarListingDetailPage() {
                           checkoutUrl.searchParams.set('totalPrice', String(calculation.total));
                           checkoutUrl.searchParams.set('subtotal', String(calculation.subtotal));
                           checkoutUrl.searchParams.set('fees', String(calculation.fees));
+                          if (calculation.discount?.code) {
+                            checkoutUrl.searchParams.set('promoCode', calculation.discount.code);
+                          }
                           router.push(checkoutUrl.toString());
                         }}
                         className="w-full mt-4 py-4 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition"

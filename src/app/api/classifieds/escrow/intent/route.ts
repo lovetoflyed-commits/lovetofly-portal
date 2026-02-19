@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/config/db';
 import { verifyToken } from '@/utils/auth';
+import { applyDiscount, validatePromoCode } from '@/utils/codeUtils';
 
 async function getStripe() {
   const Stripe = (await import('stripe')).default;
@@ -31,6 +32,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const listingType = String(body.listingType || '').toLowerCase();
     const listingId = Number(body.listingId);
+    const promoCode = String(body.promoCode || '').trim();
 
     if (!LISTING_TABLES[listingType] || !listingId) {
       return NextResponse.json({ error: 'Invalid listing' }, { status: 400 });
@@ -63,7 +65,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Este anúncio já foi vendido.' }, { status: 409 });
     }
 
-    const amountCents = Math.round(Number(listing.price) * 100);
+    const baseSubtotal = Number(listing.price);
+    if (!baseSubtotal || baseSubtotal <= 0) {
+      return NextResponse.json({ error: 'Preço inválido' }, { status: 400 });
+    }
+
+    let discountAmount = 0;
+    let finalTotal = baseSubtotal;
+    let appliedPromo: null | {
+      code: string;
+      discountType: string;
+      discountValue: number;
+      amount: number;
+    } = null;
+
+    if (promoCode) {
+      const promoInfo = await validatePromoCode(promoCode);
+      if (!promoInfo) {
+        return NextResponse.json({ error: 'Código inválido ou expirado' }, { status: 400 });
+      }
+
+      const discountResult = applyDiscount(baseSubtotal, promoInfo);
+      discountAmount = discountResult.discount_amount;
+      finalTotal = discountResult.final_subtotal;
+      appliedPromo = {
+        code: promoInfo.code,
+        discountType: promoInfo.discountType,
+        discountValue: promoInfo.discountValue,
+        amount: discountAmount,
+      };
+    }
+
+    const amountCents = Math.round(finalTotal * 100);
     if (!amountCents || amountCents <= 0) {
       return NextResponse.json({ error: 'Preço inválido' }, { status: 400 });
     }
@@ -77,6 +110,8 @@ export async function POST(request: NextRequest) {
         listing_id: String(listingId),
         buyer_user_id: String(user.id),
         seller_user_id: String(listing.user_id),
+        promo_code: appliedPromo?.code || '',
+        discount_amount: String(discountAmount || 0),
       },
     });
 
@@ -106,6 +141,12 @@ export async function POST(request: NextRequest) {
         price: Number(listing.price),
         listingType,
       },
+      pricing: {
+        subtotal: baseSubtotal,
+        discountAmount,
+        total: finalTotal,
+      },
+      appliedPromo,
     });
   } catch (error: any) {
     console.error('Error creating classifieds payment intent:', error);

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/config/db';
 import MonitoringService from '@/services/monitoring';
+import { validatePromoCode, applyDiscount, incrementCodeUsage } from '@/utils/codeUtils';
 
 // Importa Stripe dinamicamente apenas durante a execução
 async function getStripe() {
@@ -93,7 +94,7 @@ export async function POST(request: NextRequest) {
   try {
     const stripe = await getStripe();
     parsedBody = await request.json();
-    const { hangarId, userId, checkIn, checkOut, totalPrice, subtotal, fees } = parsedBody;
+    const { hangarId, userId, checkIn, checkOut, totalPrice, subtotal, fees, promoCode } = parsedBody;
 
     const timeZone = process.env.BOOKING_TIMEZONE || 'America/Sao_Paulo';
 
@@ -103,6 +104,25 @@ export async function POST(request: NextRequest) {
         { error: 'Dados obrigatórios faltando' },
         { status: 400 }
       );
+    }
+
+    // Validate and apply promo code if provided
+    let finalSubtotal = subtotal;
+    let finalFees = fees;
+    let finalTotal = totalPrice;
+    let appliedPromoCode = null;
+    let discountAmount = 0;
+
+    if (promoCode && promoCode.trim()) {
+      const promoInfo = await validatePromoCode(promoCode);
+      if (promoInfo) {
+        const discountResult = applyDiscount(subtotal, promoInfo);
+        appliedPromoCode = promoInfo;
+        discountAmount = discountResult.discount_amount;
+        finalSubtotal = discountResult.final_subtotal;
+        finalFees = finalSubtotal * 0.05;
+        finalTotal = finalSubtotal + finalFees;
+      }
     }
 
     // Verify user is authenticated (should be passed in request headers)
@@ -243,7 +263,7 @@ export async function POST(request: NextRequest) {
 
     // Create Stripe Payment Intent
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(totalPrice * 100), // Convert to cents
+      amount: Math.round(finalTotal * 100), // Convert to cents
       currency: 'brl',
       payment_method_types: ['card'],
       metadata: {
@@ -254,16 +274,17 @@ export async function POST(request: NextRequest) {
         checkOut,
         nights: String(nights),
         bookingType,
+        promoCode: appliedPromoCode?.code || '',
       },
       receipt_email: user.email,
-      description: `Reserva de hangar ${hangar.hangar_number} (${hangar.icao_code}) - ${nights} noite(s)`,
+      description: `Reserva de hangar ${hangar.hangar_number} (${hangar.icao_code}) - ${nights} noite(s)${appliedPromoCode ? ` - Desconto: ${appliedPromoCode.code}` : ''}`,
     });
 
     // Create booking record with confirmed status
     const bookingResult = await client.query(
       `INSERT INTO hangar_bookings 
-        (hangar_id, user_id, check_in, check_out, nights, subtotal, fees, total_price, status, payment_method, stripe_payment_intent_id, booking_type, refund_policy_applied)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        (hangar_id, user_id, check_in, check_out, nights, subtotal, fees, total_price, status, payment_method, stripe_payment_intent_id, booking_type, refund_policy_applied, promo_code, discount_amount)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
        RETURNING id, stripe_payment_intent_id, booking_type`,
       [
         hangarId,
@@ -271,16 +292,38 @@ export async function POST(request: NextRequest) {
         checkIn,
         checkOut,
         nights,
-        subtotal,
-        fees,
-        totalPrice,
+        finalSubtotal,
+        finalFees,
+        finalTotal,
         'confirmed',
         'stripe',
         paymentIntent.id,
         bookingType,
         refundPolicyApplied,
+        appliedPromoCode?.code || null,
+        discountAmount > 0 ? discountAmount : null,
       ]
     );
+
+    // Track code usage if promo code was applied
+    if (appliedPromoCode) {
+      try {
+        // Increment usage count
+        await incrementCodeUsage(appliedPromoCode.id);
+
+        // Record redemption if it's a coupon type
+        if (appliedPromoCode.type === 'coupon') {
+          await client.query(
+            `INSERT INTO coupon_redemptions (coupon_id, user_id, booking_id, redeemed_at)
+             VALUES ($1, $2, $3, NOW())`,
+            [appliedPromoCode.id, userId, bookingResult.rows[0].id]
+          );
+        }
+      } catch (err) {
+        console.error('Error tracking code usage:', err);
+        // Don't fail the booking if code tracking fails
+      }
+    }
 
     await client.query('COMMIT');
 
@@ -295,7 +338,13 @@ export async function POST(request: NextRequest) {
         checkIn,
         checkOut,
         nights,
-        totalPrice,
+        subtotal: finalSubtotal,
+        discount: appliedPromoCode ? {
+          code: appliedPromoCode.code,
+          amount: discountAmount,
+        } : null,
+        fees: finalFees,
+        totalPrice: finalTotal,
         bookingType,
       },
       payment: {

@@ -4,6 +4,116 @@ async function getResendClient() {
   return new Resend(process.env.RESEND_API_KEY);
 }
 
+type SendEmailOptions = {
+  from?: string;
+  to: string | string[];
+  subject: string;
+  html: string;
+};
+
+type SendEmailResult = {
+  provider: 'smtp' | 'resend';
+  data?: unknown;
+};
+
+async function getSmtpTransporter({
+  host,
+  port,
+  secure,
+  user,
+  pass,
+}: {
+  host: string;
+  port: number;
+  secure: boolean;
+  user: string;
+  pass: string;
+}) {
+  const nodemailer = await import('nodemailer');
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure,
+    auth: { user, pass },
+  });
+}
+
+async function sendEmail({ from, to, subject, html }: SendEmailOptions) {
+  const smtpHost = process.env.SMTP_HOST;
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+  const smtpPort = Number(process.env.SMTP_PORT ?? 587);
+  const smtpSecure = process.env.SMTP_SECURE === 'true' || smtpPort === 465;
+  const resolvedFrom =
+    from ||
+    process.env.SMTP_FROM ||
+    process.env.RESEND_FROM ||
+    'noreply@lovetofly.com.br';
+
+  // Debug logging
+  console.log('[Email] Sending email:', {
+    from: resolvedFrom,
+    to: Array.isArray(to) ? to : [to],
+    subject,
+    provider: smtpHost ? 'smtp' : 'resend',
+  });
+
+  if (smtpHost && smtpUser && smtpPass) {
+    try {
+      const transporter = await getSmtpTransporter({
+        host: smtpHost,
+        port: smtpPort,
+        secure: smtpSecure,
+        user: smtpUser,
+        pass: smtpPass,
+      });
+
+      const result = await transporter.sendMail({
+        from: resolvedFrom,
+        to,
+        subject,
+        html,
+      });
+
+      console.log('[Email] Successfully sent via SMTP:', {
+        messageId: result.messageId,
+        to: Array.isArray(to) ? to : [to],
+      });
+
+      return { provider: 'smtp' } as SendEmailResult;
+    } catch (smtpError) {
+      console.error('[Email] SMTP sending failed:', smtpError);
+      throw smtpError;
+    }
+  }
+
+  // Only use Resend if it has a valid API key
+  const resendApiKey = process.env.RESEND_API_KEY;
+  if (!resendApiKey || resendApiKey.startsWith('re_YOUR')) {
+    console.warn('[Email] No valid email provider configured; email skipped');
+    return null;
+  }
+
+  const resend = await getResendClient();
+  const { data, error } = await resend.emails.send({
+    from: resolvedFrom,
+    to,
+    subject,
+    html,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  console.log('[Email] Successfully sent via Resend:', {
+    messageId: data?.id,
+    to: Array.isArray(to) ? to : [to],
+  });
+
+  return { provider: 'resend', data } as SendEmailResult;
+}
+
 /**
  * Send aircraft transfer quote request email
  */
@@ -43,12 +153,6 @@ export async function sendTransferQuoteRequest({
   notes?: string;
 }) {
   try {
-    if (!process.env.RESEND_API_KEY) {
-      console.warn('RESEND_API_KEY not set; transfer quote email skipped');
-      return false;
-    }
-
-    const resend = await getResendClient();
     const htmlContent = `
 <!DOCTYPE html>
 <html>
@@ -105,12 +209,16 @@ export async function sendTransferQuoteRequest({
 </html>
 `;
 
-    await resend.emails.send({
+    const result = await sendEmail({
       from: 'LoveToFly Portal <suporte@lovetofly.com.br>',
       to: ['suporte@lovetofly.com.br'],
       subject: `Solicitação de cotação - Traslados (${aircraftPrefix})`,
       html: htmlContent,
     });
+
+    if (!result) {
+      return false;
+    }
 
     return true;
   } catch (error) {
@@ -132,8 +240,6 @@ export async function sendPasswordResetEmail({
   resetCode: string;
 }) {
   try {
-    const resend = await getResendClient();
-
     const htmlContent = `
 <!DOCTYPE html>
 <html>
@@ -173,12 +279,15 @@ export async function sendPasswordResetEmail({
 </html>
 `;
 
-    await resend.emails.send({
-      from: 'noreply@lovetofly.com.br',
+    const result = await sendEmail({
       to: email,
       subject: 'Redefinir Senha - Love to Fly',
       html: htmlContent,
     });
+
+    if (!result) {
+      return false;
+    }
 
     return true;
   } catch (error) {
@@ -214,8 +323,7 @@ export async function sendBookingConfirmation({
   paymentId: string;
 }) {
   try {
-    const resend = await getResendClient();
-    const { data, error } = await resend.emails.send({
+    const result = await sendEmail({
       from: 'LoveToFly Portal <reservas@lovetofly.com.br>',
       to: [customerEmail],
       subject: `Confirmação de Reserva - ${confirmationNumber}`,
@@ -232,13 +340,13 @@ export async function sendBookingConfirmation({
       }),
     });
 
-    if (error) {
-      console.error('❌ Error sending confirmation email:', error);
-      return { success: false, error };
+    if (!result) {
+      console.error('❌ Email provider not configured');
+      return { success: false, error: 'Email provider not configured' };
     }
 
-    console.log('✅ Confirmation email sent:', data?.id);
-    return { success: true, data };
+    console.log('✅ Confirmation email sent:', result.provider);
+    return { success: true, data: result };
   } catch (error) {
     console.error('❌ Exception sending confirmation email:', error);
     return { success: false, error };
@@ -270,8 +378,7 @@ export async function sendOwnerNotification({
   confirmationNumber: string;
 }) {
   try {
-    const resend = await getResendClient();
-    const { data, error } = await resend.emails.send({
+    const result = await sendEmail({
       from: 'LoveToFly Portal <notificacoes@lovetofly.com.br>',
       to: [ownerEmail],
       subject: `Nova Reserva Recebida - ${hangarName}`,
@@ -287,13 +394,13 @@ export async function sendOwnerNotification({
       }),
     });
 
-    if (error) {
-      console.error('❌ Error sending owner notification:', error);
-      return { success: false, error };
+    if (!result) {
+      console.error('❌ Email provider not configured');
+      return { success: false, error: 'Email provider not configured' };
     }
 
-    console.log('✅ Owner notification sent:', data?.id);
-    return { success: true, data };
+    console.log('✅ Owner notification sent:', result.provider);
+    return { success: true, data: result };
   } catch (error) {
     console.error('❌ Exception sending owner notification:', error);
     return { success: false, error };
@@ -321,8 +428,7 @@ export async function sendPaymentFailureNotification({
   failureReason?: string;
 }) {
   try {
-    const resend = await getResendClient();
-    const { data, error } = await resend.emails.send({
+    const result = await sendEmail({
       from: 'LoveToFly Portal <suporte@lovetofly.com.br>',
       to: [customerEmail],
       subject: 'Problema no Pagamento - Ação Necessária',
@@ -336,13 +442,13 @@ export async function sendPaymentFailureNotification({
       }),
     });
 
-    if (error) {
-      console.error('❌ Error sending failure notification:', error);
-      return { success: false, error };
+    if (!result) {
+      console.error('❌ Email provider not configured');
+      return { success: false, error: 'Email provider not configured' };
     }
 
-    console.log('✅ Failure notification sent:', data?.id);
-    return { success: true, data };
+    console.log('✅ Failure notification sent:', result.provider);
+    return { success: true, data: result };
   } catch (error) {
     console.error('❌ Exception sending failure notification:', error);
     return { success: false, error };
@@ -705,8 +811,7 @@ export async function sendCancellationEmail({
   serviceFee: number;
 }) {
   try {
-    const resend = await getResendClient();
-    const { data, error } = await resend.emails.send({
+    const result = await sendEmail({
       from: 'LoveToFly Portal <reservas@lovetofly.com.br>',
       to: [customerEmail],
       subject: `Reserva Cancelada - Reembolso Processado #${bookingId}`,
@@ -723,12 +828,11 @@ export async function sendCancellationEmail({
       }),
     });
 
-    if (error) {
-      console.error('Resend error sending cancellation email:', error);
-      throw error;
+    if (!result) {
+      throw new Error('Email provider not configured');
     }
 
-    return data;
+    return result;
   } catch (error) {
     console.error('Error sending cancellation email:', error);
     throw error;
@@ -1067,10 +1171,14 @@ export async function sendBookingStatusEmail({
 </html>
   `;
 
-  await resend.emails.send({
+  const result = await sendEmail({
     from: 'LoveToFly <noreply@lovetofly.com.br>',
     to,
     subject: `${icon} Atualização de Reserva: ${statusLabel} - #${bookingId}`,
     html,
   });
+
+  if (!result) {
+    throw new Error('Email provider not configured');
+  }
 }

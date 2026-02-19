@@ -110,7 +110,9 @@ export async function GET(request: NextRequest) {
       totalMessages,
       unreadMessages,
       pendingReports,
-      messagesToday
+      messagesToday,
+      inviteCodesGenerated,
+      promoCodesGenerated
     ] = await Promise.all([
       // Pending verifications (unverified hangar owners)
       safeCount(
@@ -127,11 +129,11 @@ export async function GET(request: NextRequest) {
       // Pending hangar listings
       safeCount(
         {
-          query: 'SELECT COUNT(*) FROM hangar_listings WHERE status = $1',
+          query: 'SELECT COUNT(*) as count FROM hangar_listings WHERE status = $1',
           params: ['pending']
         },
         {
-          query: 'SELECT COUNT(*) FROM hangar_listings WHERE approval_status = $1',
+          query: 'SELECT COUNT(*) as count FROM hangar_listings WHERE approval_status = $1',
           params: ['pending_approval']
         },
         'pending listings'
@@ -139,39 +141,39 @@ export async function GET(request: NextRequest) {
       // Active/Published hangar listings
       safeCount(
         {
-          query: "SELECT COUNT(*) FROM hangar_listings WHERE status IN ('active', 'published')"
+          query: "SELECT COUNT(*) as count FROM hangar_listings WHERE status IN ('active', 'published')"
         },
         {
-          query: "SELECT COUNT(*) FROM hangar_listings WHERE approval_status = 'approved'"
+          query: "SELECT COUNT(*) as count FROM hangar_listings WHERE approval_status = 'approved'"
         },
         'active listings'
       ),
       // Active bookings (pending + confirmed)
       safeCount(
         {
-          query: "SELECT COUNT(*) FROM hangar_bookings WHERE status IN ('pending', 'confirmed')"
+          query: "SELECT COUNT(*) as count FROM hangar_bookings WHERE status IN ('pending', 'confirmed')"
         },
         {
-          query: "SELECT COUNT(*) FROM hangar_bookings WHERE booking_status IN ('pending', 'confirmed')"
+          query: "SELECT COUNT(*) as count FROM hangar_bookings WHERE booking_status IN ('pending', 'confirmed')"
         },
         'active bookings'
       ),
       // Bookings created today
       safeCount(
         {
-          query: "SELECT COUNT(*) FROM hangar_bookings WHERE created_at >= $1",
+          query: "SELECT COUNT(*) as count FROM hangar_bookings WHERE created_at >= $1",
           params: [today]
         },
         {
-          query: "SELECT COUNT(*) FROM bookings WHERE created_at >= $1",
+          query: "SELECT COUNT(*) as count FROM bookings WHERE created_at >= $1",
           params: [today]
         },
         'bookings today'
       ),
       // Total users
-      safeCount({ query: 'SELECT COUNT(*) FROM users' }, undefined, 'total users'),
+      safeCount({ query: 'SELECT COUNT(*) as count FROM users' }, { query: 'SELECT 0 as count', params: [] }, 'total users'),
       // New users today
-      safeCount({ query: 'SELECT COUNT(*) FROM users WHERE created_at >= $1', params: [today] }, undefined, 'new users today'),
+      safeCount({ query: 'SELECT COUNT(*) as count FROM users WHERE created_at >= $1', params: [today] }, { query: 'SELECT 0 as count', params: [] }, 'new users today'),
       // Total revenue from completed bookings
       safeCount(
         { query: "SELECT COALESCE(SUM(total_price), 0) as total FROM hangar_bookings WHERE status = 'completed'" },
@@ -180,68 +182,68 @@ export async function GET(request: NextRequest) {
       ),
       // Pending traslados requests
       safeCount(
-        { query: "SELECT COUNT(*) FROM traslados_requests WHERE status = 'new'" },
-        undefined,
+        { query: "SELECT COUNT(*) as count FROM traslados_requests WHERE status = 'new'" },
+        { query: "SELECT 0 as count", params: [] },
         'pending traslados'
       ),
       // Pending traslados pilots
       safeCount(
-        { query: "SELECT COUNT(*) FROM traslados_pilots WHERE status = 'pending'" },
-        undefined,
+        { query: "SELECT COUNT(*) as count FROM traslados_pilots WHERE status = 'pending'" },
+        { query: "SELECT 0 as count", params: [] },
         'pending traslados pilots'
       ),
       // Moderation open cases
       safeCount(
-        { query: "SELECT COUNT(*) FROM content_reports WHERE status = 'pending'" },
-        undefined,
+        { query: "SELECT COUNT(*) as count FROM content_reports WHERE status = 'pending'" },
+        { query: "SELECT 0 as count", params: [] },
         'moderation open'
       ),
       // Moderation escalations
       safeCount(
-        { query: "SELECT COUNT(*) FROM user_moderation WHERE is_active = true AND severity IN ('high', 'critical')" },
-        undefined,
+        { query: "SELECT COUNT(*) as count FROM user_moderation WHERE is_active = true AND severity IN ('high', 'critical')" },
+        { query: "SELECT 0 as count", params: [] },
         'moderation escalations'
       ),
       // Pending invoices
       safeCount(
-        { query: "SELECT COUNT(*) FROM invoices WHERE status IN ('issued', 'sent', 'received')" },
-        undefined,
+        { query: "SELECT COUNT(*) as count FROM invoices WHERE status IN ('issued', 'sent', 'received')" },
+        { query: "SELECT 0 as count", params: [] },
         'pending invoices'
       ),
       // Compliance pending
       safeCount(
-        { query: "SELECT COUNT(*) FROM compliance_records WHERE status = 'pending'" },
-        undefined,
+        { query: "SELECT COUNT(*) as count FROM compliance_records WHERE status = 'pending'" },
+        { query: "SELECT 0 as count", params: [] },
         'compliance pending'
       ),
       // Compliance audits
       safeCount(
-        { query: "SELECT COUNT(*) FROM compliance_records WHERE type ILIKE '%audit%'" },
-        undefined,
+        { query: "SELECT COUNT(*) as count FROM compliance_records WHERE type ILIKE '%audit%'" },
+        { query: "SELECT 0 as count", params: [] },
         'compliance audits'
       ),
       // Marketing campaigns active
       safeCount(
-        { query: "SELECT COUNT(*) FROM marketing_campaigns WHERE status = 'active'" },
-        undefined,
+        { query: "SELECT COUNT(*) as count FROM marketing_campaigns WHERE status = 'active'" },
+        { query: "SELECT 0 as count", params: [] },
         'marketing active'
       ),
       // Marketing campaigns total
       safeCount(
-        { query: 'SELECT COUNT(*) FROM marketing_campaigns' },
-        undefined,
+        { query: 'SELECT COUNT(*) as count FROM marketing_campaigns' },
+        { query: "SELECT 0 as count", params: [] },
         'marketing total'
       ),
       // Marketing leads total
       safeCount(
-        { query: 'SELECT COUNT(*) FROM marketing_leads' },
-        undefined,
+        { query: 'SELECT COUNT(*) as count FROM marketing_leads' },
+        { query: "SELECT 0 as count", params: [] },
         'marketing leads'
       ),
       // Marketing leads today
       safeCount(
-        { query: 'SELECT COUNT(*) FROM marketing_leads WHERE created_at >= $1', params: [today] },
-        undefined,
+        { query: 'SELECT COUNT(*) as count FROM marketing_leads WHERE created_at >= $1', params: [today] },
+        { query: "SELECT 0 as count", params: [] },
         'marketing leads today'
       ),
       // Total portal visits
@@ -264,21 +266,33 @@ export async function GET(request: NextRequest) {
       ),
       // Unread messages (admin context)
       safeCount(
-        { query: "SELECT COUNT(*) FROM portal_messages WHERE is_read = false AND sender_type != 'admin'" },
-        undefined,
+        { query: "SELECT COUNT(*) as count FROM portal_messages WHERE is_read = false AND sender_type != 'admin'" },
+        { query: "SELECT 0 as count", params: [] },
         'unread messages'
       ),
       // Pending reports
       safeCount(
-        { query: "SELECT COUNT(*) FROM portal_message_reports WHERE status = 'pending'" },
-        undefined,
+        { query: "SELECT COUNT(*) as count FROM portal_message_reports WHERE status = 'pending'" },
+        { query: "SELECT 0 as count", params: [] },
         'pending reports'
       ),
       // Messages sent today
       safeCount(
-        { query: 'SELECT COUNT(*) FROM portal_messages WHERE created_at >= $1', params: [today] },
-        undefined,
+        { query: 'SELECT COUNT(*) as count FROM portal_messages WHERE created_at >= $1', params: [today] },
+        { query: "SELECT 0 as count", params: [] },
         'messages today'
+      ),
+      // Invite codes generated
+      safeCount(
+        { query: "SELECT COUNT(*) as count FROM codes WHERE code_type = 'invite' AND is_active = true" },
+        { query: "SELECT 0 as count", params: [] },
+        'invite codes generated'
+      ),
+      // Promo codes generated
+      safeCount(
+        { query: "SELECT COUNT(*) as count FROM codes WHERE code_type = 'promo' AND is_active = true" },
+        { query: "SELECT 0 as count", params: [] },
+        'promo codes generated'
       )
     ]);
 
@@ -314,7 +328,9 @@ export async function GET(request: NextRequest) {
       totalMessages,
       unreadMessages,
       pendingReports,
-      messagesToday
+      messagesToday,
+      inviteCodesGenerated,
+      promoCodesGenerated
     }, { status: 200 });
   } catch (error) {
     console.error('Erro ao buscar stats admin:', error);

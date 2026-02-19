@@ -46,6 +46,7 @@ export default function RegisterPage() {
     licencas: '',
     habilitacoes: '',
     curso_atual: '',
+    invitationCode: '',
     terms: false,
   });
   const [loading, setLoading] = useState(false);
@@ -79,7 +80,7 @@ export default function RegisterPage() {
           'Accept': 'application/json',
         },
       });
-      
+
       const data = await res.json();
 
       if (!res.ok) {
@@ -91,7 +92,7 @@ export default function RegisterPage() {
         setCepLoading(false);
         return;
       }
-      
+
       if (data.success && data.street) {
         setForm((prev) => ({
           ...prev,
@@ -176,6 +177,17 @@ export default function RegisterPage() {
             <label className="block text-xs font-bold mb-1">E-mail</label>
             <input name="email" type="email" value={form.email} onChange={handleChange} required className="w-full px-3 py-2 border rounded" title="Email" />
           </div>
+          <div>
+            <label className="block text-xs font-bold mb-1">Código de convite (opcional)</label>
+            <input
+              name="invitationCode"
+              value={form.invitationCode}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border rounded"
+              placeholder="LTF-XXXX-XXXX"
+              title="Código de convite"
+            />
+          </div>
           <div className="flex gap-2">
             <div className="w-1/2">
               <label className="block text-xs font-bold mb-1">Senha</label>
@@ -248,39 +260,39 @@ export default function RegisterPage() {
               <option value="other">Outro</option>
             </select>
           </div>
-          
+
           {/* Qualificações ANAC/RBAC 61 */}
           <div className="border-t pt-4 mt-4">
             <h3 className="text-sm font-bold mb-3 text-gray-700">Qualificações de Aviação (Opcional)</h3>
             <div>
               <label className="block text-xs font-bold mb-1">Licenças</label>
-              <input 
-                name="licencas" 
-                value={form.licencas} 
-                onChange={handleChange} 
-                placeholder="Ex: PP, PC, ATP" 
+              <input
+                name="licencas"
+                value={form.licencas}
+                onChange={handleChange}
+                placeholder="Ex: PP, PC, ATP"
                 className="w-full px-3 py-2 border rounded"
               />
               <p className="text-xs text-gray-500 mt-1">Digite suas licenças ANAC (PP, PC, ATP, PLA, etc.)</p>
             </div>
             <div className="mt-3">
               <label className="block text-xs font-bold mb-1">Habilitações</label>
-              <input 
-                name="habilitacoes" 
-                value={form.habilitacoes} 
-                onChange={handleChange} 
-                placeholder="Ex: MLTE, IFR, B737" 
+              <input
+                name="habilitacoes"
+                value={form.habilitacoes}
+                onChange={handleChange}
+                placeholder="Ex: MLTE, IFR, B737"
                 className="w-full px-3 py-2 border rounded"
               />
               <p className="text-xs text-gray-500 mt-1">Digite suas habilitações (MLTE, IFR, habilitações de tipo, etc.)</p>
             </div>
             <div className="mt-3">
               <label className="block text-xs font-bold mb-1">Curso Atual</label>
-              <input 
-                name="curso_atual" 
-                value={form.curso_atual} 
-                onChange={handleChange} 
-                placeholder="Ex: Habilitação de Tipo A320" 
+              <input
+                name="curso_atual"
+                value={form.curso_atual}
+                onChange={handleChange}
+                placeholder="Ex: Habilitação de Tipo A320"
                 className="w-full px-3 py-2 border rounded"
               />
               <p className="text-xs text-gray-500 mt-1">Curso de aviação que está realizando atualmente (opcional)</p>

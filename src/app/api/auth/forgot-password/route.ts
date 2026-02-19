@@ -59,7 +59,7 @@ export async function POST(request: Request) {
     // Save reset code in database
     await pool.query(
       `UPDATE users 
-       SET reset_code = $1, reset_code_expires = $2 
+       SET password_reset_code = $1, password_reset_expires = $2 
        WHERE id = $3`,
       [resetCode, expiresAt, user.id]
     );

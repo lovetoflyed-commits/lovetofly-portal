@@ -113,6 +113,13 @@ export async function logAdminAction(
   const userAgent = request.headers.get('user-agent') || 'unknown';
 
   try {
+    // Convert target_id to integer if it's a string representation of a number, otherwise use null
+    let targetIdValue: number | string | null = targetId;
+    if (typeof targetId === 'string') {
+      const parsed = parseInt(targetId, 10);
+      targetIdValue = isNaN(parsed) ? null : parsed;
+    }
+    
     // Use the actual columns that exist in admin_activity_log table
     await pool.query(
       `INSERT INTO admin_activity_log 
@@ -122,7 +129,7 @@ export async function logAdminAction(
         adminId, 
         actionType, 
         targetType, 
-        targetId, 
+        targetIdValue, 
         oldValue ? JSON.stringify(oldValue) : null,
         newValue ? JSON.stringify(newValue) : null,
         typeof details === 'string' ? details : JSON.stringify(details),

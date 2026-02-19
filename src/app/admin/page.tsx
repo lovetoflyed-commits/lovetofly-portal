@@ -163,7 +163,12 @@ export default function AdminDashboardPage() {
     totalMessages: 0,
     unreadMessages: 0,
     pendingReports: 0,
-    messagesToday: 0
+    messagesToday: 0,
+    inviteCodesGenerated: 0,
+    promoCodesGenerated: 0,
+    pixPendingPayments: 0,
+    pixCompletedToday: 0,
+    pixRevenueToday: '0.00'
   });
 
   useEffect(() => {
@@ -185,7 +190,8 @@ export default function AdminDashboardPage() {
         return;
       }
 
-      fetch('/api/admin/stats', {
+      // Fetch main stats
+      const mainStatsPromise = fetch('/api/admin/stats', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -197,13 +203,42 @@ export default function AdminDashboardPage() {
           }
           return res.json();
         })
-        .then((data) => {
-          if (data) {
-            console.log('[Admin Stats] Received stats:', data);
-            setStats(data);
+        .catch((err) => {
+          console.error('[Admin Stats] Failed to fetch:', err);
+          return null;
+        });
+
+      // Fetch PIX stats
+      const pixStatsPromise = fetch('/api/admin/pix/stats', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      })
+        .then((res) => {
+          if (!res.ok) {
+            console.error('[PIX Stats] API returned status:', res.status);
+            return null;
           }
+          return res.json();
         })
-        .catch((err) => console.error('[Admin Stats] Failed to fetch:', err));
+        .catch((err) => {
+          console.error('[PIX Stats] Failed to fetch:', err);
+          return null;
+        });
+
+      // Merge results
+      Promise.all([mainStatsPromise, pixStatsPromise]).then(([mainData, pixData]) => {
+        if (mainData) {
+          const mergedStats = {
+            ...mainData,
+            pixPendingPayments: pixData?.stats?.pendingPayments ?? 0,
+            pixCompletedToday: pixData?.stats?.completedToday ?? 0,
+            pixRevenueToday: pixData?.stats?.revenueToday ?? '0.00'
+          };
+          console.log('[Admin Stats] Merged stats:', mergedStats);
+          setStats(mergedStats);
+        }
+      });
     };
 
     // Initial fetch when token is available
@@ -693,6 +728,24 @@ export default function AdminDashboardPage() {
       ]
     },
     {
+      key: 'pix',
+      title: 'PIX',
+      icon: '💳',
+      href: '/admin/pix',
+      priority: 'high',
+      metrics: [
+        { label: 'Pagamentos Pendentes', value: stats.pixPendingPayments },
+        { label: 'Concluídos Hoje', value: stats.pixCompletedToday },
+        { label: 'Receita Hoje', value: `R$ ${Number(stats.pixRevenueToday).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` }
+      ],
+      alert: 'Gerencie chaves PIX e monitore pagamentos em tempo real.',
+      note: 'Pagamentos instantâneos via Banco Central do Brasil com webhook automático.',
+      items: [
+        { label: 'Painel PIX Completo', href: '/admin/pix' },
+        { label: 'Gerenciador de Chaves', href: '/admin/pix?tab=keys' }
+      ]
+    },
+    {
       key: 'finance',
       title: 'Finanças',
       icon: '💰',
@@ -703,7 +756,7 @@ export default function AdminDashboardPage() {
         { label: 'Faturas Pendentes', value: stats.pendingInvoices }
       ],
       alert: (stats.totalRevenue ?? 0) > 0 ? `Receita acumulada: R$ ${(stats.totalRevenue ?? 0).toLocaleString('pt-BR')}` : 'Revise o cronograma de pagamentos.',
-      note: 'Garanta conciliação sempre atualizada.',
+      note: 'Garança conciliação sempre atualizada.',
       items: [
         { label: 'Visão Geral', href: '/admin/finance' }
       ]
@@ -738,6 +791,22 @@ export default function AdminDashboardPage() {
       note: 'Alinhe promoções com capacidade.',
       items: [
         { label: 'Campanhas', href: '/admin/marketing' }
+      ]
+    },
+    {
+      key: 'codes',
+      title: 'Codes',
+      icon: '🎟️',
+      href: '/admin/codes',
+      priority: 'normal',
+      metrics: [
+        { label: 'Invites', value: stats.inviteCodesGenerated },
+        { label: 'Promos', value: stats.promoCodesGenerated }
+      ],
+      alert: 'Manage invitation and promotional codes.',
+      note: 'Generate, monitor, and revoke access codes.',
+      items: [
+        { label: 'Generator', href: '/admin/codes' }
       ]
     },
     {

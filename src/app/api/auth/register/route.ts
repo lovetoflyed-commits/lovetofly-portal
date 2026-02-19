@@ -6,6 +6,60 @@ import { isValidCNPJ, isValidCPF } from '@/utils/masks';
 import * as Sentry from '@sentry/nextjs';
 import { sendWelcomeMessage } from '@/utils/systemMessages';
 
+const buildAccessExpiryFromCode = (codeInfo: any) => {
+  if (!codeInfo) return null;
+  if (codeInfo.access_expires_at) return new Date(codeInfo.access_expires_at);
+  if (codeInfo.grant_duration_days && Number(codeInfo.grant_duration_days) > 0) {
+    const expiry = new Date();
+    expiry.setDate(expiry.getDate() + Number(codeInfo.grant_duration_days));
+    return expiry;
+  }
+  if (codeInfo.valid_until) return new Date(codeInfo.valid_until);
+  return null;
+};
+
+const createCodeNotificationForRegistration = async (
+  userId: number,
+  appliedCode: string,
+  planCode: string,
+  codeInfo: any
+) => {
+  const expiresAt = buildAccessExpiryFromCode(codeInfo);
+  const expiryText = expiresAt
+    ? `O acesso gratuito expira em ${expiresAt.toLocaleDateString('pt-BR')}.`
+    : 'Consulte sua assinatura para verificar prazos e renovacao.';
+
+  const title = codeInfo?.code_type === 'invite'
+    ? 'Convite aplicado no cadastro'
+    : 'Codigo promocional aplicado no cadastro';
+
+  const message = `Seu codigo ${appliedCode} ativou o plano ${planCode}. ${expiryText}`;
+
+  await pool.query(
+    `INSERT INTO user_notifications
+     (user_id, type, title, message, priority, action_url, action_label, metadata, expires_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+    [
+      userId,
+      'membership_code_applied',
+      title,
+      message,
+      'normal',
+      '/profile?tab=membership',
+      'Ver assinatura',
+      JSON.stringify({
+        code: appliedCode,
+        plan: planCode,
+        codeType: codeInfo?.code_type || null,
+        discountType: codeInfo?.discount_type || null,
+        discountValue: codeInfo?.discount_value || null,
+        expiresAt: expiresAt ? expiresAt.toISOString() : null,
+      }),
+      expiresAt,
+    ]
+  );
+};
+
 export async function POST(request: Request) {
   try {
     // Critical rate limiting for registration (3 attempts per hour)
@@ -91,6 +145,8 @@ async function handleIndividualRegistration(userData: any) {
     addressCountry,
     aviationRole,
     aviationRoleOther,
+    invitationCode,
+    membershipPlan = 'free',
     licencas,
     habilitacoes,
     curso_atual,
@@ -146,6 +202,27 @@ async function handleIndividualRegistration(userData: any) {
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
 
+  // Validate code if provided
+  let codeInfo = null;
+  let finalMembershipPlan = membershipPlan || 'free';
+  
+  if (invitationCode && invitationCode.trim()) {
+    try {
+      const { validateAndGetCodeInfo, getCodeBenefits } = await import('@/utils/codeUtils');
+      codeInfo = await validateAndGetCodeInfo(invitationCode);
+      
+      if (codeInfo) {
+        const benefits = getCodeBenefits(codeInfo);
+        // Override membership plan if code grants upgrade
+        if (benefits.membershipUpgrade) {
+          finalMembershipPlan = benefits.membershipUpgrade;
+        }
+      }
+    } catch (error) {
+      console.error('Error validating code:', error);
+    }
+  }
+
   // Create user
   const newUser = await pool.query(
     `INSERT INTO users (
@@ -180,13 +257,68 @@ async function handleIndividualRegistration(userData: any) {
       curso_atual || null,
       newsletter || false,
       terms || false,
-      'free',
+      finalMembershipPlan,
       'individual',
       true  // Individual users are immediately verified
     ]
   );
 
   const userId = newUser.rows[0].id;
+
+  if (codeInfo?.role_grant) {
+    try {
+      await pool.query(
+        'UPDATE users SET role = $1 WHERE id = $2',
+        [String(codeInfo.role_grant).toLowerCase(), userId]
+      );
+    } catch (error) {
+      console.error('Error applying role grant:', error);
+    }
+  }
+
+  if (invitationCode && invitationCode.trim() && codeInfo) {
+    try {
+      await createCodeNotificationForRegistration(
+        userId,
+        invitationCode.trim(),
+        finalMembershipPlan,
+        codeInfo
+      );
+    } catch (error) {
+      console.error('Error creating code notification:', error);
+    }
+  }
+
+  // Create user membership if not on free plan
+  if (finalMembershipPlan !== 'free') {
+    try {
+      const membershipPlanResult = await pool.query(
+        'SELECT id FROM membership_plans WHERE code = $1',
+        [finalMembershipPlan]
+      );
+      
+      if (membershipPlanResult.rows.length > 0) {
+        const planId = membershipPlanResult.rows[0].id;
+        
+        // Create user membership record
+        await pool.query(
+          `INSERT INTO user_memberships (user_id, membership_plan_id, status, created_at, updated_at)
+           VALUES ($1, $2, 'active', NOW(), NOW())`,
+          [userId, planId]
+        );
+
+        // Track code usage if code was applied
+        if (codeInfo) {
+          const { incrementCodeUsage, recordUserCodeUsage } = await import('@/utils/codeUtils');
+          await incrementCodeUsage(codeInfo.id);
+          await recordUserCodeUsage(userId, codeInfo.id);
+        }
+      }
+    } catch (error) {
+      console.error('Error creating membership:', error);
+      // Don't block registration if membership creation fails
+    }
+  }
 
   // Send welcome message (don't block registration if it fails)
   sendWelcomeMessage(userId).catch(err => {
@@ -236,6 +368,7 @@ async function handleBusinessRegistration(userData: any) {
     faaCertificateNumber,
     newsletter,
     terms,
+    invitationCode,
   } = userData;
 
   const cleanedCNPJ = (cnpj || '').replace(/\D/g, '');
@@ -298,6 +431,26 @@ async function handleBusinessRegistration(userData: any) {
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
 
+  // Validate code if provided
+  let codeInfo = null;
+  let finalMembershipPlan = 'free';
+
+  if (invitationCode && invitationCode.trim()) {
+    try {
+      const { validateAndGetCodeInfo, getCodeBenefits } = await import('@/utils/codeUtils');
+      codeInfo = await validateAndGetCodeInfo(invitationCode);
+
+      if (codeInfo) {
+        const benefits = getCodeBenefits(codeInfo);
+        if (benefits.membershipUpgrade) {
+          finalMembershipPlan = benefits.membershipUpgrade;
+        }
+      }
+    } catch (error) {
+      console.error('Error validating code:', error);
+    }
+  }
+
   try {
     // Start transaction
     await pool.query('BEGIN');
@@ -320,13 +473,37 @@ async function handleBusinessRegistration(userData: any) {
         cleanedPhone,
         newsletter || false,
         terms || false,
-        'free',
+        finalMembershipPlan,
         'business',
         false  // Business users need verification
       ]
     );
 
     const userId = newUser.rows[0].id;
+
+    if (codeInfo?.role_grant) {
+      try {
+        await pool.query(
+          'UPDATE users SET role = $1 WHERE id = $2',
+          [String(codeInfo.role_grant).toLowerCase(), userId]
+        );
+      } catch (error) {
+        console.error('Error applying role grant:', error);
+      }
+    }
+
+    if (invitationCode && invitationCode.trim() && codeInfo) {
+      try {
+        await createCodeNotificationForRegistration(
+          userId,
+          invitationCode.trim(),
+          finalMembershipPlan,
+          codeInfo
+        );
+      } catch (error) {
+        console.error('Error creating code notification:', error);
+      }
+    }
 
     // Create business profile
     const businessUserResult = await pool.query(
@@ -374,6 +551,33 @@ async function handleBusinessRegistration(userData: any) {
       ]
     );
 
+    if (finalMembershipPlan !== 'free') {
+      try {
+        const membershipPlanResult = await pool.query(
+          'SELECT id FROM membership_plans WHERE code = $1',
+          [finalMembershipPlan]
+        );
+
+        if (membershipPlanResult.rows.length > 0) {
+          const planId = membershipPlanResult.rows[0].id;
+
+          await pool.query(
+            `INSERT INTO user_memberships (user_id, membership_plan_id, status, created_at, updated_at)
+             VALUES ($1, $2, 'active', NOW(), NOW())`,
+            [userId, planId]
+          );
+
+          if (codeInfo) {
+            const { incrementCodeUsage, recordUserCodeUsage } = await import('@/utils/codeUtils');
+            await incrementCodeUsage(codeInfo.id);
+            await recordUserCodeUsage(userId, codeInfo.id);
+          }
+        }
+      } catch (error) {
+        console.error('Error creating membership:', error);
+      }
+    }
+
     // Commit transaction
     await pool.query('COMMIT');
 
@@ -387,7 +591,7 @@ async function handleBusinessRegistration(userData: any) {
       user: {
         id: userId,
         email: newUser.rows[0].email,
-        plan: 'free',
+        plan: finalMembershipPlan,
         userType: 'business',
         verificationStatus: 'pending',
       },

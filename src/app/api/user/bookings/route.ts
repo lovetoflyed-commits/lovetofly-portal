@@ -55,9 +55,7 @@ export async function GET(request: Request) {
       subtotal: r.subtotal,
       fees: r.fees,
       totalPrice: r.total_price,
-      status: r.status === 'pending' && r.payment_method === 'stripe' && r.stripe_payment_intent_id
-        ? 'confirmed'
-        : r.status,
+      status: r.status,
       paymentMethod: r.payment_method,
       stripePaymentIntentId: r.stripe_payment_intent_id,
       stripeChargeId: r.stripe_charge_id,
