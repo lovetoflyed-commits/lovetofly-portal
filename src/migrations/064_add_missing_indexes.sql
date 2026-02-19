@@ -6,7 +6,7 @@
 -- Verified against current schema on Jan 20, 2026
 
 -- 1. Career profiles user_id for fast lookups (if table exists)
-CREATE INDEX CONCURRENTLY IF NOT EXISTS 
+CREATE INDEX IF NOT EXISTS 
   idx_career_profiles_user 
   ON career_profiles(user_id);
 
@@ -28,7 +28,7 @@ BEGIN
 END $$;
 
 -- 3. Forum replies topic_id for topic discussion queries (if missing)
-CREATE INDEX CONCURRENTLY IF NOT EXISTS 
+CREATE INDEX IF NOT EXISTS 
   idx_forum_replies_topic 
   ON forum_replies(topic_id);
 
