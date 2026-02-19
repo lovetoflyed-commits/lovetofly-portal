@@ -19,18 +19,18 @@ VALUES
 ON CONFLICT (email) DO NOTHING;
 
 -- Hangar owners: required columns only
-INSERT INTO hangar_owners (id, user_id, company_name, cnpj, is_verified, created_at, updated_at, owner_type, cpf, pix_key, pix_key_type)
-SELECT gen_random_uuid(), u.id, 'SkyHoldings Ltd', '12345678000199', true, NOW() - INTERVAL '120 days', NOW() - INTERVAL '120 days', 'company', '11122233344', 'joao@pix', 'email'
+INSERT INTO hangar_owners (user_id, company_name, cnpj, is_verified, created_at, updated_at, owner_type, cpf, pix_key, pix_key_type)
+SELECT u.id, 'SkyHoldings Ltd', '12345678000199', true, NOW() - INTERVAL '120 days', NOW() - INTERVAL '120 days', 'company', '11122233344', 'joao@pix', 'email'
 FROM users u WHERE u.email = 'joao.owner@email.com'
 ON CONFLICT DO NOTHING;
 
-INSERT INTO hangar_owners (id, user_id, company_name, cnpj, is_verified, created_at, updated_at, owner_type, cpf, pix_key, pix_key_type)
-SELECT gen_random_uuid(), u.id, 'Costa Aviation', '98765432000155', false, NOW() - INTERVAL '100 days', NOW() - INTERVAL '100 days', 'company', '22233344455', 'pedro@pix', 'email'
+INSERT INTO hangar_owners (user_id, company_name, cnpj, is_verified, created_at, updated_at, owner_type, cpf, pix_key, pix_key_type)
+SELECT u.id, 'Costa Aviation', '98765432000155', false, NOW() - INTERVAL '100 days', NOW() - INTERVAL '100 days', 'company', '22233344455', 'pedro@pix', 'email'
 FROM users u WHERE u.email = 'pedro.owner@email.com'
 ON CONFLICT DO NOTHING;
 
-INSERT INTO hangar_owners (id, user_id, company_name, cnpj, is_verified, created_at, updated_at, owner_type, cpf, pix_key, pix_key_type)
-SELECT gen_random_uuid(), u.id, 'Ferreira Aero', '10203040000188', false, NOW() - INTERVAL '90 days', NOW() - INTERVAL '90 days', 'company', '33344455566', 'ana@pix', 'email'
+INSERT INTO hangar_owners (user_id, company_name, cnpj, is_verified, created_at, updated_at, owner_type, cpf, pix_key, pix_key_type)
+SELECT u.id, 'Ferreira Aero', '10203040000188', false, NOW() - INTERVAL '90 days', NOW() - INTERVAL '90 days', 'company', '33344455566', 'ana@pix', 'email'
 FROM users u WHERE u.email = 'ana.owner@email.com'
 ON CONFLICT DO NOTHING;
 
