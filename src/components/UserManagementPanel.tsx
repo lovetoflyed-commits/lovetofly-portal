@@ -37,6 +37,7 @@ export default function UserManagementPanel() {
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [cleanupLoading, setCleanupLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -224,6 +225,49 @@ export default function UserManagementPanel() {
     }
   };
 
+  const handleCleanupTestUsers = async () => {
+    if (!token) {
+      alert('Missing auth token. Please log in again.');
+      return;
+    }
+
+    const confirmed = confirm(
+      'Remover usuários de teste com emails @email.com e @teste.com?\n\nEsta ação fará soft delete e removerá estes usuários da lista.'
+    );
+
+    if (!confirmed) return;
+
+    setCleanupLoading(true);
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          mode: 'cleanup_test_users',
+          domains: ['email.com', 'teste.com'],
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data?.message || 'Erro ao remover usuários de teste');
+        return;
+      }
+
+      alert(data?.message || 'Usuários de teste removidos com sucesso');
+      fetchUsers();
+    } catch (error) {
+      console.error('Error cleaning test users:', error);
+      alert('Erro ao remover usuários de teste');
+    } finally {
+      setCleanupLoading(false);
+    }
+  };
+
   if (loading) {
     return <div className="p-8 text-center">Loading users...</div>;
   }
@@ -394,6 +438,14 @@ export default function UserManagementPanel() {
             <option value="warned">Warned</option>
             <option value="inactive">Inactive (30+ days)</option>
           </select>
+          <button
+            onClick={handleCleanupTestUsers}
+            disabled={cleanupLoading || loading}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Remove usuários de teste criados via curl (@email.com e @teste.com)"
+          >
+            {cleanupLoading ? 'Removendo...' : 'Remover usuários teste'}
+          </button>
         </div>
       </div>
 

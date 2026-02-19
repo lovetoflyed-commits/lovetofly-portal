@@ -9,11 +9,12 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q')?.trim() || '';
+    const includeDeleted = searchParams.get('includeDeleted') === 'true';
     const page = Number(searchParams.get('page') || '1');
     const limit = Math.min(Number(searchParams.get('limit') || '20'), 100);
     const offset = (page - 1) * limit;
 
-    const whereClauses: string[] = [];
+    const whereClauses: string[] = includeDeleted ? [] : ['u.deleted_at IS NULL'];
     const values: Array<string | number> = [];
     let paramIndex = 1;
 
@@ -148,5 +149,95 @@ export async function PATCH(request: NextRequest) {
   } catch (error) {
     console.error('Erro ao atualizar role do usuário:', error);
     return NextResponse.json({ message: 'Erro ao atualizar usuário' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const authError = await requireAdmin(request);
+    if (authError) return authError;
+
+    const adminUser = await getAdminUser(request);
+    if (!adminUser) {
+      return NextResponse.json({ message: 'Admin user not found' }, { status: 401 });
+    }
+
+    const body = await request.json().catch(() => ({}));
+    const mode = body?.mode;
+
+    if (mode !== 'cleanup_test_users') {
+      return NextResponse.json({ message: 'Modo de exclusão inválido' }, { status: 400 });
+    }
+
+    const domainsRaw = Array.isArray(body?.domains) ? body.domains : ['email.com', 'teste.com'];
+    const domains = domainsRaw
+      .map((domain: unknown) => String(domain).trim().toLowerCase())
+      .filter((domain: string) => domain.length > 0);
+
+    if (domains.length === 0) {
+      return NextResponse.json({ message: 'Nenhum domínio informado' }, { status: 400 });
+    }
+
+    const emailConditions = domains
+      .map((_, index) => `LOWER(email) LIKE $${index + 1}`)
+      .join(' OR ');
+
+    const emailParams = domains.map((domain: string) => `%@${domain}`);
+
+    const previewResult = await pool.query(
+      `SELECT id, email
+       FROM users
+       WHERE deleted_at IS NULL
+         AND (${emailConditions})`,
+      emailParams
+    );
+
+    if (previewResult.rows.length === 0) {
+      return NextResponse.json(
+        {
+          message: 'Nenhum usuário de teste encontrado para remover',
+          data: { deletedCount: 0 },
+        },
+        { status: 200 }
+      );
+    }
+
+    const deleteResult = await pool.query(
+      `UPDATE users
+       SET deleted_at = NOW(),
+           deleted_by = $${emailParams.length + 1}
+       WHERE deleted_at IS NULL
+         AND (${emailConditions})
+       RETURNING id, email, deleted_at`,
+      [...emailParams, adminUser.id]
+    );
+
+    await logAdminAction(
+      adminUser.id,
+      'cleanup_test_users',
+      'users',
+      null,
+      `Soft deleted ${deleteResult.rowCount} test users by domains: ${domains.join(', ')}`,
+      request,
+      { domains },
+      {
+        deletedCount: deleteResult.rowCount,
+        emails: deleteResult.rows.map((row) => row.email),
+      }
+    );
+
+    return NextResponse.json(
+      {
+        message: `${deleteResult.rowCount} usuários de teste removidos com sucesso`,
+        data: {
+          deletedCount: deleteResult.rowCount,
+          deletedUsers: deleteResult.rows,
+        },
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('Erro ao remover usuários de teste:', error);
+    return NextResponse.json({ message: 'Erro ao remover usuários de teste' }, { status: 500 });
   }
 }
