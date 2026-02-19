@@ -32,7 +32,11 @@ async function runMigrations() {
     `);
     
     // Get all migration files
-    const migrationsDir = path.join(__dirname, 'src', 'migrations');
+    const migrationsDir = path.join(__dirname, '..', 'src', 'migrations');
+    if (!fs.existsSync(migrationsDir)) {
+      console.log('ℹ️  No migrations directory found, skipping migration step.');
+      return;
+    }
     const files = fs.readdirSync(migrationsDir)
       .filter(f => f.endsWith('.sql'))
       .sort();
