@@ -37,7 +37,7 @@ ON CONFLICT DO NOTHING;
 -- Hangar listings: status allowed (active, inactive, pending, rejected, suspended)
 INSERT INTO hangar_listings (
   owner_id, icao_code, aerodrome_name, city, state, country, hangar_number,
-  size_sqm, max_wingspan, max_length, max_height,
+  hangar_size_sqm, max_wingspan_meters, max_length_meters, max_height_meters,
   daily_rate, weekly_rate, monthly_rate, description,
   is_available, status, created_at, updated_at, image_url, hourly_rate,
   available_from, available_until, accepts_online_payment, accepts_payment_on_arrival,
@@ -59,7 +59,7 @@ ON CONFLICT DO NOTHING;
 
 INSERT INTO hangar_listings (
   owner_id, icao_code, aerodrome_name, city, state, country, hangar_number,
-  size_sqm, max_wingspan, max_length, max_height,
+  hangar_size_sqm, max_wingspan_meters, max_length_meters, max_height_meters,
   daily_rate, weekly_rate, monthly_rate, description,
   is_available, status, created_at, updated_at, image_url, hourly_rate,
   available_from, available_until, accepts_online_payment, accepts_payment_on_arrival,
@@ -81,7 +81,7 @@ ON CONFLICT DO NOTHING;
 
 INSERT INTO hangar_listings (
   owner_id, icao_code, aerodrome_name, city, state, country, hangar_number,
-  size_sqm, max_wingspan, max_length, max_height,
+  hangar_size_sqm, max_wingspan_meters, max_length_meters, max_height_meters,
   daily_rate, weekly_rate, monthly_rate, description,
   is_available, status, created_at, updated_at, image_url, hourly_rate,
   available_from, available_until, accepts_online_payment, accepts_payment_on_arrival,
