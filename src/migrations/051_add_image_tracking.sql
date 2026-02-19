@@ -7,9 +7,20 @@ BEGIN;
 ALTER TABLE hangar_listings
 ADD COLUMN IF NOT EXISTS image_key VARCHAR(500),
 ADD COLUMN IF NOT EXISTS image_uploaded_at TIMESTAMP,
-ADD COLUMN IF NOT EXISTS images_count INTEGER DEFAULT 0,
-ADD CONSTRAINT hangar_listings_image_url_not_null_check 
-  CHECK (image_url IS NOT NULL OR is_paid = false);
+ADD COLUMN IF NOT EXISTS images_count INTEGER DEFAULT 0;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'hangar_listings_image_url_not_null_check'
+  ) THEN
+    ALTER TABLE hangar_listings
+      ADD CONSTRAINT hangar_listings_image_url_not_null_check
+      CHECK (image_url IS NOT NULL OR is_paid = false);
+  END IF;
+END $$;
 
 -- Create hangar_image_uploads table for tracking all uploads
 CREATE TABLE IF NOT EXISTS hangar_image_uploads (
