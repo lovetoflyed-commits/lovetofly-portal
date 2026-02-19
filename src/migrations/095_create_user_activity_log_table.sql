@@ -19,6 +19,17 @@ CREATE TABLE IF NOT EXISTS user_activity_log (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Ensure newer columns exist when a previous migration created the table
+ALTER TABLE user_activity_log
+  ADD COLUMN IF NOT EXISTS activity_category VARCHAR(50),
+  ADD COLUMN IF NOT EXISTS details JSONB,
+  ADD COLUMN IF NOT EXISTS target_type VARCHAR(100),
+  ADD COLUMN IF NOT EXISTS target_id VARCHAR(100),
+  ADD COLUMN IF NOT EXISTS old_value TEXT,
+  ADD COLUMN IF NOT EXISTS new_value TEXT,
+  ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'success',
+  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
 -- Indexes for efficient querying
 CREATE INDEX IF NOT EXISTS idx_user_activity_user_id ON user_activity_log(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_activity_type ON user_activity_log(activity_type);

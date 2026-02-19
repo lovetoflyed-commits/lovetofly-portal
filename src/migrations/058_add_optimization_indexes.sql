@@ -16,14 +16,44 @@ CREATE INDEX IF NOT EXISTS idx_hangar_listings_daily_rate
   WHERE status = 'active' AND is_available = true;
 
 -- Composite index for common filter combinations (price + size)
-CREATE INDEX IF NOT EXISTS idx_hangar_listings_price_size 
-  ON hangar_listings(monthly_rate, hangar_size_sqm) 
-  WHERE status = 'active' AND is_available = true;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_name = 'hangar_listings'
+      AND column_name = 'hangar_size_sqm'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_hangar_listings_price_size 
+      ON hangar_listings(monthly_rate, hangar_size_sqm) 
+      WHERE status = 'active' AND is_available = true;
+  END IF;
+END $$;
 
 -- Index for dimension-based filtering (wingspan, length, height)
-CREATE INDEX IF NOT EXISTS idx_hangar_listings_dimensions 
-  ON hangar_listings(max_wingspan_meters, max_length_meters, max_height_meters) 
-  WHERE status = 'active' AND is_available = true;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_name = 'hangar_listings'
+      AND column_name = 'max_wingspan_meters'
+  ) AND EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_name = 'hangar_listings'
+      AND column_name = 'max_length_meters'
+  ) AND EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_name = 'hangar_listings'
+      AND column_name = 'max_height_meters'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_hangar_listings_dimensions 
+      ON hangar_listings(max_wingspan_meters, max_length_meters, max_height_meters) 
+      WHERE status = 'active' AND is_available = true;
+  END IF;
+END $$;
 
 -- Drop redundant indexes (keep only one of each pair)
 DROP INDEX IF EXISTS idx_listings_icao; -- Keep idx_hangar_icao

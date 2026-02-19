@@ -51,7 +51,7 @@ All PIX payment functionality has been implemented and is ready for deployment.
   - [ ] Banking app compatibility testing
   - [ ] Load testing (multiple concurrent payments)
 
-### Documentation
+### PIX Documentation
 - [ ] Team trained on PIX features
 - [ ] Support documentation shared:
   - [ ] `PIX_IMPLEMENTATION_GUIDE.md`
