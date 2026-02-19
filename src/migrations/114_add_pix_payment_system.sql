@@ -2,10 +2,20 @@
 -- This migration sets up PIX payment support with QR code generation and payment tracking
 
 -- Create payment methods enum type
-CREATE TYPE payment_method AS ENUM ('stripe', 'pix', 'boleto');
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_type
+        WHERE typname = 'payment_method'
+    ) THEN
+        CREATE TYPE payment_method AS ENUM ('stripe', 'pix', 'boleto');
+    END IF;
+END;
+$$;
 
 -- Create PIX keys table for storing merchant PIX account details
-CREATE TABLE pix_keys (
+CREATE TABLE IF NOT EXISTS pix_keys (
     id SERIAL PRIMARY KEY,
     organization_id UUID NOT NULL,
     pix_key VARCHAR(255) NOT NULL UNIQUE,
@@ -22,7 +32,7 @@ CREATE TABLE pix_keys (
 CREATE INDEX idx_pix_keys_organization_active ON pix_keys(organization_id, is_active);
 
 -- Create PIX payments table for tracking all PIX transactions
-CREATE TABLE pix_payments (
+CREATE TABLE IF NOT EXISTS pix_payments (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL,
     order_id VARCHAR(100), -- Reference to membership upgrade, booking, etc.
@@ -59,7 +69,7 @@ CREATE INDEX idx_pix_payments_transaction_id ON pix_payments(transaction_id);
 CREATE INDEX idx_pix_payments_expires_at ON pix_payments(expires_at);
 
 -- Create PIX webhook logs for debugging and audit trail
-CREATE TABLE pix_webhook_logs (
+CREATE TABLE IF NOT EXISTS pix_webhook_logs (
     id SERIAL PRIMARY KEY,
     event_type VARCHAR(100), -- payment.received, payment.pending, etc.
     external_id VARCHAR(255),
@@ -75,14 +85,36 @@ CREATE INDEX idx_pix_webhook_logs_created_at ON pix_webhook_logs(created_at);
 
 -- Add pix_payment_id column to user_payments or membership tracking tables if they exist
 -- This allows linking payments across the system
-ALTER TABLE memberships 
-ADD COLUMN IF NOT EXISTS pix_payment_id INTEGER REFERENCES pix_payments(id),
-ADD COLUMN IF NOT EXISTS payment_method payment_method DEFAULT 'stripe';
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.tables
+        WHERE table_schema = 'public'
+          AND table_name = 'memberships'
+    ) THEN
+        ALTER TABLE memberships 
+        ADD COLUMN IF NOT EXISTS pix_payment_id INTEGER REFERENCES pix_payments(id),
+        ADD COLUMN IF NOT EXISTS payment_method payment_method DEFAULT 'stripe';
+    END IF;
+END;
+$$;
 
 -- Add payment method to hangar bookings if table exists
-ALTER TABLE hangar_bookings 
-ADD COLUMN IF NOT EXISTS payment_method payment_method DEFAULT 'stripe',
-ADD COLUMN IF NOT EXISTS pix_payment_id INTEGER REFERENCES pix_payments(id) ON DELETE SET NULL;
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.tables
+        WHERE table_schema = 'public'
+          AND table_name = 'hangar_bookings'
+    ) THEN
+        ALTER TABLE hangar_bookings 
+        ADD COLUMN IF NOT EXISTS payment_method payment_method DEFAULT 'stripe',
+        ADD COLUMN IF NOT EXISTS pix_payment_id INTEGER REFERENCES pix_payments(id) ON DELETE SET NULL;
+    END IF;
+END;
+$$;
 
 -- Create function to update pix_payments timestamps
 CREATE OR REPLACE FUNCTION update_pix_payments_updated_at()

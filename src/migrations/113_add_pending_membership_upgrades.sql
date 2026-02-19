@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS pending_membership_upgrades (
     billing_cycle VARCHAR(10) NOT NULL CHECK (billing_cycle IN ('monthly', 'annual')),
     checkout_session_id VARCHAR(255),
     checkout_url TEXT NOT NULL,
-    promo_code_id INTEGER REFERENCES codes(id) ON DELETE SET NULL,
+    promo_code_id INTEGER REFERENCES coupons(id) ON DELETE SET NULL,
     started_at TIMESTAMP DEFAULT NOW(),
     completed_at TIMESTAMP,
     cancelled_at TIMESTAMP,

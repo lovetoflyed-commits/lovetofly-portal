@@ -44,10 +44,52 @@ CREATE TABLE IF NOT EXISTS coupon_redemptions (
   id SERIAL PRIMARY KEY,
   coupon_id INTEGER NOT NULL REFERENCES coupons(id) ON DELETE CASCADE,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  booking_id UUID REFERENCES hangar_bookings(id) ON DELETE SET NULL,
+  booking_id INTEGER REFERENCES hangar_bookings(id) ON DELETE SET NULL,
   redeemed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Ensure booking_id exists for older schemas that used order_id
+ALTER TABLE coupon_redemptions
+ADD COLUMN IF NOT EXISTS booking_id INTEGER;
+
+-- Backfill booking_id from legacy order_id when present
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'coupon_redemptions'
+      AND column_name = 'order_id'
+  ) THEN
+    UPDATE coupon_redemptions
+    SET booking_id = order_id
+    WHERE booking_id IS NULL;
+  END IF;
+END
+$$;
+
+-- Add FK only when table/column exist and constraint is missing
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'coupon_redemptions'
+      AND column_name = 'booking_id'
+  ) AND NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'coupon_redemptions_booking_id_fkey'
+  ) THEN
+    ALTER TABLE coupon_redemptions
+    ADD CONSTRAINT coupon_redemptions_booking_id_fkey
+    FOREIGN KEY (booking_id) REFERENCES hangar_bookings(id) ON DELETE SET NULL;
+  END IF;
+END
+$$;
 
 -- Create index on coupon_redemptions
 CREATE INDEX IF NOT EXISTS idx_coupon_redemptions_coupon_id ON coupon_redemptions(coupon_id);
