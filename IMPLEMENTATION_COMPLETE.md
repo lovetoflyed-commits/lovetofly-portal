@@ -343,7 +343,7 @@ curl -X POST http://localhost:3000/api/admin/pix-reconcile \
 
 ---
 
-## Summary
+### Summary
 
 The PIX integration system is **100% complete and production-ready**. It includes:
 
