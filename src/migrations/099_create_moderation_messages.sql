@@ -6,8 +6,8 @@
 -- Stores messages sent from moderators/admins to users
 CREATE TABLE IF NOT EXISTS moderation_messages (
   id SERIAL PRIMARY KEY,
-  sender_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  recipient_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  sender_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  recipient_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   message TEXT NOT NULL,
   sent_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   read_at TIMESTAMP WITH TIME ZONE,
