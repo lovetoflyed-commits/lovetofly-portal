@@ -24,7 +24,7 @@ CREATE INDEX idx_pix_keys_organization_active ON pix_keys(organization_id, is_ac
 -- Create PIX payments table for tracking all PIX transactions
 CREATE TABLE pix_payments (
     id SERIAL PRIMARY KEY,
-    user_id UUID NOT NULL,
+    user_id INTEGER NOT NULL,
     order_id VARCHAR(100), -- Reference to membership upgrade, booking, etc.
     order_type VARCHAR(50) NOT NULL, -- membership, hangar_booking, classifieds, etc.
     amount_cents BIGINT NOT NULL, -- Store in cents to avoid floating point issues

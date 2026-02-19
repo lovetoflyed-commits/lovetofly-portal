@@ -43,7 +43,7 @@ CREATE INDEX IF NOT EXISTS idx_hangar_bookings_promo_code ON hangar_bookings(pro
 CREATE TABLE IF NOT EXISTS coupon_redemptions (
   id SERIAL PRIMARY KEY,
   coupon_id INTEGER NOT NULL REFERENCES coupons(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   booking_id UUID REFERENCES hangar_bookings(id) ON DELETE SET NULL,
   redeemed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
