@@ -2,10 +2,33 @@ import Stripe from 'stripe';
 
 const STRIPE_API_VERSION = process.env.STRIPE_API_VERSION || undefined;
 
-export const stripe = new Stripe(
-    process.env.STRIPE_SECRET_KEY || '',
-    STRIPE_API_VERSION ? { apiVersion: STRIPE_API_VERSION as any } : undefined
-);
+let stripeClient: Stripe | null = null;
+
+export function getStripeClient(): Stripe {
+    if (stripeClient) {
+        return stripeClient;
+    }
+
+    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+    if (!stripeSecretKey) {
+        throw new Error('Missing STRIPE_SECRET_KEY');
+    }
+
+    stripeClient = new Stripe(
+        stripeSecretKey,
+        STRIPE_API_VERSION ? { apiVersion: STRIPE_API_VERSION as any } : undefined
+    );
+
+    return stripeClient;
+}
+
+export const stripe = new Proxy({} as Stripe, {
+    get(_target, prop) {
+        const client = getStripeClient() as any;
+        const value = client[prop];
+        return typeof value === 'function' ? value.bind(client) : value;
+    },
+});
 
 export interface StripeProductConfig {
     code: 'free' | 'standard' | 'premium' | 'pro';
