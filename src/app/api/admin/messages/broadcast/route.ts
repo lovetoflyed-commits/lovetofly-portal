@@ -16,6 +16,57 @@ import { verifyToken } from '@/utils/auth';
 import { sanitizeMessageContent, validateMessageData } from '@/utils/messageUtils';
 import { v4 as uuidv4 } from 'uuid';
 
+async function sendBroadcastEmail(options: {
+  to: string;
+  recipientName?: string | null;
+  senderName?: string | null;
+  module: string;
+  subject: string;
+  message: string;
+}) {
+  const resendApiKey = process.env.RESEND_API_KEY;
+  if (!resendApiKey) {
+    return { sent: false, reason: 'missing_resend_key' };
+  }
+
+  const from = process.env.RESEND_FROM || 'Love to Fly <noreply@lovetofly.com.br>';
+  const recipientLabel = options.recipientName || 'usuário';
+  const senderLabel = options.senderName || 'Administração Love to Fly';
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.5;color:#111;max-width:640px;margin:0 auto;">
+      <h2 style="margin-bottom:8px;">Comunicado da administração</h2>
+      <p>Olá, ${recipientLabel}.</p>
+      <p>Você recebeu uma nova mensagem administrativa no módulo <strong>${options.module}</strong>.</p>
+      <p><strong>Assunto:</strong> ${options.subject}</p>
+      <p><strong>Remetente:</strong> ${senderLabel}</p>
+      <div style="margin-top:12px;padding:12px;border:1px solid #e5e7eb;border-radius:8px;white-space:pre-wrap;">${options.message}</div>
+      <p style="margin-top:16px;color:#666;font-size:12px;">Esta mensagem também está disponível no painel do usuário.</p>
+    </div>
+  `;
+
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${resendApiKey}`,
+    },
+    body: JSON.stringify({
+      from,
+      to: [options.to],
+      subject: `[Love to Fly] ${options.subject}`,
+      html,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Resend error (${response.status}): ${errorText}`);
+  }
+
+  return { sent: true };
+}
+
 export async function POST(request: NextRequest) {
   try {
     // ============ Authentication & Authorization ============
@@ -91,6 +142,7 @@ export async function POST(request: NextRequest) {
       message,
       priority = 'normal',
       targetFilter = 'all_users',
+      sendEmail = false,
     } = body;
 
     // ============ Validation ============
@@ -102,23 +154,33 @@ export async function POST(request: NextRequest) {
     }
 
     // ============ Get Target Users ============
-    let usersQuery = 'SELECT id FROM users WHERE id IS NOT NULL';
+    let usersQuery = 'SELECT id, email, first_name, last_name FROM users WHERE id IS NOT NULL';
     const params: any[] = [];
 
     console.log('[Broadcast] Target filter:', targetFilter);
 
     if (targetFilter === 'module_hangarshare' || targetFilter === 'hangarshare') {
       // Target users who are hangar owners
-      usersQuery = 'SELECT DISTINCT user_id as id FROM hangar_owners WHERE user_id IS NOT NULL';
+      usersQuery = `
+        SELECT DISTINCT u.id, u.email, u.first_name, u.last_name
+        FROM hangar_owners ho
+        JOIN users u ON u.id = ho.user_id
+        WHERE ho.user_id IS NOT NULL
+      `;
     } else if (targetFilter === 'module_career' || targetFilter === 'career') {
       // Target users who have posted jobs (via companies)
-      usersQuery = 'SELECT DISTINCT user_id as id FROM companies WHERE user_id IS NOT NULL';
+      usersQuery = `
+        SELECT DISTINCT u.id, u.email, u.first_name, u.last_name
+        FROM companies c
+        JOIN users u ON u.id = c.user_id
+        WHERE c.user_id IS NOT NULL
+      `;
     } else if (targetFilter === 'module_traslados' || targetFilter === 'traslados') {
       // For now, default to all users if traslados module requested
-      usersQuery = 'SELECT id FROM users WHERE id IS NOT NULL ORDER BY id';
+      usersQuery = 'SELECT id, email, first_name, last_name FROM users WHERE id IS NOT NULL ORDER BY id';
     } else {
       // Default: all users ('all', 'all_users', or any other value)
-      usersQuery = 'SELECT id FROM users WHERE id IS NOT NULL ORDER BY id';
+      usersQuery = 'SELECT id, email, first_name, last_name FROM users WHERE id IS NOT NULL ORDER BY id';
     }
 
     console.log('[Broadcast] Query:', usersQuery);
@@ -142,6 +204,7 @@ export async function POST(request: NextRequest) {
 
     // ============ Send Messages ============
     let sentCount = 0;
+    let emailSentCount = 0;
     const failedUsers: string[] = [];
 
     console.log('[Broadcast] Starting message send loop for', targetUsers.length, 'users');
@@ -194,6 +257,25 @@ export async function POST(request: NextRequest) {
           ]
         );
 
+        if (sendEmail && targetUser.email) {
+          try {
+            const recipientName = [targetUser.first_name, targetUser.last_name].filter(Boolean).join(' ') || null;
+            const emailResult = await sendBroadcastEmail({
+              to: targetUser.email,
+              recipientName,
+              senderName: adminCheck.rows[0]?.email || 'Administração Love to Fly',
+              module: module.toLowerCase(),
+              subject: subject.trim(),
+              message: finalMessage,
+            });
+            if (emailResult.sent) {
+              emailSentCount++;
+            }
+          } catch (emailError) {
+            console.error(`[Broadcast] Failed to send email to user ${targetUser.id}:`, emailError);
+          }
+        }
+
         sentCount++;
         console.log('[Broadcast] Message sent successfully. Sent count:', sentCount);
       } catch (error) {
@@ -227,6 +309,7 @@ export async function POST(request: NextRequest) {
         message: 'Broadcast enviado com sucesso',
         data: {
           sentCount,
+          emailSentCount,
           failedCount: failedUsers.length,
           totalTargets: targetUsers.length,
           contentModified: sanitizationResult.hasViolations,

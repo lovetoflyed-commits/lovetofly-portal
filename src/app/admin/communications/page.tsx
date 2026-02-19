@@ -74,6 +74,7 @@ export default function AdminCommunicationsPage({ params, searchParams }: PagePr
     const [subject, setSubject] = useState('');
     const [message, setMessage] = useState('');
     const [priority, setPriority] = useState('normal');
+    const [sendEmailCopy, setSendEmailCopy] = useState(false);
 
     // Broadcast
     const [broadcastModule, setBroadcastModule] = useState('all');
@@ -81,6 +82,7 @@ export default function AdminCommunicationsPage({ params, searchParams }: PagePr
     const [broadcastMessage, setBroadcastMessage] = useState('');
     const [broadcastPriority, setBroadcastPriority] = useState('normal');
     const [broadcastTargetCount, setBroadcastTargetCount] = useState(0);
+    const [broadcastSendEmailCopy, setBroadcastSendEmailCopy] = useState(false);
 
     // Reports
     const [reports, setReports] = useState<Report[]>([]);
@@ -197,6 +199,7 @@ export default function AdminCommunicationsPage({ params, searchParams }: PagePr
                     subject,
                     message,
                     priority,
+                    sendEmail: sendEmailCopy,
                     metadata: {
                         sent_by: 'admin',
                         sent_from: 'admin_dashboard',
@@ -213,6 +216,7 @@ export default function AdminCommunicationsPage({ params, searchParams }: PagePr
                 setRecipientId('');
                 setSubject('');
                 setMessage('');
+                setSendEmailCopy(false);
 
                 if (result.data?.contentModified) {
                     alert('Aviso: Alguns conteúdos foram bloqueados por política de segurança.');
@@ -267,6 +271,7 @@ export default function AdminCommunicationsPage({ params, searchParams }: PagePr
                     message: broadcastMessage,
                     priority: broadcastPriority,
                     targetFilter: broadcastModule === 'all' ? 'all_users' : `module_${broadcastModule}`,
+                    sendEmail: broadcastSendEmailCopy,
                 }),
             });
 
@@ -277,6 +282,7 @@ export default function AdminCommunicationsPage({ params, searchParams }: PagePr
                 // Clear form
                 setBroadcastSubject('');
                 setBroadcastMessage('');
+                setBroadcastSendEmailCopy(false);
             } else {
                 const error = await response.json();
                 alert(error.message || 'Erro ao enviar broadcast');
@@ -836,6 +842,19 @@ export default function AdminCommunicationsPage({ params, searchParams }: PagePr
                                 </div>
 
                                 {/* Send Button */}
+                                <div className="mb-4 flex items-center gap-2">
+                                    <input
+                                        id="send-email-copy"
+                                        type="checkbox"
+                                        checked={sendEmailCopy}
+                                        onChange={(e) => setSendEmailCopy(e.target.checked)}
+                                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    />
+                                    <label htmlFor="send-email-copy" className="text-sm text-gray-700">
+                                        Enviar também por e-mail
+                                    </label>
+                                </div>
+
                                 <button
                                     onClick={sendMessage}
                                     disabled={loading || !recipientId || !subject.trim() || !message.trim()}
@@ -940,6 +959,19 @@ export default function AdminCommunicationsPage({ params, searchParams }: PagePr
                                 </div>
 
                                 {/* Send Broadcast Button */}
+                                <div className="mb-4 flex items-center gap-2">
+                                    <input
+                                        id="broadcast-send-email-copy"
+                                        type="checkbox"
+                                        checked={broadcastSendEmailCopy}
+                                        onChange={(e) => setBroadcastSendEmailCopy(e.target.checked)}
+                                        className="h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                                    />
+                                    <label htmlFor="broadcast-send-email-copy" className="text-sm text-gray-700">
+                                        Enviar também por e-mail
+                                    </label>
+                                </div>
+
                                 <button
                                     onClick={sendBroadcast}
                                     disabled={loading || !broadcastSubject.trim() || !broadcastMessage.trim() || broadcastTargetCount === 0}
